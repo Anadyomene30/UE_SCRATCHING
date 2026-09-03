@@ -1,0 +1,249 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=DM+Mono:wght@300;400;500&display=swap">
+  <style>
+    body { margin: 0; background: #141412; color: #E9E6DF;
+           font-family: Archivo, "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+    a { color: #C9762F; } a:hover { color: #E08B3E; }
+    .lbl { font-size: 9px; letter-spacing: .2em; text-transform: uppercase; color: #605D56; font-weight: 500; }
+    .mono { font-family: "DM Mono", ui-monospace, Consolas, monospace; font-variant-numeric: tabular-nums; }
+    .tab { font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: #605D56; }
+    .tab.on { color: #E9E6DF; }
+    .row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  </style>
+</helmet>
+
+<div style="width: 1200px; height: 900px; background: #141412; display: flex; flex-direction: column;">
+
+  <div style="display: flex; align-items: center; gap: 22px; height: 40px; padding: 0 20px; border-bottom: 1px solid #2E2D28; flex: none;">
+    <span class="mono" style="font-size: 12.5px; color: #97938A;">scratchvj</span>
+    <span class="mono" style="font-size: 11px; color: #605D56;">mode complet &#183; second &#233;cran</span>
+    <div style="margin-left: auto; display: flex; gap: 20px;">
+      <span class="tab on">Effets</span>
+      <span class="tab on">Mapping</span>
+      <span class="tab on">Analyse</span>
+      <span class="tab">R&#233;glages</span>
+      <span class="tab">Biblioth&#232;que</span>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; flex: 1; min-height: 0;">
+
+    <!-- ============ FX racks ============ -->
+    <div style="border-right: 1px solid #2E2D28; display: flex; flex-direction: column;">
+      <div style="padding: 14px 18px; border-bottom: 1px solid #232220; display: flex; align-items: baseline; gap: 12px;">
+        <span style="font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: #97938A; font-weight: 600;">Effets</span>
+        <span class="mono" style="font-size: 11px; color: #605D56;">3 racks</span>
+      </div>
+
+      <div style="padding: 16px 18px; display: flex; flex-direction: column; gap: 18px;">
+
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <span class="lbl" style="color: #C9762F;">Rack deck A</span>
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <div class="row">
+              <span style="display: flex; align-items: center; gap: 7px; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: #E9E6DF;">
+                <svg width="12" height="12" viewBox="0 0 16 16" style="display: block; color: #7D8F6E;"><path d="M6.4 9.6 9.6 6.4M5.9 11.3 4.7 12.5a2.35 2.35 0 0 1-3.3-3.3l1.2-1.2M10.1 4.7l1.2-1.2a2.35 2.35 0 0 1 3.3 3.3l-1.2 1.2" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"></path></svg>
+                Echo</span>
+              <span class="mono" style="font-size: 11px; color: #605D56;">1/8 &#183; 62 %</span>
+            </div>
+            <div class="row">
+              <span style="display: flex; align-items: center; gap: 7px; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: #E9E6DF;">
+                <svg width="12" height="12" viewBox="0 0 16 16" style="display: block; color: #7D8F6E;"><path d="M6.4 9.6 9.6 6.4M5.9 11.3 4.7 12.5a2.35 2.35 0 0 1-3.3-3.3l1.2-1.2M10.1 4.7l1.2-1.2a2.35 2.35 0 0 1 3.3 3.3l-1.2 1.2" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"></path></svg>
+                Filtre</span>
+              <span class="mono" style="font-size: 11px; color: #605D56;">LP &#183; 41 %</span>
+            </div>
+            <div class="row">
+              <span style="font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: #3A3833; padding-left: 19px;">Libre</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 12px; padding-top: 16px; border-top: 1px solid #232220;">
+          <span class="lbl" style="color: #7C8B91;">Rack deck B</span>
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <div class="row">
+              <span style="display: flex; align-items: center; gap: 7px; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: #E9E6DF;">
+                <svg width="12" height="12" viewBox="0 0 16 16" style="display: block; color: #A8564E;"><path d="M5.9 11.3 4.7 12.5a2.35 2.35 0 0 1-3.3-3.3l1.2-1.2M10.1 4.7l1.2-1.2a2.35 2.35 0 0 1 3.3 3.3l-1.2 1.2" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"></path><path d="M2 14 14 2" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"></path></svg>
+                Bitcrush</span>
+              <span class="mono" style="font-size: 11px; color: #605D56;">vid&#233;o &#183; 77 %</span>
+            </div>
+            <div class="row">
+              <span style="display: flex; align-items: center; gap: 7px; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: #E9E6DF;">
+                <svg width="12" height="12" viewBox="0 0 16 16" style="display: block; color: #7D8F6E;"><path d="M6.4 9.6 9.6 6.4M5.9 11.3 4.7 12.5a2.35 2.35 0 0 1-3.3-3.3l1.2-1.2M10.1 4.7l1.2-1.2a2.35 2.35 0 0 1 3.3 3.3l-1.2 1.2" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"></path></svg>
+                Slit-scan</span>
+              <span class="mono" style="font-size: 11px; color: #605D56;">120 ms</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 12px; padding-top: 16px; border-top: 1px solid #232220;">
+          <span class="lbl">Rack master</span>
+          <div class="row">
+            <span style="display: flex; align-items: center; gap: 7px; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: #E9E6DF;">
+              <svg width="12" height="12" viewBox="0 0 16 16" style="display: block; color: #7D8F6E;"><path d="M6.4 9.6 9.6 6.4M5.9 11.3 4.7 12.5a2.35 2.35 0 0 1-3.3-3.3l1.2-1.2M10.1 4.7l1.2-1.2a2.35 2.35 0 0 1 3.3 3.3l-1.2 1.2" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"></path></svg>
+              Reverb</span>
+            <span class="mono" style="font-size: 11px; color: #605D56;">2.4 s &#183; 18 %</span>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 12px; padding-top: 16px; border-top: 1px solid #232220;">
+          <span class="lbl">Couche d'incrustation</span>
+          <div class="row">
+            <span style="font-size: 13px; color: #E9E6DF;">logo_alpha.mov</span>
+            <span class="mono" style="font-size: 11px; color: #605D56;">screen &#183; 40 %</span>
+          </div>
+          <div class="row">
+            <span style="font-size: 12.5px; color: #97938A;">Transport</span>
+            <span class="mono" style="font-size: 11px; color: #7C8B91;">libre &#183; boucle</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ============ Mapping ============ -->
+    <div style="border-right: 1px solid #2E2D28; display: flex; flex-direction: column;">
+      <div style="padding: 14px 18px; border-bottom: 1px solid #232220; display: flex; align-items: baseline; gap: 12px;">
+        <span style="font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: #97938A; font-weight: 600;">Mapping</span>
+        <span class="mono" style="font-size: 11px; color: #605D56;">14 assignations</span>
+        <span style="margin-left: auto; font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: #C9762F;">Apprendre</span>
+      </div>
+
+      <div style="padding: 16px 18px; display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding-bottom: 9px; border-bottom: 1px solid #2E2D28;">
+          <span class="lbl">Source</span>
+          <span class="lbl">Destination</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <span class="mono" style="font-size: 11.5px; color: #E9E6DF;">Crossfader</span>
+          <span class="mono" style="font-size: 11.5px; color: #605D56;">Transition A/B</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <span class="mono" style="font-size: 11.5px; color: #E9E6DF;">V1 &#183; Hi</span>
+          <span class="mono" style="font-size: 11.5px; color: #605D56;">Deck A &#183; yaw 360</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <span class="mono" style="font-size: 11.5px; color: #E9E6DF;">V1 &#183; Mid</span>
+          <span class="mono" style="font-size: 11.5px; color: #605D56;">Deck A &#183; pitch 360</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <span class="mono" style="font-size: 11.5px; color: #E9E6DF;">V1 &#183; Filtre</span>
+          <span class="mono" style="font-size: 11.5px; color: #605D56;">Filtre &#183; cutoff + flou</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <span class="mono" style="font-size: 11.5px; color: #E9E6DF;">Deck A &#183; vel</span>
+          <span class="mono" style="font-size: 11.5px; color: #605D56;">Glitch &#183; intensit&#233;</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <span class="mono" style="font-size: 11.5px; color: #E9E6DF;">Deck A &#183; scratch/s</span>
+          <span class="mono" style="font-size: 11.5px; color: #605D56;">OSC /ue/shake</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <span class="mono" style="font-size: 11.5px; color: #8E7F9E;">LFO 1</span>
+          <span class="mono" style="font-size: 11.5px; color: #605D56;">Kal&#233;idoscope &#183; rotation</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <span class="mono" style="font-size: 11.5px; color: #8E7F9E;">FFT graves</span>
+          <span class="mono" style="font-size: 11.5px; color: #605D56;">Bloom &#183; intensit&#233;</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <span class="mono" style="font-size: 11.5px; color: #E9E6DF;">Backspin A</span>
+          <span class="mono" style="font-size: 11.5px; color: #605D56;">OSC /ue/whippan</span>
+        </div>
+
+        <div style="margin-top: 10px; padding-top: 16px; border-top: 1px solid #232220; display: flex; flex-direction: column; gap: 10px;">
+          <span class="lbl">Modulateurs</span>
+          <div class="row">
+            <span style="font-size: 12.5px; color: #E9E6DF;">LFO 1</span>
+            <span class="mono" style="font-size: 11px; color: #605D56;">triangle &#183; 2 temps</span>
+          </div>
+          <div class="row">
+            <span style="font-size: 12.5px; color: #E9E6DF;">LFO 2</span>
+            <span class="mono" style="font-size: 11px; color: #605D56;">rampe &#183; 8 temps</span>
+          </div>
+          <div class="row">
+            <span style="font-size: 12.5px; color: #E9E6DF;">FFT</span>
+            <span class="mono" style="font-size: 11px; color: #605D56;">graves &#183; m&#233;dium &#183; aigus</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ Analyse ============ -->
+    <div style="display: flex; flex-direction: column;">
+      <div style="padding: 14px 18px; border-bottom: 1px solid #232220; display: flex; align-items: baseline; gap: 12px;">
+        <span style="font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: #97938A; font-weight: 600;">Analyse</span>
+        <span class="mono" style="font-size: 11px; color: #605D56;">2 en cours</span>
+      </div>
+
+      <div style="padding: 16px 18px; display: flex; flex-direction: column; gap: 16px;">
+
+        <div style="display: flex; flex-direction: column; gap: 7px;">
+          <div class="row">
+            <span class="mono" style="font-size: 11.5px; color: #E9E6DF;">rooftop_pan_4k.mp4</span>
+            <span class="mono" style="font-size: 11px; color: #605D56;">62 %</span>
+          </div>
+          <div style="height: 2px; background: #2E2D28; position: relative;">
+            <div style="position: absolute; left: 0; top: 0; bottom: 0; width: 62%; background: #C9762F;"></div>
+          </div>
+          <span class="mono" style="font-size: 10.5px; color: #605D56;">BC7 &#183; 2160p &#183; 1 842 / 2 970 frames</span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 7px;">
+          <div class="row">
+            <span class="mono" style="font-size: 11.5px; color: #E9E6DF;">neon_alley_360.mp4</span>
+            <span class="mono" style="font-size: 11px; color: #605D56;">en attente</span>
+          </div>
+          <div style="height: 2px; background: #2E2D28;"></div>
+          <span class="mono" style="font-size: 10.5px; color: #605D56;">BC7 &#183; 3840&#215;1920 &#233;quirect &#183; alpha non</span>
+        </div>
+
+        <div style="padding-top: 16px; border-top: 1px solid #232220; display: flex; flex-direction: column; gap: 10px;">
+          <span class="lbl">Budget VRAM</span>
+          <div class="row">
+            <span style="font-size: 12.5px; color: #97938A;">Deck A</span>
+            <span class="mono" style="font-size: 11px; color: #E9E6DF;">1.00 Go &#183; 8 s</span>
+          </div>
+          <div class="row">
+            <span style="font-size: 12.5px; color: #97938A;">Deck B</span>
+            <span class="mono" style="font-size: 11px; color: #E9E6DF;">0.52 Go &#183; clip entier</span>
+          </div>
+          <div class="row">
+            <span style="font-size: 12.5px; color: #97938A;">Incrustation</span>
+            <span class="mono" style="font-size: 11px; color: #E9E6DF;">0.32 Go</span>
+          </div>
+          <div style="height: 2px; background: #2E2D28; position: relative; margin-top: 4px;">
+            <div style="position: absolute; left: 0; top: 0; bottom: 0; width: 46%; background: #7D8F6E;"></div>
+          </div>
+          <span class="mono" style="font-size: 10.5px; color: #605D56;">1.84 / 4.00 Go</span>
+        </div>
+
+        <div style="padding-top: 16px; border-top: 1px solid #232220; display: flex; flex-direction: column; gap: 10px;">
+          <span class="lbl">Prise</span>
+          <div class="row">
+            <span style="font-size: 12.5px; color: #97938A;">Contr&#244;le</span>
+            <span class="mono" style="font-size: 11px; color: #A8564E;">&#9679; 04:12</span>
+          </div>
+          <div class="row">
+            <span style="font-size: 12.5px; color: #97938A;">Mix vid&#233;o</span>
+            <span class="mono" style="font-size: 11px; color: #A8564E;">&#9679; 1.4 Go</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+</body>
+</html>
