@@ -11,6 +11,7 @@
 
 #include "app/dashboard.h"
 #include "app/simulation.h"
+#include "core/effect.h"
 #include "core/layout.h"
 #include "core/protocol.h"
 #include "core/take.h"
@@ -34,6 +35,9 @@ void usage() {
         "\n"
         "  scratchvj info FILE.svcache\n"
         "        Prints what an analysed clip contains.\n"
+        "\n"
+        "  scratchvj effects\n"
+        "        Prints the effect battery and how each audio effect maps to video.\n"
         "\n"
         "  scratchvj layout\n"
         "        Lists the controls --midi-learn will ask you to sweep.\n"
@@ -383,6 +387,34 @@ int run_info(int argc, char** argv) {
     return 0;
 }
 
+int run_effects() {
+    std::size_t paired = 0, video_only = 0;
+    for (const EffectDescriptor& d : effect_catalogue()) {
+        if (d.relation == Correspondence::VideoOnly) ++video_only;
+        else ++paired;
+    }
+    std::cout << effect_catalogue().size() << " effets — " << paired << " paires audio/vidéo, "
+              << video_only << " vidéo seuls\n\n";
+
+    std::cout << "PAIRES\n";
+    for (const EffectDescriptor& d : effect_catalogue()) {
+        if (d.relation == Correspondence::VideoOnly) continue;
+        std::cout << "  " << d.id
+                  << std::string(d.id && std::strlen(d.id) < 14 ? 14 - std::strlen(d.id) : 1, ' ')
+                  << (d.relation == Correspondence::Identical ? "[identique]" : "[analogue] ")
+                  << "\n      audio  " << d.audio << "\n      vidéo  " << d.video << "\n";
+    }
+
+    std::cout << "\nVIDÉO SEULS\n";
+    for (const EffectDescriptor& d : effect_catalogue()) {
+        if (d.relation != Correspondence::VideoOnly) continue;
+        std::cout << "  " << d.id
+                  << std::string(d.id && std::strlen(d.id) < 14 ? 14 - std::strlen(d.id) : 1, ' ')
+                  << d.video << "\n";
+    }
+    return 0;
+}
+
 int run_layout() {
     const auto targets = default_rig_layout();
     std::cout << targets.size() << " contrôles à apprendre\n\n";
@@ -412,6 +444,7 @@ int main(int argc, char** argv) {
     if (command == "demo") return run_demo(argc, argv);
     if (command == "play") return run_play(argc, argv);
     if (command == "info") return run_info(argc, argv);
+    if (command == "effects") return run_effects();
     if (command == "layout") return run_layout();
     if (command == "version") {
         std::cout << "scratchvj 0.1.0 — socle, sans audio ni vidéo réels\n";
