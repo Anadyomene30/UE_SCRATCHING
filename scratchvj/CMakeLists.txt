@@ -18,6 +18,7 @@ endif()
 add_library(scratchvj_core STATIC
   src/core/anchor.cpp
   src/core/curve.cpp
+  src/core/framewindow.cpp
   src/core/gestures.cpp
   src/core/layout.cpp
   src/core/learn.cpp
@@ -26,6 +27,7 @@ add_library(scratchvj_core STATIC
   src/core/protocol.cpp
   src/core/surface.cpp
   src/core/timecode.cpp
+  src/core/videocache.cpp
 )
 target_include_directories(scratchvj_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
@@ -58,6 +60,7 @@ if(SCRATCHVJ_BUILD_TESTS)
     tests/test_anchor.cpp
     tests/test_config.cpp
     tests/test_curve.cpp
+    tests/test_framewindow.cpp
     tests/test_gestures.cpp
     tests/test_layout.cpp
     tests/test_learn.cpp
@@ -66,6 +69,7 @@ if(SCRATCHVJ_BUILD_TESTS)
     tests/test_protocol.cpp
     tests/test_surface.cpp
     tests/test_timecode.cpp
+    tests/test_videocache.cpp
   )
   target_include_directories(scratchvj_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/tests)
   target_link_libraries(scratchvj_tests PRIVATE scratchvj_core scratchvj_config)
