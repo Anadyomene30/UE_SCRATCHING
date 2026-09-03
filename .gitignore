@@ -1,0 +1,15 @@
+build/
+out/
+.cache/
+compile_commands.json
+
+# Runtime state, not source: written by --midi-learn and by the analysis pass.
+config/mapping.json
+*.svcache
+*.scratchtake
+
+.DS_Store
+Thumbs.db
+.vs/
+.vscode/
+.idea/
