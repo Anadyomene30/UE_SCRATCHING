@@ -49,6 +49,7 @@ inside, and a Phase link dropout, because those are the ones worth watching.
 scratchvj demo [--seconds N] [--fps N] [--plain] [--record FILE]
 scratchvj play FILE          replay a recorded take
 scratchvj info FILE.svcache  what an analysed clip contains
+scratchvj effects            the effect battery and how audio maps to video
 scratchvj layout             the controls --midi-learn will ask you to sweep
 ```
 
@@ -59,7 +60,7 @@ a real performance instead of a guess.
 
 ## Current state
 
-The engine's logic is written and covered by **191 tests**; the parts that touch
+The engine's logic is written and covered by **290 tests**; the parts that touch
 hardware are not.
 
 | Module | What it does |
@@ -70,12 +71,18 @@ hardware are not.
 | `core/learn` | MIDI learn: binds a control only after it proves it is really moving |
 | `core/curve` | Range, deadzone, curve, inversion and smoothing |
 | `core/mapping` | Routes any source to any destination through its own transform |
+| `core/modulator` | LFOs and envelope followers; a synced LFO follows the platter backwards |
 | `core/gestures` | Scratch rate, acceleration, backspin — and freezing on lost lock |
 | `core/timecode` | Position tracking, the vinyl/wireless split, ABS/REL/INT transport |
 | `core/anchor` | Follower mode: lining a clip up with Serato, and how stale that is |
 | `core/transport` | Loops, hot cues, beat jump, slip |
+| `core/mixer` | Crossfader curves, mix weights, transform detection |
+| `core/effect` | The paired audio/video effect rack and its catalogue |
+| `core/sphere` | 360 reprojection: perspective, little planet, fisheye |
 | `core/videocache` | The `.svcache` clip format: fixed-size block-compressed frames |
 | `core/framewindow` | The budget-driven rolling window of frames in video memory |
+| `core/library` | Clips, crates, and the play queue |
+| `core/warp` | Corner pin homography and the output mask |
 | `core/take` | Recording and replaying a performance's control stream |
 | `core/protocol` | The UDP wire format carrying surface state to Unreal |
 | `config/mapping_io` | `mapping.json`, written with names rather than numbers |
@@ -83,34 +90,18 @@ hardware are not.
 
 Not yet written, and all of it needs hardware or heavy dependencies to be worth
 writing: real MIDI and audio devices, the xwax timecode decoder, the FFmpeg
-analysis pass, GPU rendering, the effect racks, the ImGui interface, the outputs,
-and the Unreal plugin.
+analysis pass, GPU rendering, the ImGui interface, the outputs, and the Unreal
+plugin.
 
-## Two details worth knowing up front
+## Design notes
 
-**Knobs are absolute potentiometers.** At launch the application genuinely does
-not know where they are, and it will not invent a value: every control carries a
-`known` flag and unknown controls are drawn as ghosts until first moved. This is
-modelled rather than hidden because pretending otherwise would put wrong values on
-screen and wrong values into Unreal.
-
-**Nothing is hard-coded to the Elite.** Its CC map is not publicly documented, so
-`--midi-learn` discovers it by asking the user to sweep each control. A knob binds
-only after emitting several *distinct* values, so a neighbouring control brushed in
-passing cannot steal the binding. The useful side effect is that the project works
-with any other mixer.
-
-## Build
-
-```sh
-cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo
-cmake --build build
-ctest --test-dir build --output-on-failure
-```
-
-Requires a C++20 compiler and CMake 3.20. CI builds and tests on Linux, macOS and
-Windows on every push — the core carries no external dependencies specifically so
-that portability is verified continuously rather than discovered late.
+Longer reasoning lives in `docs/`: the wiring and the two audio modes
+([`cablage.md`](docs/cablage.md)), the wire format
+([`protocole.md`](docs/protocole.md)), the clip format and the VRAM window
+([`format-cache.md`](docs/format-cache.md)), and the audio-to-video effect
+correspondences ([`fx-correspondances.md`](docs/fx-correspondances.md)). The
+interface is designed as a canvas whose working files are in
+[`design/`](design/).
 
 ## Licence
 
