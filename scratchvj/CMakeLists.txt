@@ -23,6 +23,7 @@ add_library(scratchvj_core STATIC
   src/core/gestures.cpp
   src/core/layout.cpp
   src/core/learn.cpp
+  src/core/library.cpp
   src/core/mapping.cpp
   src/core/midi.cpp
   src/core/mixer.cpp
@@ -98,6 +99,7 @@ if(SCRATCHVJ_BUILD_TESTS)
     tests/test_gestures.cpp
     tests/test_layout.cpp
     tests/test_learn.cpp
+    tests/test_library.cpp
     tests/test_mapping.cpp
     tests/test_midi.cpp
     tests/test_mixer.cpp
