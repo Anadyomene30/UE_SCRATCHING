@@ -52,9 +52,12 @@ struct TimecodeConfig {
     // |pitch| below which the platter counts as standing still.
     float stopped_pitch = 0.02f;
 
-    // A position step larger than playback can explain is a discontinuity: a
-    // needle drop on vinyl, or a remote lifted and replaced on a Phase.
-    double jump_threshold_s = 0.35;
+    // A discontinuity is a position step larger than the platter could physically
+    // have produced in the time available. The budget therefore scales with the
+    // block length: a fixed threshold false-positives whenever the speed changes
+    // sharply -- which is to say, during every scratch.
+    double max_speed_ratio = 24.0;   // far beyond any real backspin
+    double jump_tolerance_s = 0.02;  // slack for decoder jitter
 
     // Absolute mode glides across a discontinuity over this long instead of
     // snapping, so a replaced remote does not make the picture crack.
@@ -112,6 +115,11 @@ private:
     bool have_previous_ = false;
     double previous_time_ = 0.0;
     double previous_raw_position_ = 0.0;
+
+    // Set while the link is down or the bits are unreadable. The first reading
+    // after that cannot be compared with the last one from before: we have no
+    // idea how far the platter travelled unobserved.
+    bool relocking_ = false;
 
     // Absolute mode glide across a discontinuity.
     bool ramping_ = false;

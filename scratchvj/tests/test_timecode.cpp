@@ -234,3 +234,43 @@ SVJ_TEST("timecode: reset clears the jump history") {
     CHECK_EQ(tracker.jump_count(), 0);
     CHECK(tracker.state().link == LinkState::Lost);
 }
+
+SVJ_TEST("timecode: coming back from a dropout is not a jump") {
+    // Dropouts are a fact of life on a wireless link. Counting each recovery as a
+    // discontinuity would age the follower-mode anchor for no reason at all.
+    TimecodeConfig config;
+    config.mode = TransportMode::Relative;
+    TimecodeTracker tracker(config);
+
+    tracker.submit(locked(0.0, 10.0, 1.0f));
+    tracker.submit(locked(0.01, 10.01, 1.0f));
+    const double before = tracker.state().position_s;
+
+    for (int i = 0; i < 100; ++i) tracker.submit(silent(0.02 + i * 0.01));
+    CHECK(tracker.state().link == LinkState::Lost);
+
+    // The remote comes back somewhere else entirely, as it will.
+    tracker.submit(locked(1.10, 47.0, 1.0f));
+    CHECK(tracker.state().link == LinkState::Ok);
+    CHECK_EQ(tracker.jump_count(), 0);
+    CHECK_NEAR(tracker.state().position_s, before, 1e-6);
+
+    // And playback carries on smoothly from there.
+    tracker.submit(locked(1.11, 47.01, 1.0f));
+    CHECK_NEAR(tracker.state().position_s, before + 0.01, 1e-6);
+    CHECK_EQ(tracker.jump_count(), 0);
+}
+
+SVJ_TEST("timecode: a real discontinuity is still caught after a clean recovery") {
+    TimecodeConfig config;
+    config.mode = TransportMode::Relative;
+    TimecodeTracker tracker(config);
+
+    tracker.submit(locked(0.0, 10.0, 1.0f));
+    for (int i = 0; i < 10; ++i) tracker.submit(silent(0.01 + i * 0.01));
+    tracker.submit(locked(0.12, 40.0, 1.0f));   // recovery, not a jump
+    CHECK_EQ(tracker.jump_count(), 0);
+
+    tracker.submit(locked(0.13, 90.0, 1.0f));   // this one really is a jump
+    CHECK_EQ(tracker.jump_count(), 1);
+}

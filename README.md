@@ -30,10 +30,37 @@ Two design principles run through everything:
    posterisation. Where it is not, the nearest perceptual analogue is chosen and
    documented. See [docs/fx-correspondances.md](docs/fx-correspondances.md).
 
+## Try it
+
+There is something to run, and it needs no hardware:
+
+```sh
+cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo && cmake --build build
+./build/scratchvj/scratchvj demo
+```
+
+A scripted performance drives the whole engine while a terminal dashboard shows
+what it is doing — deck readouts, the filmstrip with its VRAM window, the surface
+with untouched controls drawn as unknown, and the mapping engine's live output.
+The script deliberately includes the awkward moments: a backspin, a loop scratched
+inside, and a Phase link dropout, because those are the ones worth watching.
+
+```
+scratchvj demo [--seconds N] [--fps N] [--plain] [--record FILE]
+scratchvj play FILE          replay a recorded take
+scratchvj info FILE.svcache  what an analysed clip contains
+scratchvj layout             the controls --midi-learn will ask you to sweep
+```
+
+`--record` writes a `.scratchtake`: the timestamped control stream of a
+performance. That is how the rest of the project gets developed before the
+turntables are plugged in — record once, then exercise every later change against
+a real performance instead of a guess.
+
 ## Current state
 
-Milestone 1 of 10 is under way. What exists today is `scratchvj_core`: the
-**dependency-free** heart of the application, with 99 tests.
+The engine's logic is written and covered by **191 tests**; the parts that touch
+hardware are not.
 
 | Module | What it does |
 |---|---|
@@ -44,11 +71,20 @@ Milestone 1 of 10 is under way. What exists today is `scratchvj_core`: the
 | `core/curve` | Range, deadzone, curve, inversion and smoothing |
 | `core/mapping` | Routes any source to any destination through its own transform |
 | `core/gestures` | Scratch rate, acceleration, backspin — and freezing on lost lock |
+| `core/timecode` | Position tracking, the vinyl/wireless split, ABS/REL/INT transport |
+| `core/anchor` | Follower mode: lining a clip up with Serato, and how stale that is |
+| `core/transport` | Loops, hot cues, beat jump, slip |
+| `core/videocache` | The `.svcache` clip format: fixed-size block-compressed frames |
+| `core/framewindow` | The budget-driven rolling window of frames in video memory |
+| `core/take` | Recording and replaying a performance's control stream |
 | `core/protocol` | The UDP wire format carrying surface state to Unreal |
 | `config/mapping_io` | `mapping.json`, written with names rather than numbers |
+| `app/` | The simulation and the terminal dashboard |
 
-Not yet written: audio, video, 360, the effect racks, the ImGui interface, the
-outputs, and the Unreal plugin.
+Not yet written, and all of it needs hardware or heavy dependencies to be worth
+writing: real MIDI and audio devices, the xwax timecode decoder, the FFmpeg
+analysis pass, GPU rendering, the effect racks, the ImGui interface, the outputs,
+and the Unreal plugin.
 
 ## Two details worth knowing up front
 

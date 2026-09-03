@@ -8,6 +8,7 @@ namespace svj {
 void TimecodeTracker::reset() {
     state_ = TimecodeState{};
     have_previous_ = false;
+    relocking_ = false;
     ramping_ = false;
     ramp_remaining_ = 0.0;
     ramp_offset_ = 0.0;
@@ -58,6 +59,7 @@ const TimecodeState& TimecodeTracker::submit(const DecoderSample& sample) {
             state_.link = LinkState::Lost;
             state_.confidence = 0.0f;
             state_.platter_stopped = false;
+            relocking_ = true;
         } else {
             // A needle in a groove that is not turning. Entirely normal.
             state_.link = LinkState::Ok;
@@ -75,6 +77,7 @@ const TimecodeState& TimecodeTracker::submit(const DecoderSample& sample) {
     if (sample.position_s < 0.0) {
         state_.link = LinkState::Degraded;
         state_.confidence = 0.35f;
+        relocking_ = true;
         state_.velocity = sample.pitch;
         state_.platter_stopped = std::fabs(sample.pitch) < config_.stopped_pitch;
         if (have_previous_ && dt > 0.0) advance_output(dt, sample.pitch);
@@ -93,14 +96,40 @@ const TimecodeState& TimecodeTracker::submit(const DecoderSample& sample) {
         ramp_offset_ = 0.0;
         state_.position_s = sample.position_s;
         have_previous_ = true;
+        relocking_ = false;
         return state_;
     }
 
-    // A step larger than playback can account for is a discontinuity: a needle
-    // drop, or a Phase remote lifted and put back down.
-    const double expected = previous_raw_position_ + static_cast<double>(sample.pitch) * dt;
-    const double delta = sample.position_s - expected;
-    const bool jumped = std::fabs(delta) > config_.jump_threshold_s;
+    // Coming back from a dropout. The position may legitimately be anywhere, and
+    // calling that a discontinuity would be wrong twice over: it is not one, and
+    // on a wireless link -- where dropouts are a fact of life -- every recovery
+    // would age the follower-mode anchor for no reason. Re-baseline silently and
+    // leave the picture where it is.
+    if (relocking_) {
+        relocking_ = false;
+        previous_raw_position_ = sample.position_s;
+        if (config_.mode == TransportMode::Absolute && config_.relock_ramp_s > 0.0) {
+            ramp_offset_ = state_.position_s - sample.position_s;
+            ramp_remaining_ = config_.relock_ramp_s;
+            ramping_ = true;
+            state_.position_s = sample.position_s + ramp_offset_;
+        } else {
+            ramp_offset_ = state_.position_s - sample.position_s;
+        }
+        return state_;
+    }
+
+    // A step larger than the platter could physically have produced is a
+    // discontinuity: a needle drop, or a Phase remote lifted and put back down.
+    //
+    // Measured against the elapsed time rather than a fixed threshold, and
+    // against the previous position rather than a pitch-based prediction. Both
+    // matter: a fixed threshold false-positives whenever the speed changes
+    // sharply, and predicting from pitch makes the test depend on exactly the
+    // quantity that is least stable during a scratch.
+    const double budget = config_.max_speed_ratio * dt + config_.jump_tolerance_s;
+    const double delta = sample.position_s - previous_raw_position_;
+    const bool jumped = std::fabs(delta) > budget;
 
     if (jumped) {
         ++jump_count_;
