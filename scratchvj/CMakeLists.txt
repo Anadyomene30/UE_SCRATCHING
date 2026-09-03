@@ -34,6 +34,7 @@ add_library(scratchvj_core STATIC
   src/core/timecode.cpp
   src/core/transport.cpp
   src/core/videocache.cpp
+  src/core/warp.cpp
 )
 target_include_directories(scratchvj_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
@@ -108,6 +109,7 @@ if(SCRATCHVJ_BUILD_TESTS)
     tests/test_timecode.cpp
     tests/test_transport.cpp
     tests/test_videocache.cpp
+    tests/test_warp.cpp
   )
   target_include_directories(scratchvj_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/tests)
   target_link_libraries(scratchvj_tests PRIVATE scratchvj_app scratchvj_config)
