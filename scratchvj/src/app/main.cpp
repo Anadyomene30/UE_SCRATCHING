@@ -13,6 +13,8 @@
 #include "app/simulation.h"
 #include "core/effect.h"
 #include "core/layout.h"
+#include "core/mixer.h"
+#include "core/modulator.h"
 #include "core/protocol.h"
 #include "core/take.h"
 
@@ -139,6 +141,21 @@ void build_mappings(MappingEngine& mapping) {
     shake.destination.target = "/ue/shake";
     mapping.add(shake);
 
+    Mapping lfo;
+    lfo.name = "LFO 1 (2 temps) -> kaléidoscope";
+    lfo.source.kind = SourceKind::Modulator;
+    lfo.source.index = 0;
+    lfo.transform.out_hi = 360.0f;
+    lfo.destination.target = "fx.a.kaleidoscope.rotation";
+    mapping.add(lfo);
+
+    Mapping envelope;
+    envelope.name = "enveloppe scratch -> bloom";
+    envelope.source.kind = SourceKind::Modulator;
+    envelope.source.index = 1;
+    envelope.destination.target = "fx.a.bloom.amount";
+    mapping.add(envelope);
+
     Mapping whip;
     whip.name = "backspin A -> OSC /ue/whippan";
     whip.source.kind = SourceKind::Gesture;
@@ -208,6 +225,34 @@ int run_demo(int argc, char** argv) {
     Anchor anchor;
     anchor.set(0.0, 0.0, 0.0, 0);
 
+    // A tempo-synced LFO and an envelope following how hard the platter is being
+    // worked. Both reach the mapping engine as plain numbers.
+    ModulatorBank modulators;
+    Lfo sweep;
+    sweep.shape = LfoShape::Triangle;
+    sweep.beats = 2.0;
+    modulators.add(sweep);
+    Envelope follower;
+    follower.attack_ms = 20.0f;
+    follower.release_ms = 400.0f;
+    modulators.add(follower);
+
+    EffectRack rack(3);
+    rack.load(0, EffectType::Delay);
+    rack.at(0).sync.tempo = true;
+    rack.at(0).sync.beats = 0.5;
+    rack.at(0).shared.mix = 0.62f;
+    rack.at(0).shared.feedback = 0.55f;
+    rack.load(1, EffectType::LowPass);
+    rack.at(1).shared.mix = 0.41f;
+    // Unlinked on purpose, to show the one state where the two domains diverge.
+    rack.load(2, EffectType::SlitScan);
+    rack.at(2).shared.mix = 0.77f;
+    rack.at(2).unlink();
+    rack.at(2).audio_override.mix = 0.0f;
+
+    CutDetector cuts;
+
     SchemaPacket schema;
     schema.entries = schema_from(surface);
     schema.schema_hash = svj::schema_hash(schema.entries);
@@ -241,6 +286,18 @@ int run_demo(int argc, char** argv) {
         a.advance(simulation.deck_a());
         b.advance(simulation.deck_b());
 
+        const float crossfader = surface.at(surface.find("xfader")).value;
+        cuts.update(t, crossfader);
+        const MixWeights weights =
+            mix_weights(crossfader, surface.at(surface.find("ch1.fader")).value,
+                        surface.at(surface.find("ch2.fader")).value, FaderCurve::Sharp);
+
+        // The LFO's phase comes from the played position, so it follows the
+        // platter -- backwards included -- instead of marching on regardless.
+        const double beat_position = a.transport.position_s() * (kDemoBpm / 60.0);
+        modulators.set_envelope_input(1, a.gestures.scratch_rate() / 12.0f);
+        modulators.update(t, beat_position, static_cast<float>(dt));
+
         EngineInputs inputs;
         inputs.deck[0].velocity = a.timecode.state().velocity;
         inputs.deck[0].scratch_rate = a.gestures.scratch_rate();
@@ -248,6 +305,8 @@ int run_demo(int argc, char** argv) {
         inputs.deck[0].position_s = static_cast<float>(a.transport.position_s());
         inputs.deck[1].velocity = b.timecode.state().velocity;
         if (a.gestures.backspin()) inputs.gesture_bits |= kGestureBackspinA;
+        inputs.modulators = modulators.values().data();
+        inputs.modulator_count = modulators.size();
         mapping.evaluate(surface, inputs, static_cast<float>(dt));
 
         if (!record_path.empty()) {
@@ -263,6 +322,10 @@ int run_demo(int argc, char** argv) {
         view.bpm = kDemoBpm;
         view.anchor = &anchor;
         view.jump_count = a.timecode.jump_count();
+        view.weights = weights;
+        view.cuts = &cuts;
+        view.rack = &rack;
+        view.modulators = &modulators;
 
         DeckView va{a.name, &a.timecode.state(), &a.gestures, &a.transport, &a.window, &a.clip};
         DeckView vb{b.name, &b.timecode.state(), &b.gestures, &b.transport, &b.window, &b.clip};

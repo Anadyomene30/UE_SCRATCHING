@@ -199,6 +199,44 @@ std::string render_dashboard(const DashboardView& view, const DeckView& a, const
     }
     out << "\n";
 
+    out << p(kDim) << "  MIX" << p(kReset) << "\n";
+    out << "    " << p(kDim) << "A " << p(kAmber) << bar(view.weights.a, 16, true)
+        << p(kReset) << p(kDim) << "  B " << p(kSlate) << bar(view.weights.b, 16, true)
+        << p(kReset);
+    if (view.cuts != nullptr) {
+        out << p(kDim) << "   coupes " << p(view.cuts->transforming() ? kAmber : kReset)
+            << number(view.cuts->cuts_per_second(), 4, 1) << "/s" << p(kReset);
+        if (view.cuts->transforming()) out << p(kAmber) << "  TRANSFORM" << p(kReset);
+    }
+    out << "\n";
+
+    if (view.rack != nullptr) {
+        for (std::size_t i = 0; i < view.rack->size(); ++i) {
+            const EffectUnit& unit = view.rack->at(i);
+            if (!unit.enabled) continue;
+            const EffectDescriptor* d = describe(unit.type);
+            std::string id = d != nullptr ? d->id : "?";
+            id.resize(12, ' ');
+            out << "    " << p(kDim) << id << p(kReset)
+                << (unit.link ? p(kSage) : p(kAlert)) << (unit.link ? "lié   " : "délié ")
+                << p(kReset) << p(kDim) << "audio " << p(kReset)
+                << number(unit.audio_params().mix, 5, 2) << p(kDim) << "  vidéo " << p(kReset)
+                << number(unit.video_params().mix, 5, 2);
+            if (unit.sync.tempo) {
+                out << p(kDim) << "  sync " << p(kReset) << number(unit.sync.beats, 4, 2)
+                    << p(kDim) << " temps" << p(kReset);
+            }
+            out << "\n";
+        }
+    }
+
+    if (view.modulators != nullptr && view.modulators->size() > 0) {
+        out << "    " << p(kDim) << "modulateurs " << p(kReset);
+        for (const float value : view.modulators->values()) out << number(value, 6, 2);
+        out << "\n";
+    }
+    out << "\n";
+
     out << p(kDim) << "  MAPPING" << p(kReset) << "\n";
     for (std::size_t i = 0; i < mapping.size(); ++i) {
         const Mapping& m = mapping.at(i);

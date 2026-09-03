@@ -25,6 +25,7 @@ add_library(scratchvj_core STATIC
   src/core/learn.cpp
   src/core/mapping.cpp
   src/core/midi.cpp
+  src/core/mixer.cpp
   src/core/modulator.cpp
   src/core/protocol.cpp
   src/core/sphere.cpp
@@ -98,6 +99,7 @@ if(SCRATCHVJ_BUILD_TESTS)
     tests/test_learn.cpp
     tests/test_mapping.cpp
     tests/test_midi.cpp
+    tests/test_mixer.cpp
     tests/test_modulator.cpp
     tests/test_protocol.cpp
     tests/test_sphere.cpp

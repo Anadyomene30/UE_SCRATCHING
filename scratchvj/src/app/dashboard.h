@@ -10,9 +10,12 @@
 #include <vector>
 
 #include "core/anchor.h"
+#include "core/effect.h"
 #include "core/framewindow.h"
 #include "core/gestures.h"
 #include "core/mapping.h"
+#include "core/mixer.h"
+#include "core/modulator.h"
 #include "core/surface.h"
 #include "core/timecode.h"
 #include "core/transport.h"
@@ -36,6 +39,11 @@ struct DashboardView {
     double bpm = 0.0;
     const Anchor* anchor = nullptr;
     int jump_count = 0;
+
+    MixWeights weights;
+    const CutDetector* cuts = nullptr;
+    const EffectRack* rack = nullptr;
+    const ModulatorBank* modulators = nullptr;
 };
 
 // Renders one frame. `ansi` adds colour and in-place redraw; without it the
