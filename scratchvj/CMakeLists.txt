@@ -16,6 +16,7 @@ endif()
 # it compiles and its tests run on Windows, macOS and Linux from day one. That is
 # what makes the macOS CI job meaningful before any audio or GPU code exists.
 add_library(scratchvj_core STATIC
+  src/core/anchor.cpp
   src/core/curve.cpp
   src/core/gestures.cpp
   src/core/layout.cpp
@@ -24,6 +25,7 @@ add_library(scratchvj_core STATIC
   src/core/midi.cpp
   src/core/protocol.cpp
   src/core/surface.cpp
+  src/core/timecode.cpp
 )
 target_include_directories(scratchvj_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
@@ -53,6 +55,7 @@ if(SCRATCHVJ_BUILD_TESTS)
   enable_testing()
   add_executable(scratchvj_tests
     tests/harness.cpp
+    tests/test_anchor.cpp
     tests/test_config.cpp
     tests/test_curve.cpp
     tests/test_gestures.cpp
@@ -62,6 +65,7 @@ if(SCRATCHVJ_BUILD_TESTS)
     tests/test_midi.cpp
     tests/test_protocol.cpp
     tests/test_surface.cpp
+    tests/test_timecode.cpp
   )
   target_include_directories(scratchvj_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/tests)
   target_link_libraries(scratchvj_tests PRIVATE scratchvj_core scratchvj_config)

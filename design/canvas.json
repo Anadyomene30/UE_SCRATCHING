@@ -69,6 +69,13 @@
       "y": 2020,
       "w": 420,
       "text": "Corner pin et masque suffisent pour caler sur une surface de travers. Le warp maillé et l'edge blending sortent en Spout vers Resolume ou MadMapper."
+    },
+    {
+      "id": "note-anchor",
+      "x": 1410,
+      "y": -150,
+      "w": 420,
+      "text": "Fraîcheur, pas dérive : Serato n'a pas d'API publique, donc l'écart réel est inobservable. On affiche le temps écoulé depuis l'ancrage et le nombre de discontinuités vues — un risque, pas une erreur mesurée."
     }
   ],
   "launch": {
