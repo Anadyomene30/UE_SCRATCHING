@@ -266,6 +266,20 @@ void filmstrip(const Deck& deck, float width) {
 
     draw->AddRect(origin, ImVec2(origin.x + width, origin.y + height), kHair);
     ImGui::Dummy(ImVec2(width, height));
+
+    // The scale under the strip, as the mockup has it: start, playhead, end.
+    if (g_fonts.mono != nullptr && g_fonts.small != nullptr) {
+        ImGui::PushFont(g_fonts.mono, g_fonts.small->LegacySize);
+    }
+    dim("00:00");
+    const std::string now = clock_of(deck.played.position_s);
+    const float now_w = ImGui::CalcTextSize(now.c_str()).x;
+    ImGui::SameLine(std::clamp(head - origin.x - now_w * 0.5f, 60.0f, width - 120.0f));
+    text_c(kMuted, "%s", now.c_str());
+    const std::string end = short_clock(deck.clip.duration_s());
+    ImGui::SameLine(width - ImGui::CalcTextSize(end.c_str()).x);
+    dim(end.c_str());
+    if (g_fonts.mono != nullptr && g_fonts.small != nullptr) ImGui::PopFont();
 }
 
 // ---------------------------------------------------------------------------
@@ -320,13 +334,17 @@ void draw_status(Engine& engine, const Frame& frame) {
     push_small();
     // Off, and honestly so: neither output exists yet.
     dim("Spout \xE2\x80\x94 NDI \xE2\x80\x94 hors service");
-    pop_font();
 
-    const float right = ImGui::GetContentRegionMax().x - 160.0f;
-    if (right > ImGui::GetCursorPosX()) ImGui::SameLine(right);
-    push_small();
-    dim("\xC3\x89"
-        "chap pour quitter");
+    // Right-aligned by measurement, and dropped entirely when the bar is too
+    // narrow -- overlapping the outputs indicator would be worse than absent.
+    const char* quit = "\xC3\x89"
+                       "chap pour quitter";
+    const float quit_w = ImGui::CalcTextSize(quit).x;
+    const float right_x = ImGui::GetContentRegionMax().x - quit_w;
+    if (right_x > ImGui::GetCursorPosX() + 40.0f) {
+        ImGui::SameLine(right_x);
+        dim(quit);
+    }
     pop_font();
 
     ImGui::EndChild();
@@ -419,7 +437,7 @@ void draw_deck(Deck& deck, const Engine& engine, const Frame& frame, void* textu
     pop_font();
 
     ImGui::Dummy(ImVec2(0.0f, 6.0f));
-    picture_well(deck, texture, inner, std::max(120.0f, height * 0.32f));
+    picture_well(deck, texture, inner, std::max(120.0f, height * 0.23f));
 
     ImGui::Dummy(ImVec2(0.0f, 8.0f));
     push_small();
@@ -589,9 +607,18 @@ void draw_mix(Engine& engine, float width, float height) {
 
     ImGui::Dummy(ImVec2(0.0f, 6.0f));
     // On its own row: the overlay does not answer to the crossfader, and sharing
-    // the row above would say that it did.
+    // the row above would say that it did. A chip rather than a checkbox -- the
+    // mockup has no checkboxes, and one stock widget is enough to unravel the
+    // whole look.
     Layer& overlay = engine.overlay_layer();
-    ImGui::Checkbox("Incrustation", &overlay.enabled);
+    if (ImGui::SmallButton("Incrustation")) overlay.enabled = !overlay.enabled;
+    {
+        ImDrawList* draw = ImGui::GetWindowDrawList();
+        const ImVec2 lo = ImGui::GetItemRectMin();
+        const ImVec2 hi = ImGui::GetItemRectMax();
+        draw->AddLine(ImVec2(lo.x, hi.y), ImVec2(hi.x, hi.y),
+                      overlay.enabled ? kAccent : kHair, 2.0f);
+    }
     ImGui::SameLine(0.0f, 12.0f);
     ImGui::SetNextItemWidth(130.0f);
     ImGui::SliderFloat("##overlay.opacity", &overlay.opacity, 0.0f, 1.0f, "%.2f");
@@ -661,7 +688,7 @@ void draw_surface(Engine& engine, float width, float height) {
         ImGui::BeginGroup();
         ImGui::Dummy(ImVec2(column, 0.0f));
         ImGui::SameLine(0.0f, -column);
-        knob_strip(control, 70.0f);
+        knob_strip(control, 56.0f);
 
         push_small();
         ImGui::PushStyleColor(ImGuiCol_Text, rgba(control.known ? kMuted : kFaint));
@@ -927,8 +954,35 @@ void apply_style() {
     c[ImGuiCol_SliderGrab] = rgba(kAccent);
     c[ImGuiCol_SliderGrabActive] = rgba(kInk);
     c[ImGuiCol_Header] = rgba(kHair);
+    c[ImGuiCol_HeaderHovered] = rgba(kHair);
+    c[ImGuiCol_HeaderActive] = rgba(kHair);
     c[ImGuiCol_ScrollbarBg] = rgba(kWell);
     c[ImGuiCol_ScrollbarGrab] = rgba(kHair);
+
+    // Every widget ImGui ships blue, retuned to the mockup's palette. A single
+    // stock-blue tab is enough to make the whole window read as a debug tool.
+    c[ImGuiCol_Tab] = rgba(kGround);
+    c[ImGuiCol_TabHovered] = rgba(kPanel);
+    c[ImGuiCol_TabSelected] = rgba(kPanel);
+    c[ImGuiCol_TabSelectedOverline] = rgba(kAccent);
+    c[ImGuiCol_TabDimmed] = rgba(kGround);
+    c[ImGuiCol_TabDimmedSelected] = rgba(kPanel);
+    c[ImGuiCol_TabDimmedSelectedOverline] = rgba(kGround);
+    c[ImGuiCol_TableHeaderBg] = rgba(kGround);
+    c[ImGuiCol_TableBorderStrong] = rgba(kHair);
+    c[ImGuiCol_TableBorderLight] = rgba(kHair);
+    c[ImGuiCol_TableRowBg] = ImVec4(0, 0, 0, 0);
+    c[ImGuiCol_TableRowBgAlt] = ImVec4(1.0f, 1.0f, 1.0f, 0.015f);
+    c[ImGuiCol_TextSelectedBg] = ImVec4(0.79f, 0.46f, 0.18f, 0.35f);
+    c[ImGuiCol_NavCursor] = rgba(kAccent);
+    c[ImGuiCol_DragDropTarget] = rgba(kAccent);
+    c[ImGuiCol_ResizeGrip] = rgba(kHair);
+    c[ImGuiCol_ResizeGripHovered] = rgba(kAccent);
+    c[ImGuiCol_ResizeGripActive] = rgba(kAccent);
+    c[ImGuiCol_SeparatorHovered] = rgba(kAccent);
+    c[ImGuiCol_SeparatorActive] = rgba(kAccent);
+    c[ImGuiCol_TitleBg] = rgba(kGround);
+    c[ImGuiCol_TitleBgActive] = rgba(kGround);
 }
 
 void draw(Engine& engine, const Frame& frame) {
@@ -951,13 +1005,18 @@ void draw(Engine& engine, const Frame& frame) {
             // reflows while a set is running is one nobody can find anything in.
             const float rail = 250.0f;
             const float gap = ImGui::GetStyle().ItemSpacing.x;
-            const float surface_h = 150.0f;
+            // Tall enough for a knob, its label and its value; a clipped value
+            // row reads as a bug even when everything above it is right.
+            const float surface_h = 190.0f;
             const float body_h =
                 std::max(320.0f, ImGui::GetContentRegionAvail().y - surface_h - gap);
             const float decks_w =
                 std::max(520.0f, ImGui::GetContentRegionAvail().x - rail - gap);
             const float deck_w = (decks_w - gap) * 0.5f;
-            const float deck_h = body_h * 0.66f;
+            // The program panel has a fixed claim -- its three effect rows must never
+            // be the thing that gets clipped -- and the decks take what is left.
+            const float mix_h = 218.0f;
+            const float deck_h = body_h - mix_h - ImGui::GetStyle().ItemSpacing.y;
 
             draw_library(engine, rail, body_h);
             ImGui::SameLine();
@@ -968,7 +1027,7 @@ void draw(Engine& engine, const Frame& frame) {
             ImGui::SameLine();
             draw_deck(engine.deck_b(), engine, frame, frame.tex_b, kSlate, false, deck_w,
                       deck_h);
-            draw_mix(engine, decks_w, body_h - deck_h - ImGui::GetStyle().ItemSpacing.y);
+            draw_mix(engine, decks_w, mix_h);
             ImGui::EndGroup();
 
             draw_surface(engine, 0.0f, surface_h);

@@ -85,18 +85,28 @@ int main(int, char**) {
     // tabular figures for anything that has to line up in a column, is the
     // difference between glanceable and unreadable. Both are OFL and vendored in
     // ui/fonts. A missing file degrades to the default face rather than failing.
-    const float scale = SDL_GetWindowDisplayScale(window);
-    const float dpi = scale > 0.0f ? scale : 1.0f;
+    // Pixel density, NOT the display scale. The SDL window is addressed in
+    // pixels; on a 150% Windows desktop SDL_GetWindowDisplayScale answers 1.5
+    // and every face comes out anywhere from too big to enormous -- which is
+    // exactly how the first screenshot of this interface looked. The density
+    // (drawable pixels per logical unit) is 1.0 on Windows and >1 only on
+    // genuinely high-DPI drawables (macOS Retina), which is the factor the font
+    // rasteriser actually needs.
+    const float density = SDL_GetWindowPixelDensity(window);
+    const float dpi = density > 0.0f ? density : 1.0f;
 
     ImGuiIO& io = ImGui::GetIO();
     char* base = SDL_GetBasePath() != nullptr ? SDL_strdup(SDL_GetBasePath()) : nullptr;
     if (base != nullptr) {
         char path[1024];
+        // Sizes read off the mockup at its native 1440 width: body 15, labels
+        // 11.5, numbers 15. The interface is dense on purpose; big type was the
+        // single largest reason the first build did not look like the design.
         std::snprintf(path, sizeof(path), "%sfonts/Archivo-Variable.ttf", base);
-        svj::ui::g_fonts.sans = io.Fonts->AddFontFromFileTTF(path, 17.0f * dpi);
-        svj::ui::g_fonts.small = io.Fonts->AddFontFromFileTTF(path, 13.0f * dpi);
+        svj::ui::g_fonts.sans = io.Fonts->AddFontFromFileTTF(path, 15.0f * dpi);
+        svj::ui::g_fonts.small = io.Fonts->AddFontFromFileTTF(path, 11.5f * dpi);
         std::snprintf(path, sizeof(path), "%sfonts/DMMono-Regular.ttf", base);
-        svj::ui::g_fonts.mono = io.Fonts->AddFontFromFileTTF(path, 17.0f * dpi);
+        svj::ui::g_fonts.mono = io.Fonts->AddFontFromFileTTF(path, 15.0f * dpi);
         SDL_free(base);
     }
     if (svj::ui::g_fonts.sans == nullptr) {
@@ -132,6 +142,15 @@ int main(int, char**) {
         }
         std::sort(caches.begin(), caches.end());
 
+        // Real caches replace the fabricated library outright. Mixing the demo's
+        // invented entries with clips that actually exist would make the browser
+        // half-true, which is worse than either whole.
+        if (!caches.empty()) {
+            engine.library() = Library{};
+            engine.queue() = Queue{};
+            engine.library().create_crate("Tous les clips");
+        }
+
         const auto try_load = [&](svj::ui::DeckMedia& media, Deck& deck,
                                   const std::filesystem::path& path) {
             std::string error;
@@ -142,7 +161,7 @@ int main(int, char**) {
             deck.load(media.header(), path.stem().string(), kBpm);
             ClipEntry entry;
             entry.path = path.string();
-            entry.name = path.filename().string();
+            entry.name = path.stem().string();  // "clip.mp4", not "clip.mp4.svcache"
             entry.duration_s = media.header().duration_s();
             entry.width = media.header().width;
             entry.height = media.header().height;
@@ -150,6 +169,7 @@ int main(int, char**) {
             entry.bpm = kBpm;
             const ClipId id = engine.library().add(entry);
             engine.library().set_state(id, AnalysisState::Ready, 1.0f);
+            engine.library().add_to_crate(0, id);
             return true;
         };
 
