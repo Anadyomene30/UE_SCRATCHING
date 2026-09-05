@@ -19,7 +19,9 @@ Mapping control_mapping(std::string name, std::string id, std::string target, fl
 // What a deck reports while its link is good.
 DeckMotion measured(const Deck& deck) {
     DeckMotion motion;
-    motion.velocity = deck.timecode.state().velocity;
+    // The clock's velocity rather than the platter's: they agree on a deck that
+    // follows a turntable, and on one that does not, only the clock knows.
+    motion.velocity = static_cast<float>(deck.played.velocity);
     motion.scratch_rate = deck.gestures.scratch_rate();
     motion.acceleration = deck.gestures.acceleration();
     return motion;
@@ -50,6 +52,7 @@ void Deck::configure(std::string label, double duration_s, std::uint32_t width,
     timecode = TimecodeTracker(config);
 
     transport.configure(clip.duration_s(), BeatGrid{bpm, 0.0});
+    clock.configure(clip.duration_s(), bpm);
 
     WindowConfig window_config;
     window_config.budget_bytes = 256ull << 20;  // 256 MiB, enough to see it slide
@@ -60,9 +63,27 @@ void Deck::configure(std::string label, double duration_s, std::uint32_t width,
 double Deck::advance(const DecoderSample& sample) {
     const TimecodeState& state = timecode.submit(sample);
     gestures.update(sample.time_s, state.velocity, state.confidence);
-    const double played = transport.map(state.position_s);
-    window.update(clip.frame_at(played), state.velocity);
-    return played;
+    // Source, then transport, then fold. The clip's own ends are applied last:
+    // a user loop straddling the end of the clip would otherwise be folded away
+    // before the transport ever saw it. See core/playback.h.
+    const SourceReading reading =
+        clock.read_source(sample.time_s, state.position_s, state.velocity);
+    const double mapped = transport.map(reading.position_s);
+    played = clock.resolve(mapped, reading.rate);
+
+    window.update(clip.frame_at(played.position_s),
+                  static_cast<float>(played.velocity));
+    return played.position_s;
+}
+
+double Deck::advance_free(double time_s) {
+    const SourceReading reading = clock.read_source(time_s, 0.0, 0.0f);
+    const double mapped = transport.map(reading.position_s);
+    played = clock.resolve(mapped, reading.rate);
+
+    window.update(clip.frame_at(played.position_s),
+                  static_cast<float>(played.velocity));
+    return played.position_s;
 }
 
 // --- the link-loss policy ----------------------------------------------------
@@ -95,6 +116,21 @@ void Engine::configure(double bpm) {
                  SignalProfile::Wireless, bpm);
     b_.configure("DECK B  grain_loop_04", 12.0, 1920, 1080, BlockFormat::BC7,
                  SignalProfile::Wireless, bpm);
+    // The third layer. It has no platter by construction, so it is the first
+    // thing in the engine that exercises core/playback: tempo-locked, one pass
+    // per four beats, bouncing rather than cutting back to its head -- an eight
+    // second texture has a visible seam on a wrap and none on a bounce.
+    overlay_.configure("INCRUST  city_grid_mask", 8.0, 1280, 720, BlockFormat::BC7,
+                       SignalProfile::Wireless, bpm);
+    overlay_.clock.set_source(DeckSource::TempoLocked, 0.0);
+    overlay_.clock.set_beats_per_cycle(4.0, 0.0);
+    overlay_.clock.set_mode(ClipPlayMode::PingPong);
+    // A stray hand on a platter must never capture the layer holding the mask.
+    overlay_.clock.set_takeover(TakeoverMode::Ignore);
+    overlay_layer_.enabled = true;
+    overlay_layer_.opacity = 0.45f;
+    overlay_layer_.blend = BlendMode::Screen;
+
     a_.transport.set_cue(0, 0.0, 1);
     a_.transport.set_cue(1, 30.0, 2);
     a_.transport.set_cue(2, 96.0, 3);
@@ -204,6 +240,7 @@ void Engine::step(const EngineFrame& frame) {
 
     a_.advance(frame.deck_a);
     b_.advance(frame.deck_b);
+    overlay_.advance_free(frame.time_s);
 
     motion_a_ = a_.timecode.state().link == LinkState::Lost
                     ? apply_link_loss(policy_, motion_a_, frame.dt_s)
@@ -216,11 +253,16 @@ void Engine::step(const EngineFrame& frame) {
     cuts_.update(frame.time_s, crossfader);
     weights_ = mix_weights(crossfader, value_of(surface_, fader_a_),
                            value_of(surface_, fader_b_), FaderCurve::Sharp);
+    stack_ = stack_weights(crossfader, value_of(surface_, fader_a_),
+                           value_of(surface_, fader_b_), FaderCurve::Sharp,
+                           overlay_layer_);
 
     // The LFO's phase comes from the played position, so it follows the platter --
     // backwards included -- instead of marching on regardless. That is why this
     // happens after advance() and not before it.
-    const double beat_position = a_.transport.position_s() * (bpm_ / 60.0);
+    // The played position, not the transport's: everything downstream must see
+    // the position the picture is actually at, after the clip-boundary fold.
+    const double beat_position = a_.played.position_s * (bpm_ / 60.0);
     modulators_.set_envelope_input(1, motion_a_.scratch_rate / 12.0f);
     modulators_.update(frame.time_s, beat_position, frame.dt_s);
 
@@ -229,11 +271,11 @@ void Engine::step(const EngineFrame& frame) {
     inputs.deck[0].scratch_rate = motion_a_.scratch_rate;
     inputs.deck[0].acceleration = motion_a_.acceleration;
     inputs.deck[0].confidence = a_.timecode.state().confidence;
-    inputs.deck[0].position_s = static_cast<float>(a_.transport.position_s());
+    inputs.deck[0].position_s = static_cast<float>(a_.played.position_s);
     inputs.deck[1].velocity = motion_b_.velocity;
     inputs.deck[1].scratch_rate = motion_b_.scratch_rate;
     inputs.deck[1].confidence = b_.timecode.state().confidence;
-    inputs.deck[1].position_s = static_cast<float>(b_.transport.position_s());
+    inputs.deck[1].position_s = static_cast<float>(b_.played.position_s);
     if (a_.gestures.backspin()) inputs.gesture_bits |= kGestureBackspinA;
     inputs.modulators = modulators_.values().data();
     inputs.modulator_count = modulators_.size();

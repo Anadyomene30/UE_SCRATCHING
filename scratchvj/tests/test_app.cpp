@@ -164,6 +164,46 @@ SVJ_TEST("dashboard: a frame renders without ansi and names what it shows") {
     CHECK(frame.find("\033[") == std::string::npos);  // no escape codes in plain mode
 }
 
+SVJ_TEST("dashboard: A DECK SHOWS THE POSITION AFTER THE CLIP FOLD, NOT BEFORE") {
+    // Found by watching the demo, not by a unit test: every module was correct on
+    // its own, and the composition still lied. The dashboard read the transport,
+    // which sits UPSTREAM of the clip-boundary fold, so a twelve-second grain
+    // loop twenty-four seconds into the set displayed "00:24.0" -- a position
+    // that clip does not have. Anything that shows a deck's position must read
+    // the clock's output.
+    Surface surface;
+    TimecodeTracker tracker;
+    GestureTracker gestures;
+
+    CacheHeader clip;
+    clip.width = 1920; clip.height = 1080; clip.fps_num = 60; clip.fps_den = 1;
+    clip.frame_count = 720;  // twelve seconds
+
+    Transport transport;
+    transport.configure(clip.duration_s(), BeatGrid{124.0, 0.0});
+    const double mapped = transport.map(24.0);
+
+    DeckClock clock;
+    clock.configure(clip.duration_s(), 124.0);
+    const ClockOutput played = clock.resolve(mapped, 1.0);
+    CHECK_NEAR(played.position_s, 0.0, 1e-9);
+
+    FrameWindow window;
+    window.configure(clip.frame_count,
+                     block_bytes_per_frame(clip.width, clip.height, BlockFormat::BC1),
+                     WindowConfig{});
+    window.update(clip.frame_at(played.position_s), 1.0f);
+
+    MappingEngine mapping;
+    DashboardView view;
+    DeckView deck{"DECK B", &tracker.state(), &gestures, &transport,
+                  &window, &clip, &played};
+
+    const std::string frame = render_dashboard(view, deck, deck, surface, mapping, false);
+    CHECK(frame.find("00:24.0") == std::string::npos);
+    CHECK(frame.find("00:00.0") != std::string::npos);
+}
+
 SVJ_TEST("dashboard: an unknown control is drawn as unknown, never as zero") {
     Surface surface;
     surface.declare("never.touched", ControlKind::Knob);

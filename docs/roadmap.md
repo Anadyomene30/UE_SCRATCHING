@@ -13,7 +13,7 @@ tout ce qui reste à faire survive à la session qui l'a produit.
 | 3. Voir la vidéo | Format et fenêtre faits, décodage FFmpeg non fait | `core/videocache`, `core/framewindow` |
 | 4. Le Mac tourne | CI verte sur macOS depuis le premier commit ; portage audio/GPU réel non fait | `.github/workflows/ci.yml` |
 | 5. Mixer | Courbes, blend modes, détection de transform faits ; rendu GPU non fait | `core/mixer` |
-| 6. Transport | Fait en entier : boucles, hot cues, beat jump, slip, ABS/REL/INT | `core/transport` |
+| 6. Transport | Fait en entier : boucles, hot cues, beat jump, slip, ABS/REL/INT, plus la source de position et les modes de lecture par deck | `core/transport`, `core/playback` |
 | 7. 360 | Géométrie faite (perspective, little planet, fisheye) ; échantillonnage GPU non fait | `core/sphere` |
 | 8. Mode autonome | Non commencé (a besoin d'un vrai backend audio) | — |
 | 9. Effets et modulateurs | Rack, catalogue et LFO/enveloppes faits ; FFT audio-réactive non faite | `core/effect`, `core/modulator` |
@@ -21,7 +21,8 @@ tout ce qui reste à faire survive à la session qui l'a produit.
 | 11. Sorties | Corner pin et masque faits ; Spout/NDI/écran réels non faits | `core/warp` |
 | 12. Unreal | Non commencé (protocole réseau prêt à l'emploi) | `core/protocol` |
 
-Plus, hors plan initial : `core/library` (bibliothèque et queue), `core/take`
+Plus, hors plan initial : `core/playback` (source de transport et modes de
+lecture par deck), `core/library` (bibliothèque et queue), `core/take`
 (enregistrement/relecture d'une prise), `app/` (démo et tableau de bord qui font
 tourner tout ça sans matériel).
 
@@ -300,14 +301,42 @@ déjà été traité.
 | Canal alpha | Resolume | `core/videocache` (`kCacheAlpha`, BC7/BC3) |
 | Modulateurs : LFO, enveloppes | Resolume | `core/modulator` |
 | Corner pin et masque | — | `core/warp` |
+| Source de transport par deck | Resolume | `core/playback` (`DeckSource`) |
+| Modes de lecture du clip | Resolume | `core/playback` (`ClipPlayMode`) |
+| Une 3ᵉ couche d'incrustation | Resolume | `core/mixer` (`StackWeights`), `app/engine` |
+
+> **Une horloge libre est un intégrateur, et le principe n° 1 l'interdit.**
+> `pos += rate * dt` ne se scratche pas, ne se rejoue pas à l'identique et dérive
+> sur la durée d'un set. `core/playback` la remplace donc par une **forme close du
+> temps absolu** — `pos = origine + rate·(t − t₀)` — où tout changement de vitesse
+> rebase l'origine plutôt que d'accumuler. Trois heures plus tard la position est
+> encore exacte, et un test l'énonce ainsi plutôt que par un chiffre.
+>
+> Le mode de lecture n'est alors pas un lecteur mais un **repliement de la
+> position** : la même fonction pure sert au fond en aller-retour et au deck
+> scratché qui dépasse la fin du clip. Elle s'applique **après** `core/transport`,
+> jamais avant — une boucle utilisateur posée à cheval sur la fin du clip serait
+> sinon repliée avant que le transport ne la voie.
+>
+> **La couche d'incrustation ne répond pas au crossfader** (`stack_weights`). Un
+> logo qui disparaît à chaque transition est pire que pas de logo, et un masque
+> qui s'ouvre en plein transform montre exactement ce qu'il existe pour cacher.
+> La 3ᵉ couche est la part de l'image qui **survit** à la transition en dessous
+> d'elle. C'est aussi le premier consommateur de `core/playback` dans le moteur :
+> elle n'a pas de plateau, donc son horloge est sa seule entrée.
+>
+> **Prise en main du plateau** (`TakeoverMode`) : trois politiques, `Grab` par
+> défaut. Le plateau reprend la main **là où le clip est déjà**, ancré par un
+> offset, donc on peut attraper une boucle en vol pour la scratcher sans que
+> l'image saute. Le prix, assumé : la position du plateau ne veut plus rien dire
+> en absolu — le même compromis que `core/anchor` fait déjà en mode suiveur, et
+> pour la même raison. La couche d'incrustation, elle, est en `Ignore` : une main
+> qui traîne sur un plateau ne doit jamais capturer le masque.
 
 ### Encore à ajouter
 
 | Manque | Vient de | Pourquoi c'est bloquant |
 |---|---|---|
-| **Source de transport par deck** | Resolume | Tous les decks ne doivent pas suivre le plateau. Une texture de fond tourne en boucle libre ou calée au tempo. |
-| **Modes de lecture du clip** | Resolume | Boucle, aller-retour, une seule fois, sens et vitesse propres au clip. |
-| **Une 3ᵉ couche d'incrustation** | Resolume | Deux decks à scratcher plus une couche par-dessus (logo, texte, masque). Pas N couches : on reste un instrument, pas un compositeur. |
 | **Réactivité audio (FFT)** | Resolume | Le geste reste le différenciateur, mais l'audio-réactif est attendu et se branche sur la mécanique de `core/modulator` (`SourceKind::AudioBand` existe déjà côté mapping). |
 | **Entrées live** | Resolume | Un deck dont la source est une caméra, une entrée NDI ou Spout, au lieu d'un fichier. |
 | **Scope de calibration timecode** | Serato | Un `--monitor` en ligne de commande existe déjà (`core/timecode` exposé par la démo) ; il faut le voir à l'écran, en set, une fois l'UI ImGui écrite. |

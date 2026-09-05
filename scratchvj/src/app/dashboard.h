@@ -15,6 +15,7 @@
 #include "core/gestures.h"
 #include "core/mapping.h"
 #include "core/mixer.h"
+#include "core/playback.h"
 #include "core/modulator.h"
 #include "core/surface.h"
 #include "core/timecode.h"
@@ -30,6 +31,13 @@ struct DeckView {
     const Transport* transport = nullptr;
     const FrameWindow* window = nullptr;
     const CacheHeader* clip = nullptr;
+
+    // What the deck's clock resolved: the position actually shown and its signed
+    // velocity, after the clip-boundary fold. Read in preference to the
+    // transport and the timecode, which are both upstream of that fold and would
+    // show a position the clip does not have -- a twelve-second loop reading
+    // 00:24.0. Null on a replayed take, which carries no clock.
+    const ClockOutput* played = nullptr;
 };
 
 struct DashboardView {
@@ -41,6 +49,14 @@ struct DashboardView {
     int jump_count = 0;
 
     MixWeights weights;
+
+    // The third layer, drawn on its own line rather than folded into the A/B
+    // bar: it does not answer to the crossfader, so putting it on that line
+    // would suggest it does.
+    const Layer* overlay = nullptr;
+    const DeckView* overlay_deck = nullptr;
+    float overlay_gain = 0.0f;
+
     const CutDetector* cuts = nullptr;
     const EffectRack* rack = nullptr;
     const ModulatorBank* modulators = nullptr;

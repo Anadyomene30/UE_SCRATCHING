@@ -20,6 +20,18 @@ struct Paint {
     const char* operator()(const char* code) const { return ansi ? code : ""; }
 };
 
+// Padded to a fixed width so the column below it does not shift between frames.
+const char* blend_text(BlendMode blend) {
+    switch (blend) {
+        case BlendMode::Add: return "add   ";
+        case BlendMode::Multiply: return "mult  ";
+        case BlendMode::Screen: return "screen";
+        case BlendMode::Alpha: return "alpha ";
+        case BlendMode::Normal:
+        default: return "normal";
+    }
+}
+
 std::string clock_of(double seconds) {
     if (seconds < 0.0) seconds = 0.0;
     const int minutes = static_cast<int>(seconds) / 60;
@@ -61,6 +73,19 @@ const char* link_text(LinkState link) {
 
 // The filmstrip: the clip end to end, the resident VRAM window bracketed, the
 // playhead, the loop if one is running.
+// The position and velocity a deck is actually at. The clock's output is the
+// truth when there is one; without it we are replaying a take and the transport
+// and timecode are all there is.
+double shown_position(const DeckView& deck) {
+    if (deck.played != nullptr) return deck.played->position_s;
+    return deck.transport != nullptr ? deck.transport->position_s() : 0.0;
+}
+
+float shown_velocity(const DeckView& deck) {
+    if (deck.played != nullptr) return static_cast<float>(deck.played->velocity);
+    return deck.timecode != nullptr ? deck.timecode->velocity : 0.0f;
+}
+
 std::string filmstrip(const DeckView& deck, int width) {
     std::string strip(static_cast<std::size_t>(width), '.');
     if (deck.clip == nullptr || deck.clip->frame_count == 0) return strip;
@@ -99,7 +124,7 @@ std::string filmstrip(const DeckView& deck, int width) {
     }
 
     if (deck.transport != nullptr) {
-        strip[column(deck.clip->frame_at(deck.transport->position_s()))] = 'V';
+        strip[column(deck.clip->frame_at(shown_position(deck)))] = 'V';
     }
     return strip;
 }
@@ -111,9 +136,9 @@ void render_deck(std::ostringstream& out, const Paint& p, const DeckView& deck,
     out << p(accent) << "  " << deck.name << p(kReset) << "\n";
 
     out << "    " << p(kDim) << "pos " << p(kReset)
-        << clock_of(deck.transport != nullptr ? deck.transport->position_s() : 0.0);
+        << clock_of(shown_position(deck));
 
-    const float velocity = deck.timecode->velocity;
+    const float velocity = shown_velocity(deck);
     out << "   " << p(kDim) << "vit " << p(std::fabs(velocity) > 2.5f ? kAlert : kBright)
         << number(velocity, 6, 2) << "x" << p(kReset);
 
@@ -209,6 +234,21 @@ std::string render_dashboard(const DashboardView& view, const DeckView& a, const
         if (view.cuts->transforming()) out << p(kAmber) << "  TRANSFORM" << p(kReset);
     }
     out << "\n";
+
+    // On its own line, never folded into the A/B bar: the overlay does not answer
+    // to the crossfader, and sharing that line would say it did.
+    if (view.overlay != nullptr) {
+        out << "    " << p(kDim) << "incrust  " << p(kReset)
+            << (view.overlay->enabled ? blend_text(view.overlay->blend) : "off   ")
+            << p(kDim) << "  " << bar(view.overlay_gain, 10, true) << p(kReset)
+            << p(kDim) << " " << number(view.overlay_gain, 5, 2) << p(kReset);
+        if (view.overlay_deck != nullptr && view.overlay_deck->played != nullptr) {
+            out << p(kDim) << "   pos " << p(kReset)
+                << clock_of(view.overlay_deck->played->position_s) << p(kDim)
+                << (view.overlay_deck->played->reversed ? "  <<" : "  >>") << p(kReset);
+        }
+        out << "\n";
+    }
 
     if (view.rack != nullptr) {
         for (std::size_t i = 0; i < view.rack->size(); ++i) {

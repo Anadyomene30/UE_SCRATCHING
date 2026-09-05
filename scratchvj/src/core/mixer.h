@@ -60,6 +60,27 @@ struct Layer {
     BlendMode blend = BlendMode::Normal;
 };
 
+// The whole stack: the two decks, and one layer over them.
+//
+// One, not N. A logo, a text card, a mask or a running texture is what a set
+// needs on top of two scratched decks; a clip matrix and layer groups would make
+// this a VJ compositor instead of an instrument, and the answer to those cases is
+// to send the mix out over Spout or NDI and let Resolume do them.
+struct StackWeights {
+    float a = 0.0f;
+    float b = 0.0f;
+    float overlay = 0.0f;
+};
+
+// The crossfader deliberately does NOT reach the overlay.
+//
+// A logo that vanished every time the fader crossed would be worse than no logo,
+// and a mask that opened mid-transform would show the thing it exists to hide.
+// The third layer sits ABOVE the crossfader: it is the part of the picture that
+// survives the transition happening underneath it, and its only gain is its own.
+StackWeights stack_weights(float crossfader, float fader_a, float fader_b,
+                           FaderCurve curve, const Layer& overlay);
+
 // Detects a transform or crab: repeated fast cuts of the crossfader. Reported as
 // a rate rather than a flag so it can drive an effect continuously.
 class CutDetector {

@@ -268,3 +268,74 @@ SVJ_TEST("engine: two runs of the same script produce the same wire packet") {
         CHECK_NEAR(first.values[i], second.values[i], 1e-9);
     }
 }
+
+// --- the third layer ---------------------------------------------------------
+
+SVJ_TEST("engine: THE OVERLAY ADVANCES WITH NO PLATTER AT ALL") {
+    // The layer has no timecode source by construction. If it only moved when a
+    // deck moved, it would not be a layer, it would be a third deck waiting for
+    // a turntable that does not exist.
+    Engine engine;
+    engine.configure(120.0);
+    engine.bind();
+
+    EngineFrame frame;
+    frame.dt_s = 1.0f / 60.0f;
+    for (int i = 1; i <= 60; ++i) {
+        frame.time_s = i / 60.0;
+        frame.now_us = static_cast<std::uint64_t>(frame.time_s * 1e6);
+        engine.step(frame);
+    }
+
+    // Nothing was ever fed to a platter, and the layer has still moved.
+    CHECK(engine.overlay().played.position_s > 0.0);
+    CHECK(engine.overlay().played.velocity != 0.0);
+}
+
+SVJ_TEST("engine: the overlay bounces instead of wrapping") {
+    // Eight seconds of texture at four beats a pass, 120 bpm: one pass is two
+    // seconds, so three seconds in it is on the way back.
+    Engine engine;
+    engine.configure(120.0);
+    engine.bind();
+
+    EngineFrame frame;
+    frame.dt_s = 1.0f / 60.0f;
+    for (int i = 1; i <= 180; ++i) {
+        frame.time_s = i / 60.0;
+        frame.now_us = static_cast<std::uint64_t>(frame.time_s * 1e6);
+        engine.step(frame);
+    }
+
+    CHECK(engine.overlay().played.reversed);
+    CHECK(engine.overlay().played.velocity < 0.0);
+    // And it stayed inside its own clip the whole way.
+    CHECK(engine.overlay().played.position_s >= 0.0);
+    CHECK(engine.overlay().played.position_s <= engine.overlay().clip.duration_s());
+}
+
+SVJ_TEST("engine: the crossfader moves the decks and leaves the overlay alone") {
+    Engine engine;
+    engine.configure(120.0);
+    const ControlIndex xfader = engine.surface().declare("xfader", ControlKind::Fader);
+    const ControlIndex fa = engine.surface().declare("ch1.fader", ControlKind::Fader);
+    const ControlIndex fb = engine.surface().declare("ch2.fader", ControlKind::Fader);
+    engine.bind();
+
+    EngineFrame frame;
+    frame.dt_s = 1.0f / 60.0f;
+
+    float seen = -1.0f;
+    for (float x = 0.0f; x <= 1.0f; x += 0.25f) {
+        frame.now_us += 16666;
+        engine.surface().set(xfader, x, frame.now_us);
+        engine.surface().set(fa, 1.0f, frame.now_us);
+        engine.surface().set(fb, 1.0f, frame.now_us);
+        frame.time_s += frame.dt_s;
+        engine.step(frame);
+
+        if (seen < 0.0f) seen = engine.stack().overlay;
+        CHECK_NEAR(engine.stack().overlay, seen, 1e-6);
+    }
+    CHECK(seen > 0.0f);  // and it was actually showing, not merely constant at zero
+}

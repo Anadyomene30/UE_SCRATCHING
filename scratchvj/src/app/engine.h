@@ -28,6 +28,7 @@
 #include "core/mapping.h"
 #include "core/mixer.h"
 #include "core/modulator.h"
+#include "core/playback.h"
 #include "core/protocol.h"
 #include "core/surface.h"
 #include "core/timecode.h"
@@ -40,10 +41,17 @@ namespace svj {
 struct Deck {
     TimecodeTracker timecode;
     GestureTracker gestures;
+    DeckClock clock;
     Transport transport;
     FrameWindow window;
     CacheHeader clip;
     std::string name;
+
+    // What the clock resolved on the last advance(): the position actually
+    // shown, its signed velocity, and whether the clip is running backwards or
+    // parked. A free-running deck has no platter to ask, so this is where
+    // anything downstream reads its motion from.
+    ClockOutput played;
 
     void configure(std::string label, double duration_s, std::uint32_t width,
                    std::uint32_t height, BlockFormat format, SignalProfile profile,
@@ -53,6 +61,11 @@ struct Deck {
     // actually played, which is the platter's position after the transport has had
     // its say about loops, cues and slip.
     double advance(const DecoderSample& sample);
+
+    // Advances a deck that has no platter at all: the overlay layer, or a deck a
+    // performer has switched to a free or tempo-locked source. There is no
+    // timecode to submit and no gesture to track -- the clock is the whole input.
+    double advance_free(double time_s);
 };
 
 // What a front end asks a deck to do on a given frame. Buttons arrive as edges
@@ -126,6 +139,13 @@ public:
     const Deck& deck_a() const { return a_; }
     const Deck& deck_b() const { return b_; }
 
+    // The third layer: a deck with no platter, running over the two below it.
+    Deck& overlay() { return overlay_; }
+    const Deck& overlay() const { return overlay_; }
+    Layer& overlay_layer() { return overlay_layer_; }
+    const Layer& overlay_layer() const { return overlay_layer_; }
+    StackWeights stack() const { return stack_; }
+
     const MappingEngine& mapping() const { return mapping_; }
     const ModulatorBank& modulators() const { return modulators_; }
     const EffectRack& rack() const { return rack_; }
@@ -145,6 +165,9 @@ private:
     Surface surface_;
     Deck a_;
     Deck b_;
+    Deck overlay_;
+    Layer overlay_layer_;
+    StackWeights stack_;
     MappingEngine mapping_;
     ModulatorBank modulators_;
     EffectRack rack_{3};

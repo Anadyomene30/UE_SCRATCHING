@@ -128,3 +128,51 @@ SVJ_TEST("cuts: resetting clears the history") {
     detector.reset();
     CHECK_NEAR(detector.cuts_per_second(), 0.0, 1e-6);
 }
+
+// --- the third layer ---------------------------------------------------------
+
+SVJ_TEST("stack: THE CROSSFADER DOES NOT REACH THE OVERLAY") {
+    // The property that makes a third layer worth having. A logo or a mask that
+    // dipped on every transition would be worse than not having one at all.
+    Layer overlay;
+    overlay.enabled = true;
+    overlay.opacity = 0.8f;
+
+    for (float x = 0.0f; x <= 1.0f; x += 0.1f) {
+        const StackWeights stack = stack_weights(x, 1.0f, 1.0f, FaderCurve::Sharp, overlay);
+        CHECK_NEAR(stack.overlay, 0.8, 1e-5);
+    }
+}
+
+SVJ_TEST("stack: the two decks below still mix exactly as they did alone") {
+    Layer overlay;
+    overlay.enabled = true;
+
+    for (float x = 0.0f; x <= 1.0f; x += 0.1f) {
+        const MixWeights pair = mix_weights(x, 0.7f, 0.4f, FaderCurve::Smooth);
+        const StackWeights stack =
+            stack_weights(x, 0.7f, 0.4f, FaderCurve::Smooth, overlay);
+        CHECK_NEAR(stack.a, pair.a, 1e-6);
+        CHECK_NEAR(stack.b, pair.b, 1e-6);
+    }
+}
+
+SVJ_TEST("stack: a disabled overlay contributes nothing, whatever its opacity") {
+    Layer overlay;
+    overlay.enabled = false;
+    overlay.opacity = 1.0f;
+    CHECK_NEAR(stack_weights(0.5f, 1.0f, 1.0f, FaderCurve::Linear, overlay).overlay,
+               0.0, 1e-6);
+}
+
+SVJ_TEST("stack: an out of range opacity is clamped rather than trusted") {
+    // Opacity arrives from a mapping, and a mapping can be scaled to anything.
+    Layer overlay;
+    overlay.enabled = true;
+    overlay.opacity = 4.0f;
+    CHECK_NEAR(stack_weights(0.5f, 1.0f, 1.0f, FaderCurve::Linear, overlay).overlay,
+               1.0, 1e-6);
+    overlay.opacity = -2.0f;
+    CHECK_NEAR(stack_weights(0.5f, 1.0f, 1.0f, FaderCurve::Linear, overlay).overlay,
+               0.0, 1e-6);
+}

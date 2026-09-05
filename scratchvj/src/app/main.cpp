@@ -136,8 +136,17 @@ int run_demo(int argc, char** argv) {
         view.rack = &engine.rack();
         view.modulators = &engine.modulators();
 
-        DeckView va{a.name, &a.timecode.state(), &a.gestures, &a.transport, &a.window, &a.clip};
-        DeckView vb{b.name, &b.timecode.state(), &b.gestures, &b.transport, &b.window, &b.clip};
+        Deck& ov = engine.overlay();
+        DeckView va{a.name, &a.timecode.state(), &a.gestures, &a.transport,
+                    &a.window, &a.clip, &a.played};
+        DeckView vb{b.name, &b.timecode.state(), &b.gestures, &b.transport,
+                    &b.window, &b.clip, &b.played};
+        DeckView vo{ov.name, &ov.timecode.state(), &ov.gestures, &ov.transport,
+                    &ov.window, &ov.clip, &ov.played};
+        view.overlay = &engine.overlay_layer();
+        view.overlay_deck = &vo;
+        view.overlay_gain = engine.stack().overlay;
+
         std::cout << render_dashboard(view, va, vb, engine.surface(), engine.mapping(), ansi)
                   << std::flush;
 

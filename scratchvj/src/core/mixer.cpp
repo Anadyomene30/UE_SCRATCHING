@@ -59,6 +59,18 @@ MixWeights mix_weights(float crossfader, float fader_a, float fader_b, FaderCurv
     return w;
 }
 
+StackWeights stack_weights(float crossfader, float fader_a, float fader_b,
+                           FaderCurve curve, const Layer& overlay) {
+    const MixWeights below = mix_weights(crossfader, fader_a, fader_b, curve);
+
+    StackWeights stack;
+    stack.a = below.a;
+    stack.b = below.b;
+    // The crossfader is absent from this line on purpose; see the header.
+    stack.overlay = overlay.enabled ? std::clamp(overlay.opacity, 0.0f, 1.0f) : 0.0f;
+    return stack;
+}
+
 void CutDetector::reset() {
     crossings_.clear();
     have_previous_ = false;
