@@ -6,11 +6,11 @@
 // else. When there are real turntables the simulation is swapped for a MIDI and
 // timecode source and not one line below this file changes.
 //
-// No bgfx yet, deliberately. bgfx is for drawing decoded video frames and there
-// are none until the FFmpeg analysis pass exists; ImGui's SDL_Renderer backend
-// carries the interface until then. The place it will attach is the filmstrip
-// and the two deck panels -- everything else here is widgets, which bgfx would
-// not change.
+// bgfx underneath, as the roadmap chose: the interface is rendered by bgfx and
+// the deck frames reach the GPU as the BC1 blocks the cache stores, with no CPU
+// expansion on the display path. Single-threaded on purpose (renderFrame before
+// init): the render loop IS the app loop, and a second thread would buy jitter
+// before it bought speed.
 #include <SDL3/SDL.h>
 // Provides the WinMain the Windows GUI subsystem links against, so the app opens
 // as a window with no console behind it. Header-only in SDL3, and it has to be
@@ -27,7 +27,10 @@
 #include "app/simulation.h"
 #include "imgui.h"
 #include "imgui_impl_sdl3.h"
-#include "imgui_impl_sdlrenderer3.h"
+#include <bgfx/bgfx.h>
+#include <bgfx/platform.h>
+
+#include "imgui_impl_bgfx.h"
 #include "core/compose.h"
 #include "media.h"
 #include "netout.h"
@@ -68,14 +71,27 @@ int main(int, char**) {
         return 1;
     }
 
-    SDL_Renderer* renderer = SDL_CreateRenderer(window, nullptr);
-    if (renderer == nullptr) {
-        std::fprintf(stderr, "SDL_CreateRenderer: %s\n", SDL_GetError());
+    int pixel_w = 0, pixel_h = 0;
+    SDL_GetWindowSizeInPixels(window, &pixel_w, &pixel_h);
+
+    // renderFrame() before init() keeps bgfx single-threaded: the render loop
+    // IS the app loop, and a second thread would buy jitter before speed.
+    bgfx::renderFrame();
+    bgfx::Init init;
+    init.platformData.nwh = SDL_GetPointerProperty(SDL_GetWindowProperties(window),
+                                                   SDL_PROP_WINDOW_WIN32_HWND_POINTER,
+                                                   nullptr);
+    init.resolution.width = static_cast<std::uint32_t>(pixel_w);
+    init.resolution.height = static_cast<std::uint32_t>(pixel_h);
+    init.resolution.reset = BGFX_RESET_VSYNC;
+    if (!bgfx::init(init)) {
+        std::fprintf(stderr, "bgfx::init a echoue\n");
         SDL_DestroyWindow(window);
         SDL_Quit();
         return 1;
     }
-    SDL_SetRenderVSync(renderer, 1);
+    // The mockup's ground colour, painted by the clear rather than by a quad.
+    bgfx::setViewClear(0, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x141412ff, 1.0f, 0);
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -119,8 +135,11 @@ int main(int, char**) {
     } else {
         io.FontDefault = svj::ui::g_fonts.sans;
     }
-    ImGui_ImplSDL3_InitForSDLRenderer(window, renderer);
-    ImGui_ImplSDLRenderer3_Init(renderer);
+    ImGui_ImplSDL3_InitForOther(window);
+    if (!svj::ui::ImGuiBgfx_Init(0)) {
+        std::fprintf(stderr, "backend ImGui bgfx: echec\n");
+        return 1;
+    }
 
     Engine engine;
     engine.configure(kBpm);
@@ -138,7 +157,7 @@ int main(int, char**) {
     // honestly why they are empty.
     svj::ui::DeckMedia media_a, media_b, media_overlay;
     std::vector<std::uint8_t> program;
-    SDL_Texture* program_tex = nullptr;
+    std::uint16_t program_tex = 0xFFFF;
 
     // The Spout sender is opened unconditionally: receivers that are not
     // listening cost nothing, and an output that must be switched on before it
@@ -228,6 +247,12 @@ int main(int, char**) {
             if (event.type == SDL_EVENT_KEY_DOWN && event.key.key == SDLK_ESCAPE) {
                 running = false;
             }
+            if (event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED &&
+                event.window.windowID == SDL_GetWindowID(window)) {
+                SDL_GetWindowSizeInPixels(window, &pixel_w, &pixel_h);
+                bgfx::reset(static_cast<std::uint32_t>(pixel_w),
+                            static_cast<std::uint32_t>(pixel_h), BGFX_RESET_VSYNC);
+            }
         }
 
         // The script loops, so the window can be left open and watched. Wall
@@ -260,16 +285,15 @@ int main(int, char**) {
             last_schema_sent_s = wall_s;
         }
 
-        ImGui_ImplSDLRenderer3_NewFrame();
         ImGui_ImplSDL3_NewFrame();
         ImGui::NewFrame();
 
         svj::ui::Frame view;
         view.elapsed_s = t;
         view.phase = simulation.phase();
-        view.tex_a = media_a.frame_at(renderer, engine.deck_a().played.position_s);
-        view.tex_b = media_b.frame_at(renderer, engine.deck_b().played.position_s);
-        media_overlay.frame_at(renderer, engine.overlay().played.position_s);
+        view.tex_a = media_a.frame_at(engine.deck_a().played.position_s);
+        view.tex_b = media_b.frame_at(engine.deck_b().played.position_s);
+        media_overlay.frame_at(engine.overlay().played.position_s);
 
         // The program: what actually leaves the machine. Composited on the CPU
         // (core/compose, tested) at deck A's resolution, shown in the interface
@@ -294,19 +318,22 @@ int main(int, char**) {
                                           media_overlay.height(), stack.overlay,
                                           engine.overlay_layer().blend});
 
-            if (program_tex == nullptr) {
-                program_tex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA32,
-                                                SDL_TEXTUREACCESS_STREAMING,
-                                                static_cast<int>(pw),
-                                                static_cast<int>(ph));
-                if (program_tex != nullptr) {
-                    SDL_SetTextureScaleMode(program_tex, SDL_SCALEMODE_LINEAR);
-                }
+            if (program_tex == 0xFFFF) {
+                const bgfx::TextureHandle handle = bgfx::createTexture2D(
+                    static_cast<std::uint16_t>(pw), static_cast<std::uint16_t>(ph),
+                    false, 1, bgfx::TextureFormat::RGBA8, BGFX_SAMPLER_NONE);
+                if (bgfx::isValid(handle)) program_tex = handle.idx;
             }
-            if (program_tex != nullptr) {
-                SDL_UpdateTexture(program_tex, nullptr, program.data(),
-                                  static_cast<int>(pw) * 4);
-                view.tex_program = program_tex;
+            if (program_tex != 0xFFFF) {
+                bgfx::TextureHandle handle;
+                handle.idx = program_tex;
+                bgfx::updateTexture2D(
+                    handle, 0, 0, 0, 0, static_cast<std::uint16_t>(pw),
+                    static_cast<std::uint16_t>(ph),
+                    bgfx::copy(program.data(),
+                               static_cast<std::uint32_t>(program.size())));
+                view.tex_program = reinterpret_cast<void*>(
+                    svj::ui::ImGuiBgfx_TextureId(program_tex));
                 view.program_width = pw;
                 view.program_height = ph;
             }
@@ -315,16 +342,20 @@ int main(int, char**) {
         svj::ui::draw(engine, view);
 
         ImGui::Render();
-        SDL_SetRenderDrawColorFloat(renderer, 0.078f, 0.078f, 0.071f, 1.0f);
-        SDL_RenderClear(renderer);
-        ImGui_ImplSDLRenderer3_RenderDrawData(ImGui::GetDrawData(), renderer);
-        SDL_RenderPresent(renderer);
+        bgfx::setViewRect(0, 0, 0, static_cast<std::uint16_t>(pixel_w),
+                          static_cast<std::uint16_t>(pixel_h));
+        bgfx::touch(0);  // the clear runs even on a frame with nothing else
+        svj::ui::ImGuiBgfx_Render(ImGui::GetDrawData());
+        bgfx::frame();
     }
 
-    ImGui_ImplSDLRenderer3_Shutdown();
+    media_a.close();
+    media_b.close();
+    media_overlay.close();
+    svj::ui::ImGuiBgfx_Shutdown();
     ImGui_ImplSDL3_Shutdown();
     ImGui::DestroyContext();
-    SDL_DestroyRenderer(renderer);
+    bgfx::shutdown();
     SDL_DestroyWindow(window);
     SDL_Quit();
     return 0;

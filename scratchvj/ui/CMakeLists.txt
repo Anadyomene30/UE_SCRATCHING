@@ -66,8 +66,27 @@ if(WIN32)
   FetchContent_MakeAvailable(spout2)
 endif()
 
-add_executable(scratchvj_ui WIN32 main_ui.cpp media.cpp netout.cpp panels.cpp share.cpp)
-target_link_libraries(scratchvj_ui PRIVATE scratchvj_app scratchvj_imgui SDL3::SDL3)
+# bgfx, the renderer the roadmap chose: mature, permissive, native D3D/Vulkan/
+# Metal backends, and first-class support for the BCn formats and texture
+# arrays the video engine is built on. Tools and examples are off -- shaderc
+# joins when the first custom shader does; until then ImGui runs on the
+# embedded shaders bgfx ships for it.
+set(BGFX_BUILD_TOOLS OFF CACHE BOOL "" FORCE)
+set(BGFX_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(BGFX_INSTALL OFF CACHE BOOL "" FORCE)
+set(BGFX_AMALGAMATED ON CACHE BOOL "" FORCE)
+FetchContent_Declare(bgfx
+  GIT_REPOSITORY https://github.com/bkaradzic/bgfx.cmake.git
+  GIT_TAG 297c84a6ca5a43c0840059b2169ed05ff288c42c
+  GIT_SHALLOW ON
+)
+FetchContent_MakeAvailable(bgfx)
+
+add_executable(scratchvj_ui WIN32 imgui_impl_bgfx.cpp main_ui.cpp media.cpp netout.cpp panels.cpp share.cpp)
+target_link_libraries(scratchvj_ui PRIVATE scratchvj_app scratchvj_imgui SDL3::SDL3 bgfx)
+# The embedded ImGui shaders bgfx ships with its examples; headers only.
+target_include_directories(scratchvj_ui PRIVATE
+  ${bgfx_SOURCE_DIR}/bgfx/examples/common/imgui)
 if(WIN32)
   target_link_libraries(scratchvj_ui PRIVATE SpoutDX_static d3d11 dxgi)
 

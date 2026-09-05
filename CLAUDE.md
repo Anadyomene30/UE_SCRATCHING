@@ -84,8 +84,9 @@ l'aveugle :
 
 - Le décodeur de timecode `timecoder.c` (xwax, GPL-3)
 - Un vrai backend MIDI (RtMidi) et audio (miniaudio/ASIO)
-- Le rendu GPU (bgfx). L'interface Dear ImGui existe (`ui/`), mais elle ne
-  dessine encore aucune image — il n'y a pas de frame décodée à afficher
+- La suite du rendu GPU : bgfx rend désormais l'interface et affiche les frames
+  BC1 sans décodage CPU (`ui/imgui_impl_bgfx`), mais le compositeur, les effets
+  vidéo et l'échantillonnage 360 restent à porter en shaders (shaderc à outiller)
 - Les sorties Syphon (macOS) et NDI — Spout est fait et vérifié (ui/share, spout_check)
 - Le test en scène du plugin Unreal `ScratchLink` — il compile contre UE 5.7 et le flux UDP est vérifié, mais personne n'a encore scratché une scène avec
 
