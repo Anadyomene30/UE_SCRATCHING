@@ -17,6 +17,7 @@ endif()
 # what makes the macOS CI job meaningful before any audio or GPU code exists.
 add_library(scratchvj_core STATIC
   src/core/anchor.cpp
+  src/core/bc1.cpp
   src/core/curve.cpp
   src/core/effect.cpp
   src/core/framewindow.cpp
@@ -67,6 +68,7 @@ endif()
 # executable, so the demo's behaviour is covered by tests instead of only ever
 # being eyeballed.
 add_library(scratchvj_app STATIC
+  src/app/analyze.cpp
   src/app/dashboard.cpp
   src/app/engine.cpp
   src/app/simulation.cpp
@@ -105,6 +107,7 @@ if(SCRATCHVJ_BUILD_TESTS)
   add_executable(scratchvj_tests
     tests/harness.cpp
     tests/test_anchor.cpp
+    tests/test_bc1.cpp
     tests/test_app.cpp
     tests/test_config.cpp
     tests/test_curve.cpp

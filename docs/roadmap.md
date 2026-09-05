@@ -10,7 +10,7 @@ tout ce qui reste à faire survive à la session qui l'a produit.
 |---|---|---|
 | 1. Voir la table | Logique faite, matériel réel non branché | `core/surface`, `core/learn`, `core/layout`, `core/mapping`, `core/protocol` |
 | 2. Suivre le timecode | Logique faite (dont le profil `wireless`), décodeur xwax non intégré | `core/timecode`, `core/anchor`, `core/gestures` |
-| 3. Voir la vidéo | Format et fenêtre faits, décodage FFmpeg non fait | `core/videocache`, `core/framewindow` |
+| 3. Voir la vidéo | Fait de bout en bout : `scratchvj analyze` décode via l'exécutable ffmpeg, compresse en BC1 (`core/bc1`, testé) et écrit le `.svcache` ; l'interface affiche les frames | `core/videocache`, `core/framewindow`, `core/bc1`, `app/analyze` |
 | 4. Le Mac tourne | CI verte sur macOS depuis le premier commit ; portage audio/GPU réel non fait | `.github/workflows/ci.yml` |
 | 5. Mixer | Courbes, blend modes, détection de transform faits ; rendu GPU non fait | `core/mixer` |
 | 6. Transport | Fait en entier : boucles, hot cues, beat jump, slip, ABS/REL/INT, plus la source de position et les modes de lecture par deck | `core/transport`, `core/playback` |

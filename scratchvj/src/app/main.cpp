@@ -9,6 +9,7 @@
 #include <string>
 #include <thread>
 
+#include "app/analyze.h"
 #include "app/dashboard.h"
 #include "app/engine.h"
 #include "app/simulation.h"
@@ -242,6 +243,35 @@ int run_play(int argc, char** argv) {
     return 0;
 }
 
+int run_analyze(int argc, char** argv) {
+    if (argc < 3) {
+        usage();
+        return 1;
+    }
+    AnalyzeOptions options;
+    options.input = argv[2];
+    options.output = option(argc, argv, "--out", "");
+    options.max_width =
+        static_cast<std::uint32_t>(std::stoul(option(argc, argv, "--max-width", "1024")));
+
+    AnalyzeResult result;
+    std::string error;
+    const bool ok = analyze_clip(
+        options, result,
+        [](std::uint32_t frames) {
+            std::cout << "\r  " << frames << " frames..." << std::flush;
+        },
+        error);
+    if (!ok) {
+        std::cerr << "\nanalyse: " << error << "\n";
+        return 1;
+    }
+    std::cout << "\r  " << result.frames << " frames  " << result.width << "x"
+              << result.height << "  " << result.fps << " fps"
+              << (result.equirect ? "  equirect 360" : "") << "\n";
+    return 0;
+}
+
 int run_info(int argc, char** argv) {
     if (argc < 3) {
         usage();
@@ -325,6 +355,7 @@ int main(int argc, char** argv) {
     const std::string command = argv[1];
     if (command == "demo") return run_demo(argc, argv);
     if (command == "play") return run_play(argc, argv);
+    if (command == "analyze") return run_analyze(argc, argv);
     if (command == "info") return run_info(argc, argv);
     if (command == "effects") return run_effects();
     if (command == "layout") return run_layout();

@@ -76,6 +76,20 @@ double Deck::advance(const DecoderSample& sample) {
     return played.position_s;
 }
 
+void Deck::load(const CacheHeader& header, std::string label, double bpm) {
+    name = std::move(label);
+    clip = header;
+    transport.configure(clip.duration_s(), BeatGrid{bpm, 0.0});
+    clock.configure(clip.duration_s(), bpm);
+
+    WindowConfig window_config;
+    window_config.budget_bytes = 256ull << 20;
+    window.configure(clip.frame_count,
+                     block_bytes_per_frame(clip.width, clip.height, clip.format),
+                     window_config);
+    played = ClockOutput{};
+}
+
 double Deck::advance_free(double time_s) {
     const SourceReading reading = clock.read_source(time_s, 0.0, 0.0f);
     const double mapped = transport.map(reading.position_s);

@@ -17,14 +17,18 @@
 // included in the translation unit that defines main().
 #include <SDL3/SDL_main.h>
 
+#include <algorithm>
 #include <chrono>
 #include <cstdio>
+#include <filesystem>
+#include <vector>
 
 #include "app/engine.h"
 #include "app/simulation.h"
 #include "imgui.h"
 #include "imgui_impl_sdl3.h"
 #include "imgui_impl_sdlrenderer3.h"
+#include "media.h"
 #include "panels.h"
 
 namespace {
@@ -113,6 +117,62 @@ int main(int, char**) {
         std::fprintf(stderr, "mapping refers to an unknown control: %s\n", id.c_str());
     }
 
+    // Analysed clips, if any exist. `clips/*.svcache` next to the working
+    // directory is where `scratchvj analyze` leaves them; deck assignment is by
+    // the clip's own nature -- equirect footage goes to deck A (the 360 deck of
+    // the demo), the shortest clip becomes the overlay texture, the rest is B.
+    // With no caches at all, the fabricated demo decks stay and the wells say
+    // honestly why they are empty.
+    svj::ui::DeckMedia media_a, media_b, media_overlay;
+    {
+        std::vector<std::filesystem::path> caches;
+        std::error_code missing;
+        for (const auto& entry : std::filesystem::directory_iterator("clips", missing)) {
+            if (entry.path().extension() == ".svcache") caches.push_back(entry.path());
+        }
+        std::sort(caches.begin(), caches.end());
+
+        const auto try_load = [&](svj::ui::DeckMedia& media, Deck& deck,
+                                  const std::filesystem::path& path) {
+            std::string error;
+            if (!media.open(path.string(), error)) {
+                std::fprintf(stderr, "%s: %s\n", path.string().c_str(), error.c_str());
+                return false;
+            }
+            deck.load(media.header(), path.stem().string(), kBpm);
+            ClipEntry entry;
+            entry.path = path.string();
+            entry.name = path.filename().string();
+            entry.duration_s = media.header().duration_s();
+            entry.width = media.header().width;
+            entry.height = media.header().height;
+            entry.equirect = media.header().is_equirect();
+            entry.bpm = kBpm;
+            const ClipId id = engine.library().add(entry);
+            engine.library().set_state(id, AnalysisState::Ready, 1.0f);
+            return true;
+        };
+
+        // Pick by role rather than by order on disk.
+        std::stable_sort(caches.begin(), caches.end(),
+                         [](const auto& a, const auto& b) {
+                             return std::filesystem::file_size(a) >
+                                    std::filesystem::file_size(b);
+                         });
+        std::vector<std::filesystem::path> remaining;
+        for (const auto& path : caches) {
+            if (!media_a.ready()) {
+                if (try_load(media_a, engine.deck_a(), path)) continue;
+            } else if (!media_b.ready()) {
+                if (try_load(media_b, engine.deck_b(), path)) continue;
+            } else if (!media_overlay.ready()) {
+                if (try_load(media_overlay, engine.overlay(), path)) continue;
+            }
+            remaining.push_back(path);
+        }
+        (void)remaining;
+    }
+
     const auto started = std::chrono::steady_clock::now();
     double previous_s = 0.0;
     bool running = true;
@@ -160,6 +220,8 @@ int main(int, char**) {
         svj::ui::Frame view;
         view.elapsed_s = t;
         view.phase = simulation.phase();
+        view.tex_a = media_a.frame_at(renderer, engine.deck_a().played.position_s);
+        view.tex_b = media_b.frame_at(renderer, engine.deck_b().played.position_s);
         svj::ui::draw(engine, view);
 
         ImGui::Render();

@@ -35,6 +35,7 @@
 #include "core/timecode.h"
 #include "core/transport.h"
 #include "core/videocache.h"
+#include "core/warp.h"
 
 namespace svj {
 
@@ -67,6 +68,12 @@ struct Deck {
     // performer has switched to a free or tempo-locked source. There is no
     // timecode to submit and no gesture to track -- the clock is the whole input.
     double advance_free(double time_s);
+
+    // Points the deck at a real analysed clip, replacing whatever configure()
+    // fabricated. Everything that depends on the clip's duration or frame count
+    // -- transport, clock, VRAM window -- is rebuilt; the timecode tracker is
+    // not, because the platter does not change when the record does.
+    void load(const CacheHeader& header, std::string label, double bpm);
 };
 
 // What a front end asks a deck to do on a given frame. Buttons arrive as edges
@@ -155,6 +162,14 @@ public:
     Queue& queue() { return queue_; }
     const Queue& queue() const { return queue_; }
 
+    // Output geometry: the corner pin and the mask, owned here for the same
+    // reason the overlay layer is -- the performer sets them, every front end
+    // and every output (screen, Spout, NDI) must see the same ones.
+    CornerPin& pin() { return pin_; }
+    const CornerPin& pin() const { return pin_; }
+    Mask& mask() { return mask_; }
+    const Mask& mask() const { return mask_; }
+
     const MappingEngine& mapping() const { return mapping_; }
     const ModulatorBank& modulators() const { return modulators_; }
     const EffectRack& rack() const { return rack_; }
@@ -177,6 +192,8 @@ private:
     Deck overlay_;
     Layer overlay_layer_;
     StackWeights stack_;
+    CornerPin pin_;
+    Mask mask_;
     Library library_;
     Queue queue_;
     MappingEngine mapping_;

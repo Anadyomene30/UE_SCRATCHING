@@ -51,7 +51,7 @@ target_include_directories(scratchvj_imgui PUBLIC
   ${imgui_SOURCE_DIR} ${imgui_SOURCE_DIR}/backends)
 target_link_libraries(scratchvj_imgui PUBLIC SDL3::SDL3)
 
-add_executable(scratchvj_ui WIN32 main_ui.cpp panels.cpp)
+add_executable(scratchvj_ui WIN32 main_ui.cpp media.cpp panels.cpp)
 target_link_libraries(scratchvj_ui PRIVATE scratchvj_app scratchvj_imgui SDL3::SDL3)
 
 # The vendored sources are not ours to keep warning-clean, so the strict flags

@@ -25,6 +25,11 @@ struct Frame {
     double elapsed_s = 0.0;
     std::string phase;
     bool follower_mode = true;
+
+    // Live frames for the decks, as textures the render backend understands
+    // (SDL_Texture* today). Null draws the honest empty well instead.
+    void* tex_a = nullptr;
+    void* tex_b = nullptr;
 };
 
 // The three faces the mockup uses. Archivo carries the interface, DM Mono every

@@ -157,21 +157,40 @@ void knob_strip(const Control& control, float height) {
     ImGui::Dummy(ImVec2(width, height));
 }
 
-// Where the picture goes. There is no decoded frame to draw until the FFmpeg
-// analysis pass exists, so this is an empty well that says what it is waiting
-// for. Drawing a plausible still here would be the one lie this interface must
-// not tell -- a performer has to be able to trust that what is on screen is what
-// the engine actually has.
-void picture_well(const Deck& deck, float width, float height) {
+// Where the picture goes. With an analysed clip loaded this is the real frame
+// at the deck's played position; without one it is an empty well that says what
+// it is waiting for. Drawing a plausible still would be the one lie this
+// interface must not tell -- a performer has to be able to trust that what is
+// on screen is what the engine actually has.
+void picture_well(const Deck& deck, void* texture, float width, float height) {
     ImDrawList* draw = ImGui::GetWindowDrawList();
     const ImVec2 origin = ImGui::GetCursorScreenPos();
     const ImVec2 corner(origin.x + width, origin.y + height);
 
     draw->AddRectFilled(origin, corner, kWell);
+
+    if (texture != nullptr && deck.clip.width > 0 && deck.clip.height > 0) {
+        // Fit inside the well, letterboxed; stretching would misstate the frame.
+        const float aspect = static_cast<float>(deck.clip.width) /
+                             static_cast<float>(deck.clip.height);
+        float dw = width;
+        float dh = dw / aspect;
+        if (dh > height) {
+            dh = height;
+            dw = dh * aspect;
+        }
+        const ImVec2 lo(origin.x + (width - dw) * 0.5f, origin.y + (height - dh) * 0.5f);
+        draw->AddImage(ImTextureRef(reinterpret_cast<ImTextureID>(texture)), lo,
+                       ImVec2(lo.x + dw, lo.y + dh));
+        draw->AddRect(origin, corner, kHair);
+        ImGui::Dummy(ImVec2(width, height));
+        return;
+    }
+
     draw->AddRect(origin, corner, kHair);
 
     push_small();
-    const char* waiting = "aucune image — passe d'analyse non écrite";
+    const char* waiting = "aucune image — lancer: scratchvj analyze <video>";
     const ImVec2 size = ImGui::CalcTextSize(waiting);
     draw->AddText(ImVec2(origin.x + (width - size.x) * 0.5f,
                          origin.y + height * 0.5f - size.y),
@@ -379,8 +398,8 @@ void draw_library(Engine& engine, float width, float height) {
     ImGui::EndChild();
 }
 
-void draw_deck(Deck& deck, const Engine& engine, const Frame& frame, ImU32 accent, bool is_a,
-               float width, float height) {
+void draw_deck(Deck& deck, const Engine& engine, const Frame& frame, void* texture,
+               ImU32 accent, bool is_a, float width, float height) {
     ImGui::PushID(is_a ? "deck.a" : "deck.b");
     ImGui::BeginChild(is_a ? "deckA" : "deckB", ImVec2(width, height), ImGuiChildFlags_Borders);
 
@@ -400,7 +419,7 @@ void draw_deck(Deck& deck, const Engine& engine, const Frame& frame, ImU32 accen
     pop_font();
 
     ImGui::Dummy(ImVec2(0.0f, 6.0f));
-    picture_well(deck, inner, std::max(120.0f, height * 0.32f));
+    picture_well(deck, texture, inner, std::max(120.0f, height * 0.32f));
 
     ImGui::Dummy(ImVec2(0.0f, 8.0f));
     push_small();
@@ -665,6 +684,213 @@ void draw_surface(Engine& engine, float width, float height) {
     ImGui::EndChild();
 }
 
+// --- EFFETS: the whole battery, with its correspondences stated honestly ------
+
+void draw_effects_screen(Engine& engine) {
+    eyebrow("LA BATTERIE — chaque effet audio et son pendant visuel");
+    push_small();
+    ImGui::PushStyleColor(ImGuiCol_Text, rgba(kFaint));
+    ImGui::TextUnformatted(
+        "\"analogue\" marque une correspondance perceptive choisie, jamais "
+        "pr\xC3\xA9sent\xC3\xA9""e comme identique.");
+    ImGui::PopStyleColor();
+    pop_font();
+    ImGui::Dummy(ImVec2(0.0f, 8.0f));
+
+    if (ImGui::BeginTable("catalogue", 4,
+                          ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_RowBg)) {
+        ImGui::TableSetupColumn("effet", ImGuiTableColumnFlags_WidthFixed, 130.0f);
+        ImGui::TableSetupColumn("audio", ImGuiTableColumnFlags_WidthFixed, 260.0f);
+        ImGui::TableSetupColumn("video", ImGuiTableColumnFlags_WidthFixed, 300.0f);
+        ImGui::TableSetupColumn("lien", ImGuiTableColumnFlags_WidthFixed, 110.0f);
+
+        for (const EffectDescriptor& fx : effect_catalogue()) {
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            text_c(kInk, "%s", fx.id);
+            ImGui::TableSetColumnIndex(1);
+            push_small();
+            text_c(fx.audio != nullptr ? kMuted : kFaint, "%s",
+                   fx.audio != nullptr ? fx.audio : "—");
+            pop_font();
+            ImGui::TableSetColumnIndex(2);
+            push_small();
+            text_c(kMuted, "%s", fx.video);
+            pop_font();
+            ImGui::TableSetColumnIndex(3);
+            push_small();
+            switch (fx.relation) {
+                case Correspondence::Identical: text_c(kSage, "identique"); break;
+                case Correspondence::Analogue: text_c(kAmber, "analogue"); break;
+                case Correspondence::VideoOnly: text_c(kFaint, "vid\xC3\xA9o seule"); break;
+            }
+            pop_font();
+        }
+        ImGui::EndTable();
+    }
+
+    ImGui::Dummy(ImVec2(0.0f, 14.0f));
+    eyebrow("LE RACK — ce qui est charg\xC3\xA9 maintenant");
+    ImGui::Dummy(ImVec2(0.0f, 4.0f));
+    draw_mix(engine, 0.0f, 0.0f);
+}
+
+// --- MAPPING ------------------------------------------------------------------
+
+const char* source_text(SourceKind kind) {
+    switch (kind) {
+        case SourceKind::Control: return "contr\xC3\xB4le";
+        case SourceKind::DeckPosition: return "position deck";
+        case SourceKind::DeckVelocity: return "vitesse deck";
+        case SourceKind::DeckAcceleration: return "acc\xC3\xA9l\xC3\xA9ration";
+        case SourceKind::DeckScratchRate: return "scratch/s";
+        case SourceKind::DeckConfidence: return "confiance";
+        case SourceKind::Gesture: return "geste";
+        case SourceKind::Modulator: return "modulateur";
+        case SourceKind::AudioBand: return "bande audio";
+    }
+    return "?";
+}
+
+void draw_mapping_screen(Engine& engine) {
+    eyebrow("MAPPING — toute source vers toute destination");
+    ImGui::Dummy(ImVec2(0.0f, 8.0f));
+
+    if (ImGui::BeginTable("mappings", 4,
+                          ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_RowBg)) {
+        ImGui::TableSetupColumn("nom", ImGuiTableColumnFlags_WidthFixed, 300.0f);
+        ImGui::TableSetupColumn("source", ImGuiTableColumnFlags_WidthFixed, 140.0f);
+        ImGui::TableSetupColumn("destination", ImGuiTableColumnFlags_WidthFixed, 200.0f);
+        ImGui::TableSetupColumn("valeur", ImGuiTableColumnFlags_WidthFixed, 100.0f);
+
+        for (std::size_t i = 0; i < engine.mapping().size(); ++i) {
+            const Mapping& mapping = engine.mapping().at(i);
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            text_c(engine.mapping().active(i) ? kInk : kFaint, "%s", mapping.name.c_str());
+            ImGui::TableSetColumnIndex(1);
+            push_small();
+            text_c(kMuted, "%s", source_text(mapping.source.kind));
+            pop_font();
+            ImGui::TableSetColumnIndex(2);
+            push_small();
+            text_c(kMuted, "%s", mapping.destination.target.c_str());
+            pop_font();
+            ImGui::TableSetColumnIndex(3);
+            push_mono();
+            text_c(kInk, "%9.2f", static_cast<double>(engine.mapping().value(i)));
+            pop_font();
+        }
+        ImGui::EndTable();
+    }
+
+    ImGui::Dummy(ImVec2(0.0f, 14.0f));
+    eyebrow("APPRENTISSAGE MIDI");
+    push_small();
+    ImGui::PushStyleColor(ImGuiCol_Text, rgba(kFaint));
+    ImGui::TextUnformatted(
+        "La table de l'Elite n'est pas documient\xC3\xA9""e publiquement, donc rien "
+        "n'est en dur : --midi-learn demande de balayer chaque contr\xC3\xB4le et "
+        "n'associe qu'un contr\xC3\xB4le qui bouge vraiment. La checklist compl\xC3\xA8te "
+        "est dans `scratchvj layout`.");
+    ImGui::PopStyleColor();
+    pop_font();
+}
+
+// --- SORTIE: corner pin and mask, editable ------------------------------------
+
+void draw_output_screen(Engine& engine) {
+    eyebrow("SORTIE — corner pin et masque");
+    push_small();
+    ImGui::PushStyleColor(ImGuiCol_Text, rgba(kFaint));
+    ImGui::TextUnformatted(
+        "Le pin est une homographie, pas un \xC3\xA9tirement bilin\xC3\xA9""aire : sous un "
+        "vrai projecteur le centre de l'image ne tombe pas au centre du quadrilat\xC3\xA8re. "
+        "Tirer les poign\xC3\xA9""es.");
+    ImGui::PopStyleColor();
+    pop_font();
+    ImGui::Dummy(ImVec2(0.0f, 10.0f));
+
+    const float width = std::min(720.0f, ImGui::GetContentRegionAvail().x - 20.0f);
+    const float height = width * 9.0f / 16.0f;
+    ImDrawList* draw = ImGui::GetWindowDrawList();
+    const ImVec2 origin = ImGui::GetCursorScreenPos();
+
+    draw->AddRectFilled(origin, ImVec2(origin.x + width, origin.y + height), kWell);
+    draw->AddRect(origin, ImVec2(origin.x + width, origin.y + height), kHair);
+
+    CornerPin& pin = engine.pin();
+    Point* corners[4] = {&pin.top_left, &pin.top_right, &pin.bottom_right, &pin.bottom_left};
+
+    const auto to_screen = [&](const Point& p) {
+        return ImVec2(origin.x + static_cast<float>(p.x) * width,
+                      origin.y + static_cast<float>(p.y) * height);
+    };
+
+    // The warped grid, through the actual homography from core/warp -- the same
+    // matrix the shader will get. Drawing it any other way would be a preview of
+    // something the output does not do.
+    const Homography h = homography_from(pin);
+    const int kGrid = 8;
+    for (int i = 0; i <= kGrid; ++i) {
+        const double t = static_cast<double>(i) / kGrid;
+        ImVec2 prev_row, prev_col;
+        for (int j = 0; j <= kGrid; ++j) {
+            const double u = static_cast<double>(j) / kGrid;
+            const ImVec2 row = to_screen(apply(h, Point{u, t}));
+            const ImVec2 col = to_screen(apply(h, Point{t, u}));
+            if (j > 0) {
+                draw->AddLine(prev_row, row, kHair);
+                draw->AddLine(prev_col, col, kHair);
+            }
+            prev_row = row;
+            prev_col = col;
+        }
+    }
+
+    // The quad's edges, and a draggable handle on each corner.
+    for (int i = 0; i < 4; ++i) {
+        draw->AddLine(to_screen(*corners[i]), to_screen(*corners[(i + 1) % 4]), kAccent,
+                      2.0f);
+    }
+    for (int i = 0; i < 4; ++i) {
+        const ImVec2 at = to_screen(*corners[i]);
+        ImGui::SetCursorScreenPos(ImVec2(at.x - 8.0f, at.y - 8.0f));
+        ImGui::PushID(i);
+        ImGui::InvisibleButton("corner", ImVec2(16.0f, 16.0f));
+        if (ImGui::IsItemActive()) {
+            const ImVec2 mouse = ImGui::GetIO().MousePos;
+            corners[i]->x = std::clamp(static_cast<double>(mouse.x - origin.x) / width,
+                                       -0.2, 1.2);
+            corners[i]->y = std::clamp(static_cast<double>(mouse.y - origin.y) / height,
+                                       -0.2, 1.2);
+        }
+        const bool hot = ImGui::IsItemHovered() || ImGui::IsItemActive();
+        draw->AddRectFilled(ImVec2(at.x - 5.0f, at.y - 5.0f), ImVec2(at.x + 5.0f, at.y + 5.0f),
+                            hot ? kInk : kAccent);
+        ImGui::PopID();
+    }
+    ImGui::SetCursorScreenPos(ImVec2(origin.x, origin.y + height + 10.0f));
+
+    if (ImGui::SmallButton("R\xC3\xA9initialiser")) pin = CornerPin{};
+    ImGui::SameLine(0.0f, 20.0f);
+    push_small();
+    ImGui::PushStyleColor(ImGuiCol_Text, rgba(kFaint));
+    ImGui::TextUnformatted(pin.is_identity() ? "identit\xC3\xA9 — plein cadre"
+                                             : "homographie active");
+    ImGui::PopStyleColor();
+    pop_font();
+
+    ImGui::Dummy(ImVec2(0.0f, 12.0f));
+    push_small();
+    ImGui::PushStyleColor(ImGuiCol_Text, rgba(kFaint));
+    ImGui::TextUnformatted(
+        "Warp maill\xC3\xA9 et edge blending : volontairement absents. La sortie part "
+        "en Spout / NDI vers Resolume ou MadMapper pour ces cas-l\xC3\xA0.");
+    ImGui::PopStyleColor();
+    pop_font();
+}
+
 }  // namespace
 
 void apply_style() {
@@ -715,28 +941,53 @@ void draw(Engine& engine, const Frame& frame) {
 
     draw_status(engine, frame);
 
-    // The mockup's proportions: a fixed library rail, then the decks, then the
-    // surface across the bottom. Fixed because a browser that reflows while a set
-    // is running is a browser nobody can find anything in.
-    const float rail = 250.0f;
-    const float gap = ImGui::GetStyle().ItemSpacing.x;
-    const float surface_h = 150.0f;
-    const float body_h = std::max(320.0f, ImGui::GetContentRegionAvail().y - surface_h - gap);
-    const float decks_w = std::max(520.0f, ImGui::GetContentRegionAvail().x - rail - gap);
-    const float deck_w = (decks_w - gap) * 0.5f;
-    const float deck_h = body_h * 0.66f;
+    // The mockup's five screens, as tabs. Performance is the one a set lives in;
+    // the others are preparation and configuration, which is why they can afford
+    // to be screens at all instead of fighting for the same pixels.
+    if (ImGui::BeginTabBar("screens")) {
+        if (ImGui::BeginTabItem("PERFORMANCE")) {
+            // The mockup's proportions: a fixed library rail, then the decks,
+            // then the surface across the bottom. Fixed because a browser that
+            // reflows while a set is running is one nobody can find anything in.
+            const float rail = 250.0f;
+            const float gap = ImGui::GetStyle().ItemSpacing.x;
+            const float surface_h = 150.0f;
+            const float body_h =
+                std::max(320.0f, ImGui::GetContentRegionAvail().y - surface_h - gap);
+            const float decks_w =
+                std::max(520.0f, ImGui::GetContentRegionAvail().x - rail - gap);
+            const float deck_w = (decks_w - gap) * 0.5f;
+            const float deck_h = body_h * 0.66f;
 
-    draw_library(engine, rail, body_h);
-    ImGui::SameLine();
+            draw_library(engine, rail, body_h);
+            ImGui::SameLine();
 
-    ImGui::BeginGroup();
-    draw_deck(engine.deck_a(), engine, frame, kAmber, true, deck_w, deck_h);
-    ImGui::SameLine();
-    draw_deck(engine.deck_b(), engine, frame, kSlate, false, deck_w, deck_h);
-    draw_mix(engine, decks_w, body_h - deck_h - ImGui::GetStyle().ItemSpacing.y);
-    ImGui::EndGroup();
+            ImGui::BeginGroup();
+            draw_deck(engine.deck_a(), engine, frame, frame.tex_a, kAmber, true, deck_w,
+                      deck_h);
+            ImGui::SameLine();
+            draw_deck(engine.deck_b(), engine, frame, frame.tex_b, kSlate, false, deck_w,
+                      deck_h);
+            draw_mix(engine, decks_w, body_h - deck_h - ImGui::GetStyle().ItemSpacing.y);
+            ImGui::EndGroup();
 
-    draw_surface(engine, 0.0f, surface_h);
+            draw_surface(engine, 0.0f, surface_h);
+            ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem("EFFETS")) {
+            draw_effects_screen(engine);
+            ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem("MAPPING")) {
+            draw_mapping_screen(engine);
+            ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem("SORTIE")) {
+            draw_output_screen(engine);
+            ImGui::EndTabItem();
+        }
+        ImGui::EndTabBar();
+    }
 
     ImGui::End();
 }
