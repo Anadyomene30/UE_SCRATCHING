@@ -25,7 +25,7 @@ Toute nouvelle fonctionnalité doit respecter ces deux règles.
 
 ```sh
 cmake -S . -B build && cmake --build build
-ctest --test-dir build --output-on-failure    # 290 tests, doivent tous passer
+ctest --test-dir build --output-on-failure    # 329 tests, doivent tous passer
 ./build/scratchvj/scratchvj demo              # démo sans matériel
 ./build/scratchvj/scratchvj effects           # catalogue d'effets
 ./build/scratchvj/scratchvj layout            # checklist MIDI learn
@@ -85,7 +85,8 @@ l'aveugle :
 - Le décodeur de timecode `timecoder.c` (xwax, GPL-3)
 - Un vrai backend MIDI (RtMidi) et audio (miniaudio/ASIO)
 - La passe d'analyse vidéo FFmpeg → `.svcache`
-- Le rendu GPU (bgfx) et l'interface Dear ImGui
+- Le rendu GPU (bgfx). L'interface Dear ImGui existe (`ui/`), mais elle ne
+  dessine encore aucune image — il n'y a pas de frame décodée à afficher
 - Les sorties Spout/Syphon/NDI
 - Le plugin Unreal `ScratchLink`
 

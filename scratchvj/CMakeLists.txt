@@ -85,6 +85,18 @@ else()
   target_compile_options(scratchvj PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
+# --- the native front end -----------------------------------------------------
+#
+# OFF by default and in its own directory. The default build stays free of every
+# external dependency, which is what keeps the core testable from a bare checkout
+# on three operating systems -- and what makes the CI job that builds the default
+# configuration a real guarantee rather than a habit.
+option(SCRATCHVJ_BUILD_UI "Build the SDL3 + Dear ImGui front end" OFF)
+
+if(SCRATCHVJ_BUILD_UI)
+  add_subdirectory(ui)
+endif()
+
 # --- tests --------------------------------------------------------------------
 option(SCRATCHVJ_BUILD_TESTS "Build the scratchvj test suite" ON)
 

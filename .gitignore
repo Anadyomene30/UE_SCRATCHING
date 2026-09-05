@@ -1,4 +1,7 @@
 build/
+# Out-of-tree build trees: the UI configuration keeps its own, because it pulls
+# SDL3 and Dear ImGui into _deps and the default build must stay free of them.
+build-*/
 out/
 .cache/
 compile_commands.json

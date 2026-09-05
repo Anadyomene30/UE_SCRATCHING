@@ -58,9 +58,29 @@ performance. That is how the rest of the project gets developed before the
 turntables are plugged in — record once, then exercise every later change against
 a real performance instead of a guess.
 
+### The window
+
+The same engine, in a real window, behind a CMake option:
+
+```sh
+cmake -S . -B build-ui -DSCRATCHVJ_BUILD_UI=ON && cmake --build build-ui --config Release
+./build-ui/scratchvj/ui/scratchvj_ui
+```
+
+It is off by default because turning it on fetches SDL3 and Dear ImGui, and the
+default build having **no external dependencies at all** is what lets the core
+and its tests run from a bare checkout on three operating systems. The CI job
+builds the default configuration, so that guarantee is enforced rather than
+merely stated.
+
+There is no bgfx yet, on purpose: bgfx exists to draw decoded video frames, and
+there are none until the FFmpeg analysis pass is written. Dear ImGui's own
+renderer carries the interface until then, and the seam it leaves — the two deck
+panels and the filmstrip — is exactly where bgfx attaches.
+
 ## Current state
 
-The engine's logic is written and covered by **301 tests**; the parts that touch
+The engine's logic is written and covered by **329 tests**; the parts that touch
 hardware are not.
 
 | Module | What it does |
@@ -76,7 +96,8 @@ hardware are not.
 | `core/timecode` | Position tracking, the vinyl/wireless split, ABS/REL/INT transport |
 | `core/anchor` | Follower mode: lining a clip up with Serato, and how stale that is |
 | `core/transport` | Loops, hot cues, beat jump, slip |
-| `core/mixer` | Crossfader curves, mix weights, transform detection |
+| `core/playback` | Where a deck's position comes from, and what the clip does at its ends |
+| `core/mixer` | Crossfader curves, mix weights, transform detection, the overlay layer |
 | `core/effect` | The paired audio/video effect rack and its catalogue |
 | `core/sphere` | 360 reprojection: perspective, little planet, fisheye |
 | `core/videocache` | The `.svcache` clip format: fixed-size block-compressed frames |
