@@ -62,7 +62,11 @@ else()
   target_compile_options(scratchvj_ui PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
-# SDL3 is built shared, so the DLL has to sit next to the executable.
+# SDL3 is built shared, so the DLL has to sit next to the executable, and the
+# fonts are loaded at runtime relative to it (SDL_GetBasePath), so they travel
+# with it too.
 add_custom_command(TARGET scratchvj_ui POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_if_different
-          $<TARGET_FILE:SDL3::SDL3> $<TARGET_FILE_DIR:scratchvj_ui>)
+          $<TARGET_FILE:SDL3::SDL3> $<TARGET_FILE_DIR:scratchvj_ui>
+  COMMAND ${CMAKE_COMMAND} -E copy_directory
+          ${CMAKE_CURRENT_SOURCE_DIR}/fonts $<TARGET_FILE_DIR:scratchvj_ui>/fonts)

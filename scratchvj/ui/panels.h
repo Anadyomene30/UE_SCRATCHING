@@ -13,6 +13,8 @@
 
 #include <string>
 
+struct ImFont;
+
 #include "app/engine.h"
 
 namespace svj::ui {
@@ -24,6 +26,21 @@ struct Frame {
     std::string phase;
     bool follower_mode = true;
 };
+
+// The three faces the mockup uses. Archivo carries the interface, DM Mono every
+// number that has to line up in a column, and the small size does the work
+// letter-spaced small caps do on the page -- ImGui has no letter-spacing, so the
+// distinction has to come from size and colour instead.
+struct Fonts {
+    ImFont* sans = nullptr;
+    ImFont* mono = nullptr;
+    ImFont* small = nullptr;
+};
+
+// Set by the front end after the fonts are loaded; null members are tolerated
+// everywhere, so a missing font file degrades to the default face rather than
+// crashing on a machine where the files were not copied.
+extern Fonts g_fonts;
 
 // Applies the palette and metrics the mockup fixes. Call once, after the ImGui
 // context exists.

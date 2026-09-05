@@ -131,6 +131,56 @@ void Engine::configure(double bpm) {
     overlay_layer_.opacity = 0.45f;
     overlay_layer_.blend = BlendMode::Screen;
 
+    // The library the demo browses, and the queue standing behind the decks. Made
+    // here rather than in a front end for the reason the decks are: a pad on the
+    // mixer loads the next clip exactly as a click does, so both have to be
+    // looking at the same list. The entries stand in for an analysis pass that
+    // does not exist yet, which is why one of them is deliberately mid-analysis
+    // and therefore not playable -- an unanalysed clip has to be visibly not
+    // loadable, or the first thing the instrument does on stage is stutter.
+    library_ = Library{};
+    queue_ = Queue{};
+    const int all = library_.create_crate("Tous les clips");
+    const int spherical = library_.create_crate("360\xC2\xB0");
+    const int loops = library_.create_crate("Loops & textures");
+
+    const auto add = [&](const char* path, const char* name, double duration, unsigned w,
+                         unsigned h, double fps, bool equirect, AnalysisState state,
+                         float progress) {
+        ClipEntry entry;
+        entry.path = path;
+        entry.name = name;
+        entry.duration_s = duration;
+        entry.width = w;
+        entry.height = h;
+        entry.fps = fps;
+        entry.equirect = equirect;
+        entry.bpm = bpm;
+        const ClipId id = library_.add(entry);
+        library_.set_state(id, state, progress);
+        library_.add_to_crate(all, id);
+        if (equirect) library_.add_to_crate(spherical, id);
+        if (duration < 60.0) library_.add_to_crate(loops, id);
+        return id;
+    };
+
+    add("clips/tokyo_nightdrive_360.mp4", "tokyo_nightdrive_360.mp4", 252.0, 3840, 1920, 60.0,
+        true, AnalysisState::Ready, 1.0f);
+    add("clips/grain_loop_04.mov", "grain_loop_04.mov", 12.0, 1920, 1080, 60.0, false,
+        AnalysisState::Ready, 1.0f);
+    add("clips/rooftop_pan_4k.mp4", "rooftop_pan_4k.mp4", 158.0, 3840, 2160, 30.0, false,
+        AnalysisState::Analysing, 0.62f);
+    const ClipId neon = add("clips/neon_alley_360.mp4", "neon_alley_360.mp4", 184.0, 3840, 1920,
+                            30.0, true, AnalysisState::Ready, 1.0f);
+    const ClipId vhs = add("clips/vhs_static_b.mov", "vhs_static_b.mov", 31.0, 1920, 1080, 30.0,
+                           false, AnalysisState::Ready, 1.0f);
+    const ClipId crowd = add("clips/crowd_slowmo.mp4", "crowd_slowmo.mp4", 107.0, 1920, 1080,
+                             120.0, false, AnalysisState::Ready, 1.0f);
+
+    queue_.push(neon, DeckTarget::A);
+    queue_.push(vhs, DeckTarget::B);
+    queue_.push(crowd);
+
     a_.transport.set_cue(0, 0.0, 1);
     a_.transport.set_cue(1, 30.0, 2);
     a_.transport.set_cue(2, 96.0, 3);

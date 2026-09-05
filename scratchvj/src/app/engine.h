@@ -25,6 +25,7 @@
 #include "core/effect.h"
 #include "core/framewindow.h"
 #include "core/gestures.h"
+#include "core/library.h"
 #include "core/mapping.h"
 #include "core/mixer.h"
 #include "core/modulator.h"
@@ -146,6 +147,14 @@ public:
     const Layer& overlay_layer() const { return overlay_layer_; }
     StackWeights stack() const { return stack_; }
 
+    // The clip library and the play queue. They belong to the engine rather than
+    // to a front end because a pad on the mixer loads the next clip just as a
+    // click does, and both have to reach the same list.
+    Library& library() { return library_; }
+    const Library& library() const { return library_; }
+    Queue& queue() { return queue_; }
+    const Queue& queue() const { return queue_; }
+
     const MappingEngine& mapping() const { return mapping_; }
     const ModulatorBank& modulators() const { return modulators_; }
     const EffectRack& rack() const { return rack_; }
@@ -168,6 +177,8 @@ private:
     Deck overlay_;
     Layer overlay_layer_;
     StackWeights stack_;
+    Library library_;
+    Queue queue_;
     MappingEngine mapping_;
     ModulatorBank modulators_;
     EffectRack rack_{3};

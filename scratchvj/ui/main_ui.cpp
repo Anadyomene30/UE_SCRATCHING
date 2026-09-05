@@ -75,12 +75,33 @@ int main(int, char**) {
     ImGui::GetIO().IniFilename = nullptr;  // no layout file next to the binary
     svj::ui::apply_style();
 
-    // Dear ImGui defaults to a 13 pixel bitmap font, which on a 1440 wide window
-    // on any current display is too small to read at arm's length -- and arm's
-    // length is the only distance this interface is ever read from, because the
-    // hands are on the platters. Scaled by the display, with a floor under it.
-    const float display_scale = SDL_GetWindowDisplayScale(window);
-    ImGui::GetStyle().FontScaleMain = 1.55f * (display_scale > 0.0f ? display_scale : 1.0f);
+    // The mockup's faces, not ImGui's default bitmap one. This is not decoration:
+    // the whole interface is numbers read at arm's length while both hands are on
+    // the platters, so a real text face at a real size, and a monospace with
+    // tabular figures for anything that has to line up in a column, is the
+    // difference between glanceable and unreadable. Both are OFL and vendored in
+    // ui/fonts. A missing file degrades to the default face rather than failing.
+    const float scale = SDL_GetWindowDisplayScale(window);
+    const float dpi = scale > 0.0f ? scale : 1.0f;
+
+    ImGuiIO& io = ImGui::GetIO();
+    char* base = SDL_GetBasePath() != nullptr ? SDL_strdup(SDL_GetBasePath()) : nullptr;
+    if (base != nullptr) {
+        char path[1024];
+        std::snprintf(path, sizeof(path), "%sfonts/Archivo-Variable.ttf", base);
+        svj::ui::g_fonts.sans = io.Fonts->AddFontFromFileTTF(path, 17.0f * dpi);
+        svj::ui::g_fonts.small = io.Fonts->AddFontFromFileTTF(path, 13.0f * dpi);
+        std::snprintf(path, sizeof(path), "%sfonts/DMMono-Regular.ttf", base);
+        svj::ui::g_fonts.mono = io.Fonts->AddFontFromFileTTF(path, 17.0f * dpi);
+        SDL_free(base);
+    }
+    if (svj::ui::g_fonts.sans == nullptr) {
+        // No font files next to the binary: fall back, and scale the bitmap face
+        // up so it is at least legible.
+        ImGui::GetStyle().FontScaleMain = 1.55f * dpi;
+    } else {
+        io.FontDefault = svj::ui::g_fonts.sans;
+    }
     ImGui_ImplSDL3_InitForSDLRenderer(window, renderer);
     ImGui_ImplSDLRenderer3_Init(renderer);
 
