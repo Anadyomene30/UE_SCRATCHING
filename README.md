@@ -99,6 +99,11 @@ that need to be tested against the real hardware — see
 [`docs/roadmap.md`](docs/roadmap.md).** That document is the durable record of
 everything that has been decided; this README only summarises the current state.
 
+**Picking this up on a different machine, or with a fresh Claude Code session?**
+See [`docs/passation.md`](docs/passation.md) — cloning, installing Claude Code,
+and what loads automatically (`CLAUDE.md`, read on every session start in this
+repo, points straight at the roadmap).
+
 ## Design notes
 
 Longer reasoning lives in `docs/`: the full roadmap and design rationale
