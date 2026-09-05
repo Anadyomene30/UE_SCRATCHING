@@ -25,7 +25,7 @@ Toute nouvelle fonctionnalité doit respecter ces deux règles.
 
 ```sh
 cmake -S . -B build && cmake --build build
-ctest --test-dir build --output-on-failure    # 335 tests, doivent tous passer
+ctest --test-dir build --output-on-failure    # 342 tests, doivent tous passer
 ./build/scratchvj/scratchvj demo              # démo sans matériel
 ./build/scratchvj/scratchvj effects           # catalogue d'effets
 ./build/scratchvj/scratchvj layout            # checklist MIDI learn
@@ -86,8 +86,8 @@ l'aveugle :
 - Un vrai backend MIDI (RtMidi) et audio (miniaudio/ASIO)
 - Le rendu GPU (bgfx). L'interface Dear ImGui existe (`ui/`), mais elle ne
   dessine encore aucune image — il n'y a pas de frame décodée à afficher
-- Les sorties Spout/Syphon/NDI
-- Le plugin Unreal `ScratchLink`
+- Les sorties Syphon (macOS) et NDI — Spout est fait et vérifié (ui/share, spout_check)
+- Le test en scène du plugin Unreal `ScratchLink` — il compile contre UE 5.7 et le flux UDP est vérifié, mais personne n'a encore scratché une scène avec
 
 **Deux tests qui reviennent à l'utilisateur, devant le matériel** (voir le
 roadmap pour le détail) :

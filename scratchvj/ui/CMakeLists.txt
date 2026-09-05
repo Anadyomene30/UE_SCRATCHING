@@ -66,7 +66,7 @@ if(WIN32)
   FetchContent_MakeAvailable(spout2)
 endif()
 
-add_executable(scratchvj_ui WIN32 main_ui.cpp media.cpp panels.cpp share.cpp)
+add_executable(scratchvj_ui WIN32 main_ui.cpp media.cpp netout.cpp panels.cpp share.cpp)
 target_link_libraries(scratchvj_ui PRIVATE scratchvj_app scratchvj_imgui SDL3::SDL3)
 if(WIN32)
   target_link_libraries(scratchvj_ui PRIVATE SpoutDX_static d3d11 dxgi)
@@ -75,6 +75,11 @@ if(WIN32)
   # path is testable end to end with no third-party software installed.
   add_executable(spout_check tools/spout_check.cpp)
   target_link_libraries(spout_check PRIVATE SpoutDX_static d3d11 dxgi)
+
+  # Same idea for the UDP control stream: a listener decoding with the very
+  # core/protocol the packets were encoded with.
+  add_executable(net_check tools/net_check.cpp)
+  target_link_libraries(net_check PRIVATE scratchvj_core ws2_32)
 endif()
 
 # The vendored sources are not ours to keep warning-clean, so the strict flags

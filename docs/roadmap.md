@@ -18,8 +18,8 @@ tout ce qui reste à faire survive à la session qui l'a produit.
 | 8. Mode autonome | Non commencé (a besoin d'un vrai backend audio) | — |
 | 9. Effets et modulateurs | Rack, catalogue et LFO/enveloppes faits ; FFT audio-réactive non faite | `core/effect`, `core/modulator` |
 | 10. Entrées live | Non commencé | — |
-| 11. Sorties | Corner pin et masque faits ; Spout/NDI/écran réels non faits | `core/warp` |
-| 12. Unreal | Non commencé (protocole réseau prêt à l'emploi) | `core/protocol` |
+| 11. Sorties | Corner pin, masque, compositeur du program (`core/compose`, testé) et **sortie Spout vérifiée** par un récepteur indépendant (`spout_check`) ; Syphon/NDI/plein écran restants | `core/warp`, `core/compose`, `ui/share` |
+| 12. Unreal | L'app émet le flux UDP (vérifié par `net_check`) et le plugin `ScratchLink` existe — subsystem + échantillonnage Hermite + dilation temporelle — compilé contre UE 5.7 ; le test en scène reste à faire | `core/protocol`, `ui/netout`, `unreal/ScratchLink` |
 
 Plus, hors plan initial : `core/playback` (source de transport et modes de
 lecture par deck), `core/library` (bibliothèque et queue), `core/take`

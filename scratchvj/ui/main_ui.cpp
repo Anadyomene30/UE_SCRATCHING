@@ -30,6 +30,7 @@
 #include "imgui_impl_sdlrenderer3.h"
 #include "core/compose.h"
 #include "media.h"
+#include "netout.h"
 #include "panels.h"
 #include "share.h"
 
@@ -144,6 +145,14 @@ int main(int, char**) {
     // can be discovered never gets discovered.
     svj::ui::ProgramShare share;
     share.open("scratchvj");
+
+    // The control stream, on localhost by default: Unreal, TouchDesigner or the
+    // net_check tool listen on the same machine first. Opened unconditionally
+    // for the same reason the Spout sender is.
+    svj::ui::ControlStream control;
+    control.open("127.0.0.1", svj::ui::kDefaultControlPort);
+    const SchemaPacket wire_schema = engine.schema();
+    double last_schema_sent_s = -10.0;
     {
         std::vector<std::filesystem::path> caches;
         std::error_code missing;
@@ -242,6 +251,14 @@ int main(int, char**) {
         frame.deck_b = simulation.deck_b();
         frame.commands_a = to_commands(simulation.events());
         engine.step(frame);
+
+        // The control stream: state every frame, schema once a second so a
+        // client attaching mid-set still learns what the floats mean.
+        control.send_state(engine.packet(now_us, wire_schema.schema_hash));
+        if (wall_s - last_schema_sent_s >= 1.0) {
+            control.send_schema(wire_schema);
+            last_schema_sent_s = wall_s;
+        }
 
         ImGui_ImplSDLRenderer3_NewFrame();
         ImGui_ImplSDL3_NewFrame();
