@@ -60,7 +60,7 @@ a real performance instead of a guess.
 
 ## Current state
 
-The engine's logic is written and covered by **290 tests**; the parts that touch
+The engine's logic is written and covered by **301 tests**; the parts that touch
 hardware are not.
 
 | Module | What it does |
@@ -86,6 +86,7 @@ hardware are not.
 | `core/take` | Recording and replaying a performance's control stream |
 | `core/protocol` | The UDP wire format carrying surface state to Unreal |
 | `config/mapping_io` | `mapping.json`, written with names rather than numbers |
+| `app/engine` | The per-frame composition: two decks, the surface, the mixer, the rack |
 | `app/` | The simulation and the terminal dashboard |
 
 Not yet written, and all of it needs hardware or heavy dependencies to be worth

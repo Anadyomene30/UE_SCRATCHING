@@ -10,12 +10,10 @@
 #include <thread>
 
 #include "app/dashboard.h"
+#include "app/engine.h"
 #include "app/simulation.h"
 #include "core/effect.h"
 #include "core/layout.h"
-#include "core/mixer.h"
-#include "core/modulator.h"
-#include "core/protocol.h"
 #include "core/take.h"
 
 namespace {
@@ -61,139 +59,18 @@ std::string option(int argc, char** argv, const char* name, const std::string& f
     return fallback;
 }
 
-// Everything a deck needs, wired together the way the real application will.
-struct Deck {
-    TimecodeTracker timecode;
-    GestureTracker gestures;
-    Transport transport;
-    FrameWindow window;
-    CacheHeader clip;
-    std::string name;
-
-    void configure(std::string label, double duration_s, std::uint32_t width,
-                   std::uint32_t height, BlockFormat format, SignalProfile profile) {
-        name = std::move(label);
-        clip.width = width;
-        clip.height = height;
-        clip.fps_num = 60;
-        clip.fps_den = 1;
-        clip.format = format;
-        clip.frame_count = static_cast<std::uint32_t>(duration_s * 60.0);
-
-        TimecodeConfig config;
-        config.profile = profile;
-        config.mode = TransportMode::Relative;
-        timecode = TimecodeTracker(config);
-
-        transport.configure(clip.duration_s(), BeatGrid{kDemoBpm, 0.0});
-
-        WindowConfig window_config;
-        window_config.budget_bytes = 256ull << 20;  // 256 MiB, to show it sliding
-        window.configure(clip.frame_count,
-                         block_bytes_per_frame(width, height, format), window_config);
-    }
-
-    double advance(const DecoderSample& sample) {
-        const TimecodeState& state = timecode.submit(sample);
-        gestures.update(sample.time_s, state.velocity, state.confidence);
-        const double played = transport.map(state.position_s);
-        window.update(clip.frame_at(played), state.velocity);
-        return played;
-    }
-};
-
-void build_mappings(MappingEngine& mapping) {
-    const auto control = [](std::string name, std::string id, std::string target,
-                            float lo, float hi) {
-        Mapping m;
-        m.name = std::move(name);
-        m.source.kind = SourceKind::Control;
-        m.source.control_id = std::move(id);
-        m.transform.out_lo = lo;
-        m.transform.out_hi = hi;
-        m.destination.target = std::move(target);
-        return m;
-    };
-
-    mapping.add(control("ch1.eq.hi -> deck A yaw 360", "ch1.eq.hi", "deck.a.yaw", -180.0f, 180.0f));
-    mapping.add(control("ch1.eq.mid -> deck A pitch 360", "ch1.eq.mid", "deck.a.pitch", -90.0f, 90.0f));
-
-    Mapping filter = control("ch1.filter -> cutoff + flou", "ch1.filter", "fx.a.filter", 0.0f, 1.0f);
-    filter.transform.deadzone = 0.08f;
-    mapping.add(filter);
-
-    mapping.add(control("crossfader -> transition A/B", "xfader", "mix.transition", 0.0f, 1.0f));
-
-    Mapping glitch;
-    glitch.name = "deck A vitesse -> glitch";
-    glitch.source.kind = SourceKind::DeckVelocity;
-    glitch.transform.in_lo = -8.0f;
-    glitch.transform.in_hi = 8.0f;
-    glitch.transform.smoothing_ms = 60.0f;
-    glitch.destination.target = "fx.a.glitch.amount";
-    mapping.add(glitch);
-
-    Mapping shake;
-    shake.name = "deck A scratch/s -> OSC /ue/shake";
-    shake.source.kind = SourceKind::DeckScratchRate;
-    shake.transform.in_hi = 12.0f;
-    shake.destination.kind = DestinationKind::Osc;
-    shake.destination.target = "/ue/shake";
-    mapping.add(shake);
-
-    Mapping lfo;
-    lfo.name = "LFO 1 (2 temps) -> kaléidoscope";
-    lfo.source.kind = SourceKind::Modulator;
-    lfo.source.index = 0;
-    lfo.transform.out_hi = 360.0f;
-    lfo.destination.target = "fx.a.kaleidoscope.rotation";
-    mapping.add(lfo);
-
-    Mapping envelope;
-    envelope.name = "enveloppe scratch -> bloom";
-    envelope.source.kind = SourceKind::Modulator;
-    envelope.source.index = 1;
-    envelope.destination.target = "fx.a.bloom.amount";
-    mapping.add(envelope);
-
-    Mapping whip;
-    whip.name = "backspin A -> OSC /ue/whippan";
-    whip.source.kind = SourceKind::Gesture;
-    whip.source.gesture_bit = kGestureBackspinA;
-    whip.destination.kind = DestinationKind::Osc;
-    whip.destination.target = "/ue/whippan";
-    mapping.add(whip);
-}
-
-StatePacket to_packet(std::uint64_t t_us, std::uint32_t schema, const Deck& a, const Deck& b,
-                      const Surface& surface) {
-    StatePacket packet;
-    packet.t_us = t_us;
-    packet.schema_hash = schema;
-
-    const auto fill = [](DeckWire& wire, const Deck& deck) {
-        wire.pos_s = static_cast<float>(deck.transport.position_s());
-        wire.velocity = deck.timecode.state().velocity;
-        wire.acceleration = deck.gestures.acceleration();
-        wire.scratch_rate = deck.gestures.scratch_rate();
-        wire.confidence = deck.timecode.state().confidence;
-    };
-    fill(packet.deck_a, a);
-    fill(packet.deck_b, b);
-
-    if (a.gestures.scratching()) packet.gesture_bits |= kGestureScratchingA;
-    if (a.gestures.backspin()) packet.gesture_bits |= kGestureBackspinA;
-    if (a.timecode.state().link == LinkState::Lost) packet.gesture_bits |= kGestureHoldingA;
-    if (b.gestures.scratching()) packet.gesture_bits |= kGestureScratchingB;
-
-    packet.values.reserve(surface.size());
-    packet.known.reserve(surface.size());
-    for (std::size_t i = 0; i < surface.size(); ++i) {
-        const Control& c = surface.at(static_cast<ControlIndex>(i));
-        packet.values.push_back(c.value);
-        packet.known.push_back(c.known);
-    }
-    return packet;
+// The script's events, as the engine's command struct. The demo is a front end
+// like any other: it says what the buttons did, and the engine decides what that
+// means for the transport.
+DeckCommands to_commands(const SimEvent& events) {
+    DeckCommands commands;
+    commands.loop_in = events.loop_in;
+    commands.loop_exit = events.loop_exit;
+    commands.slip_on = events.slip_on;
+    commands.slip_off = events.slip_off;
+    commands.cue_jump = events.cue_jump;
+    commands.cue_index = events.cue_index;
+    return commands;
 }
 
 int run_demo(int argc, char** argv) {
@@ -202,60 +79,16 @@ int run_demo(int argc, char** argv) {
     const bool ansi = !flag(argc, argv, "--plain");
     const std::string record_path = option(argc, argv, "--record", "");
 
-    Surface surface;
-    Simulation simulation;
-    simulation.configure(surface);
+    Engine engine;
+    engine.configure(kDemoBpm);
 
-    MappingEngine mapping;
-    build_mappings(mapping);
-    const auto unresolved = mapping.resolve(surface);
-    for (const std::string& id : unresolved) {
+    Simulation simulation;
+    simulation.configure(engine.surface());
+    for (const std::string& id : engine.bind()) {
         std::cerr << "mapping refers to an unknown control: " << id << "\n";
     }
 
-    Deck a, b;
-    a.configure("DECK A  tokyo_nightdrive_360", 240.0, 3840, 1920, BlockFormat::BC1,
-                SignalProfile::Wireless);
-    b.configure("DECK B  grain_loop_04", 12.0, 1920, 1080, BlockFormat::BC7,
-                SignalProfile::Wireless);
-    a.transport.set_cue(0, 0.0, 1);
-    a.transport.set_cue(1, 30.0, 2);
-    a.transport.set_cue(2, 96.0, 3);
-
-    Anchor anchor;
-    anchor.set(0.0, 0.0, 0.0, 0);
-
-    // A tempo-synced LFO and an envelope following how hard the platter is being
-    // worked. Both reach the mapping engine as plain numbers.
-    ModulatorBank modulators;
-    Lfo sweep;
-    sweep.shape = LfoShape::Triangle;
-    sweep.beats = 2.0;
-    modulators.add(sweep);
-    Envelope follower;
-    follower.attack_ms = 20.0f;
-    follower.release_ms = 400.0f;
-    modulators.add(follower);
-
-    EffectRack rack(3);
-    rack.load(0, EffectType::Delay);
-    rack.at(0).sync.tempo = true;
-    rack.at(0).sync.beats = 0.5;
-    rack.at(0).shared.mix = 0.62f;
-    rack.at(0).shared.feedback = 0.55f;
-    rack.load(1, EffectType::LowPass);
-    rack.at(1).shared.mix = 0.41f;
-    // Unlinked on purpose, to show the one state where the two domains diverge.
-    rack.load(2, EffectType::SlitScan);
-    rack.at(2).shared.mix = 0.77f;
-    rack.at(2).unlink();
-    rack.at(2).audio_override.mix = 0.0f;
-
-    CutDetector cuts;
-
-    SchemaPacket schema;
-    schema.entries = schema_from(surface);
-    schema.schema_hash = svj::schema_hash(schema.entries);
+    const SchemaPacket schema = engine.schema();
 
     TakeWriter take;
     std::string error;
@@ -271,65 +104,42 @@ int run_demo(int argc, char** argv) {
 
     for (double t = 0.0; t < seconds; t += dt) {
         const auto now_us = static_cast<std::uint64_t>(t * 1e6);
-        simulation.step(t, surface, now_us);
+        simulation.step(t, engine.surface(), now_us);
 
-        const SimEvent& events = simulation.events();
-        if (events.slip_on) a.transport.set_slip(true);
-        if (events.loop_in) {
-            a.transport.loop_in(a.transport.position_s());
-            a.transport.loop_out(a.transport.position_s() + 2.0);
-        }
-        if (events.loop_exit) a.transport.exit_loop();
-        if (events.slip_off) a.transport.set_slip(false);
-        if (events.cue_jump) a.transport.jump_to_cue(events.cue_index);
-
-        a.advance(simulation.deck_a());
-        b.advance(simulation.deck_b());
-
-        const float crossfader = surface.at(surface.find("xfader")).value;
-        cuts.update(t, crossfader);
-        const MixWeights weights =
-            mix_weights(crossfader, surface.at(surface.find("ch1.fader")).value,
-                        surface.at(surface.find("ch2.fader")).value, FaderCurve::Sharp);
-
-        // The LFO's phase comes from the played position, so it follows the
-        // platter -- backwards included -- instead of marching on regardless.
-        const double beat_position = a.transport.position_s() * (kDemoBpm / 60.0);
-        modulators.set_envelope_input(1, a.gestures.scratch_rate() / 12.0f);
-        modulators.update(t, beat_position, static_cast<float>(dt));
-
-        EngineInputs inputs;
-        inputs.deck[0].velocity = a.timecode.state().velocity;
-        inputs.deck[0].scratch_rate = a.gestures.scratch_rate();
-        inputs.deck[0].confidence = a.timecode.state().confidence;
-        inputs.deck[0].position_s = static_cast<float>(a.transport.position_s());
-        inputs.deck[1].velocity = b.timecode.state().velocity;
-        if (a.gestures.backspin()) inputs.gesture_bits |= kGestureBackspinA;
-        inputs.modulators = modulators.values().data();
-        inputs.modulator_count = modulators.size();
-        mapping.evaluate(surface, inputs, static_cast<float>(dt));
+        EngineFrame frame;
+        frame.time_s = t;
+        frame.dt_s = static_cast<float>(dt);
+        frame.now_us = now_us;
+        frame.deck_a = simulation.deck_a();
+        frame.deck_b = simulation.deck_b();
+        frame.commands_a = to_commands(simulation.events());
+        engine.step(frame);
 
         if (!record_path.empty()) {
-            if (!take.write_state(to_packet(now_us, schema.schema_hash, a, b, surface), error)) {
+            if (!take.write_state(engine.packet(now_us, schema.schema_hash), error)) {
                 std::cerr << error << "\n";
                 return 1;
             }
         }
 
+        Deck& a = engine.deck_a();
+        Deck& b = engine.deck_b();
+
         DashboardView view;
         view.elapsed_s = t;
         view.phase = simulation.phase();
-        view.bpm = kDemoBpm;
-        view.anchor = &anchor;
+        view.bpm = engine.bpm();
+        view.anchor = &engine.anchor();
         view.jump_count = a.timecode.jump_count();
-        view.weights = weights;
-        view.cuts = &cuts;
-        view.rack = &rack;
-        view.modulators = &modulators;
+        view.weights = engine.weights();
+        view.cuts = &engine.cuts();
+        view.rack = &engine.rack();
+        view.modulators = &engine.modulators();
 
         DeckView va{a.name, &a.timecode.state(), &a.gestures, &a.transport, &a.window, &a.clip};
         DeckView vb{b.name, &b.timecode.state(), &b.gestures, &b.transport, &b.window, &b.clip};
-        std::cout << render_dashboard(view, va, vb, surface, mapping, ansi) << std::flush;
+        std::cout << render_dashboard(view, va, vb, engine.surface(), engine.mapping(), ansi)
+                  << std::flush;
 
         const auto target = started + std::chrono::duration<double>(t + dt);
         std::this_thread::sleep_until(target);

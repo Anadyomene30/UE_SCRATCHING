@@ -1,4 +1,5 @@
 #include "app/dashboard.h"
+#include "app/engine.h"
 #include "app/simulation.h"
 #include "harness.h"
 
@@ -21,15 +22,15 @@ struct Outcome {
 };
 
 Outcome run(double seconds, double fps) {
-    Surface surface;
+    // Driven through the Engine, which is the object `scratchvj demo` runs. A
+    // hand-rolled tracker-and-gestures pair here would be a lookalike: it would
+    // keep passing while the wiring the command actually uses drifted away from
+    // it, which is exactly the failure these tests exist to catch.
+    Engine engine;
+    engine.configure(124.0);
     Simulation simulation;
-    simulation.configure(surface);
-
-    TimecodeConfig config;
-    config.profile = SignalProfile::Wireless;
-    config.mode = TransportMode::Relative;
-    TimecodeTracker tracker(config);
-    GestureTracker gestures;
+    simulation.configure(engine.surface());
+    engine.bind();
 
     Outcome outcome;
     bool inside_dropout = false;
@@ -37,9 +38,26 @@ Outcome run(double seconds, double fps) {
 
     const double dt = 1.0 / fps;
     for (double t = 0.0; t < seconds; t += dt) {
-        simulation.step(t, surface, static_cast<std::uint64_t>(t * 1e6));
-        const TimecodeState& state = tracker.submit(simulation.deck_a());
-        gestures.update(t, state.velocity, state.confidence);
+        const auto now_us = static_cast<std::uint64_t>(t * 1e6);
+        simulation.step(t, engine.surface(), now_us);
+
+        EngineFrame frame;
+        frame.time_s = t;
+        frame.dt_s = static_cast<float>(dt);
+        frame.now_us = now_us;
+        frame.deck_a = simulation.deck_a();
+        frame.deck_b = simulation.deck_b();
+        const SimEvent& e = simulation.events();
+        frame.commands_a.loop_in = e.loop_in;
+        frame.commands_a.loop_exit = e.loop_exit;
+        frame.commands_a.slip_on = e.slip_on;
+        frame.commands_a.slip_off = e.slip_off;
+        frame.commands_a.cue_jump = e.cue_jump;
+        frame.commands_a.cue_index = e.cue_index;
+        engine.step(frame);
+
+        const TimecodeState& state = engine.deck_a().timecode.state();
+        const GestureTracker& gestures = engine.deck_a().gestures;
 
         if (state.link == LinkState::Lost) {
             outcome.saw_lost_link = true;
@@ -58,7 +76,7 @@ Outcome run(double seconds, double fps) {
         if (state.velocity < -0.5f) outcome.saw_reverse = true;
         if (gestures.scratch_rate() > 3.0f) outcome.saw_fast_scratch = true;
     }
-    outcome.jumps = tracker.jump_count();
+    outcome.jumps = engine.deck_a().timecode.jump_count();
     return outcome;
 }
 

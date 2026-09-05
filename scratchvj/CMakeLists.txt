@@ -67,6 +67,7 @@ endif()
 # being eyeballed.
 add_library(scratchvj_app STATIC
   src/app/dashboard.cpp
+  src/app/engine.cpp
   src/app/simulation.cpp
 )
 target_include_directories(scratchvj_app PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
@@ -95,6 +96,7 @@ if(SCRATCHVJ_BUILD_TESTS)
     tests/test_config.cpp
     tests/test_curve.cpp
     tests/test_effect.cpp
+    tests/test_engine.cpp
     tests/test_framewindow.cpp
     tests/test_gestures.cpp
     tests/test_layout.cpp
