@@ -1,4 +1,7 @@
 build/
+# Out-of-tree build trees: the UI configuration keeps its own, because it pulls
+# SDL3 and Dear ImGui into _deps and the default build must stay free of them.
+build-*/
 out/
 .cache/
 compile_commands.json
@@ -13,3 +16,7 @@ Thumbs.db
 .vs/
 .vscode/
 .idea/
+
+# Seeded design canvas: a ~2.5 MB generated payload that bundles the editor.
+# Regenerate it from the .dc.html working files with the design skill's helper.
+design/maquette-scratchvj.html

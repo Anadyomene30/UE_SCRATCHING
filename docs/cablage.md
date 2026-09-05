@@ -13,7 +13,8 @@ Serato fait le DVS ; `scratchvj` ne fait que la vidéo. Comme les deux lisent le
 
 - **Ancrage** par deck : `offset = position_timecode − position_vidéo`, posé d'un
   coup de pad au moment voulu.
-- **Dérive** affichée en permanence.
+- **Fraîcheur** affichée en permanence — et non une dérive en secondes, qui serait
+  inventée : voir l'encadré ci-dessous.
 - **Re-ancrage** après tout ce qui casse la correspondance : needle drop, boucle,
   censor, ou passage en mode relatif dans Serato.
 
@@ -21,6 +22,13 @@ Serato fait le DVS ; `scratchvj` ne fait que la vidéo. Comme les deux lisent le
 > L'ancrage n'est pas un raccourci, c'est le seul mécanisme possible. D'où
 > l'exigence d'ergonomie : le re-ancrage doit être à un pad de distance, jamais
 > caché dans un menu.
+>
+> **Et pour la même raison, la dérive n'est pas mesurable.** Si le DJ boucle ou
+> pose l'aiguille dans Serato, l'audio bouge et le timecode ne bouge pas : la
+> correspondance casse sans rien d'observable de notre côté. Un nombre de secondes
+> affiché serait donc inventé. On affiche une **fraîcheur** — le temps écoulé
+> depuis la pose et le nombre de discontinuités vues — c'est-à-dire un risque et
+> non une erreur.
 
 Contrainte technique : l'entrée audio est ouverte **en lecture seule et jamais en
 exclusif**. Ouvrir le périphérique en exclusif dans ce mode empêcherait Serato de

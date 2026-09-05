@@ -1,0 +1,162 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=DM+Mono:wght@300;400;500&display=swap">
+  <style>
+    body { margin: 0; background: #141412; color: #E9E6DF;
+           font-family: Archivo, "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+    a { color: #C9762F; } a:hover { color: #E08B3E; }
+    .lbl { font-size: 9px; letter-spacing: .2em; text-transform: uppercase; color: #605D56; font-weight: 500; }
+    .mono { font-family: "DM Mono", ui-monospace, Consolas, monospace; font-variant-numeric: tabular-nums; }
+    .handle { position: absolute; width: 9px; height: 9px; background: #C9762F; }
+  </style>
+</helmet>
+
+<div style="width: 720px; min-height: 800px; background: #141412; display: flex; flex-direction: column;">
+
+  <div style="display: flex; align-items: baseline; gap: 12px; padding: 16px 20px; border-bottom: 1px solid #2E2D28;">
+    <span style="font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: #97938A; font-weight: 600;">Sortie</span>
+    <span class="mono" style="font-size: 11px; color: #605D56;">programme</span>
+  </div>
+
+  <div style="padding: 20px; display: flex; flex-direction: column; gap: 22px;">
+
+    <!-- screen picker -->
+    <div style="display: flex; flex-direction: column; gap: 11px;">
+      <span class="lbl">&#201;cran</span>
+      <div style="display: flex; flex-direction: column; gap: 7px;">
+        <div style="display: flex; align-items: center; gap: 11px;">
+          <div style="width: 2px; height: 13px; background: #C9762F;"></div>
+          <span style="flex: 1; font-size: 13px; color: #E9E6DF;">DELL U2720Q</span>
+          <span class="mono" style="font-size: 11px; color: #605D56;">3840&#215;2160 &#183; 60 Hz</span>
+          <span style="font-size: 9px; letter-spacing: .16em; text-transform: uppercase; color: #C9762F;">Plein &#233;cran</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 11px; padding-left: 13px;">
+          <span style="flex: 1; font-size: 13px; color: #97938A;">Epson EB-2250U</span>
+          <span class="mono" style="font-size: 11px; color: #605D56;">1920&#215;1200 &#183; 60 Hz</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 11px; padding-left: 13px;">
+          <span style="flex: 1; font-size: 13px; color: #97938A;">&#201;cran interne</span>
+          <span class="mono" style="font-size: 11px; color: #605D56;">2560&#215;1600 &#183; 120 Hz</span>
+          <span style="font-size: 9px; letter-spacing: .16em; text-transform: uppercase; color: #605D56;">Interface</span>
+        </div>
+      </div>
+      <span style="font-size: 12.5px; color: #605D56; line-height: 1.5;">Choix m&#233;moris&#233; et rappel&#233; au d&#233;marrage &#8212; on ne refait pas ce r&#233;glage sous pression en arrivant.</span>
+    </div>
+
+    <!-- corner pin -->
+    <div style="display: flex; flex-direction: column; gap: 11px;">
+      <div style="display: flex; align-items: baseline; gap: 12px;">
+        <span class="lbl">Corner pin</span>
+        <span class="mono" style="font-size: 11px; color: #7D8F6E;">actif</span>
+        <span style="margin-left: auto; font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: #605D56;">R&#233;initialiser</span>
+      </div>
+
+      <div style="position: relative; height: 260px; background: #0A0A09; border: 1px solid #232220; overflow: hidden;">
+        <!-- alignment grid -->
+        <div style="position: absolute; inset: 0; background:
+              repeating-linear-gradient(90deg, rgba(233,230,223,.05) 0 1px, transparent 1px 40px),
+              repeating-linear-gradient(0deg, rgba(233,230,223,.05) 0 1px, transparent 1px 40px);"></div>
+
+        <!-- the warped output quad -->
+        <div style="position: absolute; left: 60px; top: 30px; width: 560px; height: 200px;
+                    clip-path: polygon(6% 0%, 100% 9%, 94% 100%, 0% 88%);
+                    background:
+                      radial-gradient(ellipse 58% 92% at 27% 64%, rgba(201,118,47,.30), transparent 64%),
+                      radial-gradient(ellipse 50% 84% at 76% 38%, rgba(124,139,145,.22), transparent 66%),
+                      linear-gradient(148deg,#1B1E22,#211B17 62%,#0D0D0C);"></div>
+
+        <!-- quad outline -->
+        <svg width="720" height="260" viewBox="0 0 720 260" style="position: absolute; left: 0; top: 0;">
+          <polygon points="93.6,30 620,48 586.4,230 60,206" fill="none" stroke="#C9762F" stroke-width="1"></polygon>
+        </svg>
+
+        <div class="handle" style="left: 89px; top: 25px;"></div>
+        <div class="handle" style="left: 616px; top: 43px;"></div>
+        <div class="handle" style="left: 582px; top: 225px;"></div>
+        <div class="handle" style="left: 56px; top: 201px;"></div>
+
+        <span class="mono" style="position: absolute; right: 10px; bottom: 8px; font-size: 10px; color: #605D56;">grille 40 px &#183; G pour masquer</span>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px;">
+        <div>
+          <span class="lbl">Haut gauche</span>
+          <div class="mono" style="font-size: 12px; color: #E9E6DF; margin-top: 4px;">+34, &#8722;12</div>
+        </div>
+        <div>
+          <span class="lbl">Haut droit</span>
+          <div class="mono" style="font-size: 12px; color: #E9E6DF; margin-top: 4px;">&#8722;8, +6</div>
+        </div>
+        <div>
+          <span class="lbl">Bas droit</span>
+          <div class="mono" style="font-size: 12px; color: #E9E6DF; margin-top: 4px;">&#8722;22, &#8722;4</div>
+        </div>
+        <div>
+          <span class="lbl">Bas gauche</span>
+          <div class="mono" style="font-size: 12px; color: #E9E6DF; margin-top: 4px;">+2, +18</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- geometry + mask -->
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; padding-top: 4px; border-top: 1px solid #232220;">
+      <div style="display: flex; flex-direction: column; gap: 10px; padding-top: 16px;">
+        <span class="lbl">G&#233;om&#233;trie</span>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="font-size: 13px; color: #97938A;">&#201;chelle</span>
+          <span class="mono" style="font-size: 12px; color: #E9E6DF;">100.0 %</span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="font-size: 13px; color: #97938A;">Rotation</span>
+          <span class="mono" style="font-size: 12px; color: #E9E6DF;">0.0&#176;</span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="font-size: 13px; color: #97938A;">Retournement</span>
+          <span class="mono" style="font-size: 12px; color: #605D56;">aucun</span>
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px; padding-top: 16px;">
+        <span class="lbl">Masque</span>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="font-size: 13px; color: #97938A;">Points</span>
+          <span class="mono" style="font-size: 12px; color: #E9E6DF;">6</span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="font-size: 13px; color: #97938A;">Adoucissement</span>
+          <span class="mono" style="font-size: 12px; color: #E9E6DF;">12 px</span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="font-size: 13px; color: #97938A;">Warp maill&#233;</span>
+          <span class="mono" style="font-size: 12px; color: #605D56;">via Spout</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- shares -->
+    <div style="display: flex; align-items: center; gap: 22px; padding-top: 16px; border-top: 1px solid #232220;">
+      <div style="display: flex; flex-direction: column; gap: 5px;">
+        <span class="lbl">Spout</span>
+        <span class="mono" style="font-size: 12px; color: #7D8F6E;">scratchvj/program</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 5px;">
+        <span class="lbl">NDI</span>
+        <span class="mono" style="font-size: 12px; color: #7D8F6E;">actif</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 5px;">
+        <span class="lbl">Enregistrement</span>
+        <span class="mono" style="font-size: 12px; color: #A8564E;">04:12 &#183; 1.4 Go</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

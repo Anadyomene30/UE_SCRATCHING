@@ -1,0 +1,84 @@
+{
+  "artboards": [
+    {
+      "file": "Main.dc.html",
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 1040,
+      "title": "Mode performance"
+    },
+    {
+      "file": "Complet.dc.html",
+      "x": 1560,
+      "y": 0,
+      "w": 1200,
+      "h": 900,
+      "title": "Mode complet — second écran"
+    },
+    {
+      "file": "Effets.dc.html",
+      "x": 0,
+      "y": 1160,
+      "w": 560,
+      "h": 980,
+      "title": "Panneau effets"
+    },
+    {
+      "file": "Mapping.dc.html",
+      "x": 700,
+      "y": 1160,
+      "w": 700,
+      "h": 640,
+      "title": "Panneau mapping"
+    },
+    {
+      "file": "Sortie.dc.html",
+      "x": 1500,
+      "y": 1160,
+      "w": 720,
+      "h": 800,
+      "title": "Sortie — écran et corner pin"
+    }
+  ],
+  "annotations": [
+    {
+      "id": "note-ghost",
+      "x": 0,
+      "y": -150,
+      "w": 420,
+      "text": "Contrôles fantômes : les potards de l'Elite sont absolus, donc leur position est inconnue au lancement. Ils s'affichent en pointillé plutôt que d'afficher une valeur inventée."
+    },
+    {
+      "id": "note-link",
+      "x": 470,
+      "y": -150,
+      "w": 420,
+      "text": "Liaison Phase dans la barre de statut : le dock émet même plateau arrêté, donc silence = liaison perdue, pas plateau arrêté. Batterie vide et bug ne se distinguent pas autrement."
+    },
+    {
+      "id": "note-film",
+      "x": 940,
+      "y": -150,
+      "w": 420,
+      "text": "Filmstrip : le crochet ambre est la fenêtre VRAM, seule portion instantanément scratchable. La zone verte est la boucle active."
+    },
+    {
+      "id": "note-pin",
+      "x": 1500,
+      "y": 2020,
+      "w": 420,
+      "text": "Corner pin et masque suffisent pour caler sur une surface de travers. Le warp maillé et l'edge blending sortent en Spout vers Resolume ou MadMapper."
+    },
+    {
+      "id": "note-anchor",
+      "x": 1410,
+      "y": -150,
+      "w": 420,
+      "text": "Fraîcheur, pas dérive : Serato n'a pas d'API publique, donc l'écart réel est inobservable. On affiche le temps écoulé depuis l'ancrage et le nombre de discontinuités vues — un risque, pas une erreur mesurée."
+    }
+  ],
+  "launch": {
+    "view": "canvas"
+  }
+}

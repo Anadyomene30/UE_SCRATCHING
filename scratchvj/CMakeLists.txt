@@ -16,14 +16,27 @@ endif()
 # it compiles and its tests run on Windows, macOS and Linux from day one. That is
 # what makes the macOS CI job meaningful before any audio or GPU code exists.
 add_library(scratchvj_core STATIC
+  src/core/anchor.cpp
   src/core/curve.cpp
+  src/core/effect.cpp
+  src/core/framewindow.cpp
   src/core/gestures.cpp
   src/core/layout.cpp
   src/core/learn.cpp
+  src/core/library.cpp
   src/core/mapping.cpp
   src/core/midi.cpp
+  src/core/mixer.cpp
+  src/core/modulator.cpp
+  src/core/playback.cpp
   src/core/protocol.cpp
+  src/core/sphere.cpp
   src/core/surface.cpp
+  src/core/take.cpp
+  src/core/timecode.cpp
+  src/core/transport.cpp
+  src/core/videocache.cpp
+  src/core/warp.cpp
 )
 target_include_directories(scratchvj_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
@@ -46,6 +59,44 @@ else()
   target_compile_options(scratchvj_config PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
+# --- scratchvj (application) --------------------------------------------------
+#
+# The demo runs the whole engine off a scripted performance, so the behaviour can
+# be watched and recorded before any hardware is connected.
+# The simulation and the dashboard live in a library rather than in the
+# executable, so the demo's behaviour is covered by tests instead of only ever
+# being eyeballed.
+add_library(scratchvj_app STATIC
+  src/app/dashboard.cpp
+  src/app/engine.cpp
+  src/app/simulation.cpp
+)
+target_include_directories(scratchvj_app PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_link_libraries(scratchvj_app PUBLIC scratchvj_core)
+
+add_executable(scratchvj src/app/main.cpp)
+target_link_libraries(scratchvj PRIVATE scratchvj_app)
+
+if(MSVC)
+  target_compile_options(scratchvj_app PRIVATE /W4 /permissive-)
+  target_compile_options(scratchvj PRIVATE /W4 /permissive-)
+else()
+  target_compile_options(scratchvj_app PRIVATE -Wall -Wextra -Wpedantic)
+  target_compile_options(scratchvj PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+
+# --- the native front end -----------------------------------------------------
+#
+# OFF by default and in its own directory. The default build stays free of every
+# external dependency, which is what keeps the core testable from a bare checkout
+# on three operating systems -- and what makes the CI job that builds the default
+# configuration a real guarantee rather than a habit.
+option(SCRATCHVJ_BUILD_UI "Build the SDL3 + Dear ImGui front end" OFF)
+
+if(SCRATCHVJ_BUILD_UI)
+  add_subdirectory(ui)
+endif()
+
 # --- tests --------------------------------------------------------------------
 option(SCRATCHVJ_BUILD_TESTS "Build the scratchvj test suite" ON)
 
@@ -53,17 +104,32 @@ if(SCRATCHVJ_BUILD_TESTS)
   enable_testing()
   add_executable(scratchvj_tests
     tests/harness.cpp
+    tests/test_anchor.cpp
+    tests/test_app.cpp
     tests/test_config.cpp
     tests/test_curve.cpp
+    tests/test_effect.cpp
+    tests/test_engine.cpp
+    tests/test_framewindow.cpp
     tests/test_gestures.cpp
     tests/test_layout.cpp
     tests/test_learn.cpp
+    tests/test_library.cpp
     tests/test_mapping.cpp
     tests/test_midi.cpp
+    tests/test_mixer.cpp
+    tests/test_modulator.cpp
+    tests/test_playback.cpp
     tests/test_protocol.cpp
+    tests/test_sphere.cpp
     tests/test_surface.cpp
+    tests/test_take.cpp
+    tests/test_timecode.cpp
+    tests/test_transport.cpp
+    tests/test_videocache.cpp
+    tests/test_warp.cpp
   )
   target_include_directories(scratchvj_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/tests)
-  target_link_libraries(scratchvj_tests PRIVATE scratchvj_core scratchvj_config)
+  target_link_libraries(scratchvj_tests PRIVATE scratchvj_app scratchvj_config)
   add_test(NAME scratchvj_core_tests COMMAND scratchvj_tests)
 endif()

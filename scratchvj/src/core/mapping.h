@@ -28,6 +28,8 @@ enum class SourceKind : std::uint8_t {
     DeckScratchRate,   // direction reversals per second
     DeckConfidence,
     Gesture,           // a bit from the gesture bitfield, as 0 or 1
+    Modulator,         // an LFO or envelope follower, by index
+    AudioBand,         // an audio-reactive frequency band, by index
 };
 
 enum class DestinationKind : std::uint8_t {
@@ -40,6 +42,7 @@ struct Source {
     std::string control_id;              // when kind == Control
     std::uint8_t deck = 0;               // 0 = A, 1 = B, for the deck sources
     std::uint32_t gesture_bit = 0;       // when kind == Gesture
+    std::uint16_t index = 0;             // when kind == Modulator or AudioBand
 };
 
 struct Destination {
@@ -68,6 +71,14 @@ struct DeckSignals {
 struct EngineInputs {
     DeckSignals deck[2];
     std::uint32_t gesture_bits = 0;
+
+    // Flat arrays the engine reads by index. Keeping them as plain spans is what
+    // lets modulators and audio reactivity be sources without the engine knowing
+    // anything about LFOs or spectra.
+    const float* modulators = nullptr;
+    std::size_t modulator_count = 0;
+    const float* bands = nullptr;
+    std::size_t band_count = 0;
 };
 
 class MappingEngine {

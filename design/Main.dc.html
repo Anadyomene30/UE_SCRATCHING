@@ -1,0 +1,618 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=DM+Mono:wght@300;400;500&family=Instrument+Serif&display=swap">
+  <style>
+    body { margin: 0; background: #141412; color: #E9E6DF;
+           font-family: Archivo, "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+    a { color: #C9762F; } a:hover { color: #E08B3E; }
+    .lbl { font-size: 9px; letter-spacing: .2em; text-transform: uppercase; color: #605D56; font-weight: 500; }
+    .mono { font-family: "DM Mono", ui-monospace, Consolas, monospace; font-variant-numeric: tabular-nums; }
+    .hair { background: #2E2D28; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; height: 1040px; display: flex; flex-direction: column; background: #141412; overflow: hidden;">
+
+  <!-- ============ STATUS ============ -->
+  <div style="display: flex; align-items: center; gap: 18px; height: 40px; padding: 0 18px; border-bottom: 1px solid #2E2D28; flex: none;">
+    <span class="mono" style="font-size: 12.5px; font-weight: 500; color: #97938A;">scratchvj</span>
+    <div style="width: 1px; height: 16px; background: #232220;"></div>
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <span style="font-size: 10px; letter-spacing: .18em; text-transform: uppercase; font-weight: 600; color: #C9762F;">Serato</span>
+      <span style="font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: #3A3833;">Autonome</span>
+    </div>
+    <div style="width: 1px; height: 16px; background: #232220;"></div>
+    <span class="mono" style="font-size: 11.5px; color: #97938A;">ASIO 128 f · 5.3 ms</span>
+    <div style="width: 1px; height: 16px; background: #232220;"></div>
+
+    <!-- Phase link health: the user cannot otherwise tell a flat battery from a bug -->
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <span class="lbl">Liaison Phase</span>
+      <div style="display: flex; gap: 3px; align-items: flex-end;">
+        <div style="width: 3px; height: 5px; background: #7D8F6E;"></div>
+        <div style="width: 3px; height: 8px; background: #7D8F6E;"></div>
+        <div style="width: 3px; height: 11px; background: #7D8F6E;"></div>
+        <div style="width: 3px; height: 14px; background: #7D8F6E;"></div>
+      </div>
+      <span class="mono" style="font-size: 11px; color: #97938A;">A 98 % · B 96 %</span>
+    </div>
+
+    <div style="width: 1px; height: 16px; background: #232220;"></div>
+    <span class="mono" style="font-size: 11.5px; color: #97938A;">VRAM 1.84 / 4.00 Go</span>
+    <div style="width: 1px; height: 16px; background: #232220;"></div>
+    <span class="mono" style="font-size: 11.5px; color: #97938A;">124.0 BPM</span>
+
+    <div style="margin-left: auto; display: flex; align-items: center; gap: 16px;">
+      <span style="font-size: 9.5px; letter-spacing: .18em; text-transform: uppercase; color: #97938A;">Spout</span>
+      <span style="font-size: 9.5px; letter-spacing: .18em; text-transform: uppercase; color: #97938A;">NDI</span>
+      <span style="font-size: 9.5px; letter-spacing: .18em; text-transform: uppercase; color: #A8564E;">&#9679; Rec 04:12</span>
+    </div>
+  </div>
+
+  <!-- ============ BODY ============ -->
+  <div style="display: grid; grid-template-columns: 236px minmax(0, 1fr); flex: 1; min-height: 0;">
+
+    <!-- ---- rail ---- -->
+    <div style="border-right: 1px solid #2E2D28; display: flex; flex-direction: column;">
+
+      <div style="padding: 16px; border-bottom: 1px solid #232220; display: flex; flex-direction: column; gap: 12px;">
+        <div class="mono" style="font-size: 12px; color: #605D56; border-bottom: 1px solid #2E2D28; padding-bottom: 8px;">chercher&#8230;</div>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 9px;">
+            <div style="width: 2px; height: 13px; background: #C9762F;"></div>
+            <span style="flex: 1; font-size: 13px; color: #E9E6DF;">Tous les clips</span>
+            <span class="mono" style="font-size: 11px; color: #605D56;">418</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 9px; padding-left: 11px;">
+            <span style="flex: 1; font-size: 13px; color: #97938A;">360&#176;</span>
+            <span class="mono" style="font-size: 11px; color: #605D56;">27</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 9px; padding-left: 11px;">
+            <span style="flex: 1; font-size: 13px; color: #97938A;">Loops &amp; textures</span>
+            <span class="mono" style="font-size: 11px; color: #605D56;">96</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 9px; padding-left: 11px;">
+            <span style="flex: 1; font-size: 13px; color: #97938A;">Set &#8212; 12 sept.</span>
+            <span class="mono" style="font-size: 11px; color: #605D56;">14</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="padding: 16px; border-bottom: 1px solid #232220; display: flex; flex-direction: column; gap: 12px;">
+        <span class="lbl">Biblioth&#232;que</span>
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <div style="display: flex; justify-content: space-between; gap: 10px; align-items: baseline;">
+            <span class="mono" style="font-size: 11.5px; color: #E9E6DF; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">tokyo_nightdrive_360.mp4</span>
+            <span class="mono" style="font-size: 11px; color: #605D56; flex: none;">04:12</span>
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <span style="font-size: 9px; letter-spacing: .16em; text-transform: uppercase; color: #8E7F9E;">360&#176;</span>
+            <span style="font-size: 9px; letter-spacing: .16em; text-transform: uppercase; color: #605D56;">3840&#215;1920</span>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <div style="display: flex; justify-content: space-between; gap: 10px; align-items: baseline;">
+            <span class="mono" style="font-size: 11.5px; color: #E9E6DF;">grain_loop_04.mov</span>
+            <span class="mono" style="font-size: 11px; color: #605D56; flex: none;">00:12</span>
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <span style="font-size: 9px; letter-spacing: .16em; text-transform: uppercase; color: #605D56;">1080p60</span>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <div style="display: flex; justify-content: space-between; gap: 10px; align-items: baseline;">
+            <span class="mono" style="font-size: 11.5px; color: #E9E6DF;">rooftop_pan_4k.mp4</span>
+            <span class="mono" style="font-size: 11px; color: #605D56; flex: none;">02:38</span>
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <span style="font-size: 9px; letter-spacing: .16em; text-transform: uppercase; color: #605D56;">2160p</span>
+            <span style="font-size: 9px; letter-spacing: .16em; text-transform: uppercase; color: #97938A;">Analyse 62 %</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="padding: 16px; display: flex; flex-direction: column; gap: 12px;">
+        <span class="lbl">File d'attente</span>
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <div style="display: flex; justify-content: space-between; gap: 10px; align-items: baseline;">
+            <span class="mono" style="font-size: 11.5px; color: #E9E6DF;">1 &#183; neon_alley_360.mp4</span>
+            <span class="mono" style="font-size: 11px; color: #605D56; flex: none;">03:04</span>
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <span style="font-size: 9px; letter-spacing: .16em; text-transform: uppercase; color: #8E7F9E;">360&#176;</span>
+            <span style="font-size: 9px; letter-spacing: .16em; text-transform: uppercase; color: #C9762F;">&#8594; Deck A</span>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <div style="display: flex; justify-content: space-between; gap: 10px; align-items: baseline;">
+            <span class="mono" style="font-size: 11.5px; color: #E9E6DF;">2 &#183; vhs_static_b.mov</span>
+            <span class="mono" style="font-size: 11px; color: #605D56; flex: none;">00:31</span>
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <span style="font-size: 9px; letter-spacing: .16em; text-transform: uppercase; color: #7C8B91;">&#8594; Deck B</span>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <div style="display: flex; justify-content: space-between; gap: 10px; align-items: baseline;">
+            <span class="mono" style="font-size: 11.5px; color: #E9E6DF;">3 &#183; crowd_slowmo.mp4</span>
+            <span class="mono" style="font-size: 11px; color: #605D56; flex: none;">01:47</span>
+          </div>
+        </div>
+        <div style="margin-top: 4px; padding: 9px 0; text-align: center; font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: #97938A; border: 1px solid #2E2D28;">Charger le suivant</div>
+      </div>
+    </div>
+
+    <!-- ---- stage ---- -->
+    <div style="display: flex; flex-direction: column; min-width: 0;">
+
+      <!-- decks -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #2E2D28;">
+
+        <!-- DECK A -->
+        <div style="padding: 18px 20px 20px; display: flex; flex-direction: column; gap: 15px;">
+          <div style="display: flex; align-items: baseline; gap: 12px;">
+            <span style="font-family: 'Instrument Serif', Georgia, serif; font-size: 26px; line-height: 1; color: #C9762F;">A</span>
+            <span class="mono" style="font-size: 12.5px; color: #E9E6DF; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">tokyo_nightdrive_360.mp4</span>
+            <span style="font-size: 9px; letter-spacing: .18em; text-transform: uppercase; color: #8E7F9E;">360&#176;</span>
+            <span class="mono" style="margin-left: auto; font-size: 11.5px; color: #605D56;">04:12</span>
+          </div>
+
+          <!-- filmstrip -->
+          <div>
+            <div style="position: relative; padding-top: 14px;">
+              <div style="height: 54px; background:
+                    repeating-linear-gradient(90deg, rgba(0,0,0,.55) 0 1px, transparent 1px 21px),
+                    linear-gradient(90deg,#1b2430,#2c2018 14%,#1d2938 28%,#3a2a16 44%,#1a2331 58%,#33261a 72%,#1c2735 86%,#2a2018);"></div>
+              <!-- VRAM window -->
+              <div style="position: absolute; left: 24%; width: 16%; top: 10px; bottom: -4px; border: 1px solid #C9762F; border-top-width: 1px; border-bottom-width: 1px;">
+                <span style="position: absolute; top: -3px; left: 0; transform: translateY(-100%); font-size: 8.5px; letter-spacing: .18em; text-transform: uppercase; color: #C9762F; white-space: nowrap;">Fen&#234;tre VRAM &#183; 8 s</span>
+              </div>
+              <!-- active loop region -->
+              <div style="position: absolute; left: 44%; width: 9%; top: 14px; height: 54px; background: rgba(125,143,110,.20); border-left: 1px solid #7D8F6E; border-right: 1px solid #7D8F6E;">
+                <span style="position: absolute; top: 4px; left: 4px; font-size: 8.5px; letter-spacing: .16em; text-transform: uppercase; color: #7D8F6E;">4</span>
+              </div>
+              <div style="position: absolute; left: 12%; top: 14px; width: 1px; height: 8px; background: #A8564E;"></div>
+              <div style="position: absolute; left: 47%; top: 14px; width: 1px; height: 8px; background: #605D56;"></div>
+              <div style="position: absolute; left: 71%; top: 14px; width: 1px; height: 8px; background: #7D8F6E;"></div>
+              <!-- playhead -->
+              <div style="position: absolute; left: 33%; top: 10px; bottom: -8px; width: 1px; background: #E9E6DF;"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-top: 10px;">
+              <span class="mono" style="font-size: 9.5px; color: #605D56;">00:00</span>
+              <span class="mono" style="font-size: 9.5px; color: #605D56;">01:23.4</span>
+              <span class="mono" style="font-size: 9.5px; color: #605D56;">04:12</span>
+            </div>
+          </div>
+
+          <!-- readouts -->
+          <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: #232220;">
+            <div style="background: #191917; padding: 10px 12px 11px; display: flex; flex-direction: column; gap: 5px;">
+              <span class="lbl">Position</span>
+              <span class="mono" style="font-size: 19px; line-height: 1; letter-spacing: -.03em; color: #E9E6DF;">01:23.4</span>
+            </div>
+            <div style="background: #191917; padding: 10px 12px 11px; display: flex; flex-direction: column; gap: 5px;">
+              <span class="lbl">Vitesse</span>
+              <span class="mono" style="font-size: 19px; line-height: 1; letter-spacing: -.03em; color: #A8564E;">&#8722;1.80<span style="font-size: 11px; color: #605D56; letter-spacing: 0;"> &#215;</span></span>
+            </div>
+            <div style="background: #191917; padding: 10px 12px 11px; display: flex; flex-direction: column; gap: 5px;">
+              <span class="lbl">Confiance</span>
+              <span class="mono" style="font-size: 19px; line-height: 1; letter-spacing: -.03em; color: #E9E6DF;">98<span style="font-size: 11px; color: #605D56; letter-spacing: 0;"> %</span></span>
+            </div>
+            <div style="background: #191917; padding: 10px 12px 11px; display: flex; flex-direction: column; gap: 5px;">
+              <span class="lbl">Scratch</span>
+              <span class="mono" style="font-size: 19px; line-height: 1; letter-spacing: -.03em; color: #C9762F;">6.4<span style="font-size: 11px; color: #605D56; letter-spacing: 0;"> /s</span></span>
+            </div>
+          </div>
+
+          <!-- transport -->
+          <div style="display: flex; align-items: center; gap: 20px; padding-top: 13px; border-top: 1px solid #232220;">
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <span class="lbl">Mode</span>
+              <div style="display: flex; gap: 10px;">
+                <span style="font-size: 10px; letter-spacing: .16em; font-weight: 600; color: #605D56;">ABS</span>
+                <span style="font-size: 10px; letter-spacing: .16em; font-weight: 600; color: #C9762F;">REL</span>
+                <span style="font-size: 10px; letter-spacing: .16em; font-weight: 600; color: #605D56;">INT</span>
+              </div>
+            </div>
+            <div style="width: 1px; height: 26px; background: #232220;"></div>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <span class="lbl">Boucle</span>
+              <div style="display: flex; gap: 10px; align-items: baseline;">
+                <span class="mono" style="font-size: 13px; color: #7D8F6E;">4</span>
+                <span style="font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: #605D56;">temps</span>
+              </div>
+            </div>
+            <div style="width: 1px; height: 26px; background: #232220;"></div>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <span class="lbl">Slip</span>
+              <span style="font-size: 10px; letter-spacing: .16em; font-weight: 600; color: #C9762F;">ON</span>
+            </div>
+            <div style="width: 1px; height: 26px; background: #232220;"></div>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <span class="lbl">Hot cues</span>
+              <div style="display: flex; gap: 4px;">
+                <div style="width: 18px; height: 14px; background: #A8564E;"></div>
+                <div style="width: 18px; height: 14px; background: #C9762F;"></div>
+                <div style="width: 18px; height: 14px; background: #7D8F6E;"></div>
+                <div style="width: 18px; height: 14px; background: #8E7F9E;"></div>
+                <div style="width: 18px; height: 14px; background: #201F1C;"></div>
+                <div style="width: 18px; height: 14px; background: #201F1C;"></div>
+                <div style="width: 18px; height: 14px; background: #201F1C;"></div>
+                <div style="width: 18px; height: 14px; background: #201F1C;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 360 block -->
+          <div style="display: grid; grid-template-columns: 118px minmax(0, 1fr); gap: 18px; align-items: center;">
+            <div style="position: relative; height: 56px; background: linear-gradient(180deg,#1D2028 0 40%,#242423 40% 54%,#131312 54% 100%);">
+              <div style="position: absolute; inset: 0; background:
+                    radial-gradient(ellipse 20% 44% at 20% 60%, rgba(201,118,47,.30), transparent 70%),
+                    radial-gradient(ellipse 15% 36% at 60% 64%, rgba(124,139,145,.26), transparent 70%),
+                    radial-gradient(ellipse 8% 28% at 87% 56%, rgba(201,118,47,.22), transparent 70%);"></div>
+              <div style="position: absolute; left: 52%; top: 22%; width: 26%; height: 46%; border: 1px solid #E9E6DF;"></div>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px;">
+              <div>
+                <span class="lbl">Yaw</span>
+                <div class="mono" style="font-size: 14px; color: #E9E6DF; margin-top: 4px; letter-spacing: -.02em;">+34&#176;</div>
+                <div style="height: 1px; background: #2E2D28; margin-top: 7px; position: relative;">
+                  <div style="position: absolute; top: -1px; left: 56%; width: 9px; height: 3px; background: #C9762F;"></div>
+                </div>
+              </div>
+              <div>
+                <span class="lbl">Pitch</span>
+                <div class="mono" style="font-size: 14px; color: #E9E6DF; margin-top: 4px; letter-spacing: -.02em;">&#8722;8&#176;</div>
+                <div style="height: 1px; background: #2E2D28; margin-top: 7px; position: relative;">
+                  <div style="position: absolute; top: -1px; left: 44%; width: 9px; height: 3px; background: #C9762F;"></div>
+                </div>
+              </div>
+              <div>
+                <span class="lbl">Roll</span>
+                <div class="mono" style="font-size: 14px; color: #E9E6DF; margin-top: 4px; letter-spacing: -.02em;">0&#176;</div>
+                <div style="height: 1px; background: #2E2D28; margin-top: 7px; position: relative;">
+                  <div style="position: absolute; top: -1px; left: 48%; width: 9px; height: 3px; background: #C9762F;"></div>
+                </div>
+              </div>
+              <div>
+                <span class="lbl">FOV</span>
+                <div class="mono" style="font-size: 14px; color: #E9E6DF; margin-top: 4px; letter-spacing: -.02em;">90&#176;</div>
+                <div style="height: 1px; background: #2E2D28; margin-top: 7px; position: relative;">
+                  <div style="position: absolute; top: -1px; left: 60%; width: 9px; height: 3px; background: #C9762F;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- fx -->
+          <div style="display: flex; align-items: center; gap: 22px; padding-top: 13px; border-top: 1px solid #232220;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <svg width="13" height="13" viewBox="0 0 16 16" style="display: block; color: #C9762F;"><path d="M6.4 9.6 9.6 6.4M5.9 11.3 4.7 12.5a2.35 2.35 0 0 1-3.3-3.3l1.2-1.2M10.1 4.7l1.2-1.2a2.35 2.35 0 0 1 3.3 3.3l-1.2 1.2" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"></path></svg>
+              <span style="font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: #E9E6DF; font-weight: 500;">Echo</span>
+              <span class="mono" style="font-size: 11px; color: #605D56;">1/8 &#183; 62 %</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <svg width="13" height="13" viewBox="0 0 16 16" style="display: block; color: #C9762F;"><path d="M6.4 9.6 9.6 6.4M5.9 11.3 4.7 12.5a2.35 2.35 0 0 1-3.3-3.3l1.2-1.2M10.1 4.7l1.2-1.2a2.35 2.35 0 0 1 3.3 3.3l-1.2 1.2" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"></path></svg>
+              <span style="font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: #E9E6DF; font-weight: 500;">Filtre</span>
+              <span class="mono" style="font-size: 11px; color: #605D56;">LP &#183; 41 %</span>
+            </div>
+            <span style="font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: #3A3833;">+ effet</span>
+          </div>
+        </div>
+
+        <!-- DECK B -->
+        <div style="padding: 18px 20px 20px; display: flex; flex-direction: column; gap: 15px; border-left: 1px solid #2E2D28;">
+          <div style="display: flex; align-items: baseline; gap: 12px;">
+            <span style="font-family: 'Instrument Serif', Georgia, serif; font-size: 26px; line-height: 1; color: #7C8B91;">B</span>
+            <span class="mono" style="font-size: 12.5px; color: #E9E6DF;">grain_loop_04.mov</span>
+            <span class="mono" style="margin-left: auto; font-size: 11.5px; color: #605D56;">00:12</span>
+          </div>
+
+          <div>
+            <div style="position: relative; padding-top: 14px;">
+              <div style="height: 54px; background:
+                    repeating-linear-gradient(90deg, rgba(0,0,0,.55) 0 1px, transparent 1px 21px),
+                    linear-gradient(90deg,#1a1d1b,#222724 20%,#191c1a 40%,#242a26 60%,#181b19 80%,#212623);"></div>
+              <div style="position: absolute; left: 0; width: 100%; top: 10px; bottom: -4px; border: 1px solid #7C8B91;">
+                <span style="position: absolute; top: -3px; left: 0; transform: translateY(-100%); font-size: 8.5px; letter-spacing: .18em; text-transform: uppercase; color: #7C8B91; white-space: nowrap;">Fen&#234;tre VRAM &#183; clip entier</span>
+              </div>
+              <div style="position: absolute; left: 0; top: 14px; width: 1px; height: 8px; background: #A8564E;"></div>
+              <div style="position: absolute; left: 50%; top: 14px; width: 1px; height: 8px; background: #7D8F6E;"></div>
+              <div style="position: absolute; left: 62%; top: 10px; bottom: -8px; width: 1px; background: #E9E6DF;"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-top: 10px;">
+              <span class="mono" style="font-size: 9.5px; color: #605D56;">00:00</span>
+              <span class="mono" style="font-size: 9.5px; color: #605D56;">00:07.4</span>
+              <span class="mono" style="font-size: 9.5px; color: #605D56;">00:12</span>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: #232220;">
+            <div style="background: #191917; padding: 10px 12px 11px; display: flex; flex-direction: column; gap: 5px;">
+              <span class="lbl">Position</span>
+              <span class="mono" style="font-size: 19px; line-height: 1; letter-spacing: -.03em; color: #E9E6DF;">00:07.4</span>
+            </div>
+            <div style="background: #191917; padding: 10px 12px 11px; display: flex; flex-direction: column; gap: 5px;">
+              <span class="lbl">Vitesse</span>
+              <span class="mono" style="font-size: 19px; line-height: 1; letter-spacing: -.03em; color: #E9E6DF;">1.00<span style="font-size: 11px; color: #605D56; letter-spacing: 0;"> &#215;</span></span>
+            </div>
+            <div style="background: #191917; padding: 10px 12px 11px; display: flex; flex-direction: column; gap: 5px;">
+              <span class="lbl">Confiance</span>
+              <span class="mono" style="font-size: 19px; line-height: 1; letter-spacing: -.03em; color: #E9E6DF;">96<span style="font-size: 11px; color: #605D56; letter-spacing: 0;"> %</span></span>
+            </div>
+            <div style="background: #191917; padding: 10px 12px 11px; display: flex; flex-direction: column; gap: 5px;">
+              <span class="lbl">Scratch</span>
+              <span class="mono" style="font-size: 19px; line-height: 1; letter-spacing: -.03em; color: #E9E6DF;">0.0<span style="font-size: 11px; color: #605D56; letter-spacing: 0;"> /s</span></span>
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 20px; padding-top: 13px; border-top: 1px solid #232220;">
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <span class="lbl">Transport</span>
+              <div style="display: flex; gap: 10px;">
+                <span style="font-size: 10px; letter-spacing: .16em; font-weight: 600; color: #605D56;">Plateau</span>
+                <span style="font-size: 10px; letter-spacing: .16em; font-weight: 600; color: #7C8B91;">Libre</span>
+                <span style="font-size: 10px; letter-spacing: .16em; font-weight: 600; color: #605D56;">Tempo</span>
+              </div>
+            </div>
+            <div style="width: 1px; height: 26px; background: #232220;"></div>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <span class="lbl">Lecture</span>
+              <span style="font-size: 10px; letter-spacing: .16em; font-weight: 600; color: #7C8B91;">BOUCLE</span>
+            </div>
+            <div style="width: 1px; height: 26px; background: #232220;"></div>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <span class="lbl">Hot cues</span>
+              <div style="display: flex; gap: 4px;">
+                <div style="width: 18px; height: 14px; background: #7C8B91;"></div>
+                <div style="width: 18px; height: 14px; background: #201F1C;"></div>
+                <div style="width: 18px; height: 14px; background: #8E7F9E;"></div>
+                <div style="width: 18px; height: 14px; background: #201F1C;"></div>
+                <div style="width: 18px; height: 14px; background: #201F1C;"></div>
+                <div style="width: 18px; height: 14px; background: #201F1C;"></div>
+                <div style="width: 18px; height: 14px; background: #201F1C;"></div>
+                <div style="width: 18px; height: 14px; background: #201F1C;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- follower-mode block: anchor and drift replace pitch and gain -->
+          <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px;">
+            <div>
+              <span class="lbl">Source</span>
+              <div class="mono" style="font-size: 14px; color: #C9762F; margin-top: 4px; letter-spacing: -.02em;">Serato</div>
+              <div style="height: 1px; background: #2E2D28; margin-top: 7px; position: relative;">
+                <div style="position: absolute; top: -1px; left: 0; width: 100%; height: 3px; background: #C9762F;"></div>
+              </div>
+            </div>
+            <div>
+              <span class="lbl">Ancrage</span>
+              <div class="mono" style="font-size: 14px; color: #E9E6DF; margin-top: 4px; letter-spacing: -.02em;">00:00.0</div>
+              <div style="height: 1px; background: #2E2D28; margin-top: 7px; position: relative;">
+                <div style="position: absolute; top: -1px; left: 0; width: 100%; height: 3px; background: #2E2D28;"></div>
+              </div>
+            </div>
+            <div>
+              <span class="lbl">Fra&#238;cheur</span>
+              <div class="mono" style="font-size: 14px; color: #7D8F6E; margin-top: 4px; letter-spacing: -.02em;">2:14 &#183; 0 saut</div>
+              <div style="height: 1px; background: #2E2D28; margin-top: 7px; position: relative;">
+                <div style="position: absolute; top: -1px; left: 0; width: 27%; height: 3px; background: #7D8F6E;"></div>
+              </div>
+            </div>
+            <div>
+              <span class="lbl">Cache</span>
+              <div class="mono" style="font-size: 14px; color: #E9E6DF; margin-top: 4px; letter-spacing: -.02em;">BC7</div>
+              <div style="height: 1px; background: #2E2D28; margin-top: 7px; position: relative;">
+                <div style="position: absolute; top: -1px; left: 0; width: 100%; height: 3px; background: #2E2D28;"></div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 22px; padding-top: 13px; border-top: 1px solid #232220;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <svg width="13" height="13" viewBox="0 0 16 16" style="display: block; color: #3A3833;"><path d="M5.9 11.3 4.7 12.5a2.35 2.35 0 0 1-3.3-3.3l1.2-1.2M10.1 4.7l1.2-1.2a2.35 2.35 0 0 1 3.3 3.3l-1.2 1.2" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"></path><path d="M2 14 14 2" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"></path></svg>
+              <span style="font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: #E9E6DF; font-weight: 500;">Bitcrush</span>
+              <span class="mono" style="font-size: 11px; color: #605D56;">vid&#233;o seule &#183; 77 %</span>
+            </div>
+            <span style="font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: #3A3833;">+ effet</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- program -->
+      <div style="display: grid; grid-template-columns: minmax(0, 1fr) 168px; gap: 16px; padding: 18px 20px 20px; border-bottom: 1px solid #2E2D28;">
+        <div style="position: relative; height: 168px; overflow: hidden; background:
+              radial-gradient(ellipse 58% 92% at 27% 64%, rgba(201,118,47,.26), transparent 64%),
+              radial-gradient(ellipse 50% 84% at 76% 38%, rgba(124,139,145,.20), transparent 66%),
+              linear-gradient(148deg,#16181C,#1C1815 62%,#0B0B0A);">
+          <div style="position: absolute; inset: 0; background: repeating-linear-gradient(0deg, rgba(255,255,255,.022) 0 1px, transparent 1px 3px);"></div>
+          <div style="position: absolute; left: 14px; top: 12px; display: flex; gap: 16px;">
+            <span style="font-size: 9px; letter-spacing: .2em; text-transform: uppercase; color: rgba(233,230,223,.62);">Program</span>
+            <span style="font-size: 9px; letter-spacing: .2em; text-transform: uppercase; color: rgba(233,230,223,.62);">360 &#8594; perspective</span>
+            <span style="font-size: 9px; letter-spacing: .2em; text-transform: uppercase; color: #C9762F;">XF 0.74 &#8594; A</span>
+          </div>
+          <span class="mono" style="position: absolute; right: 14px; bottom: 12px; font-size: 10.5px; color: rgba(233,230,223,.5);">1920&#215;1080 &#183; 60 fps &#183; DELL U2720Q</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <div style="position: relative; height: 74px; background: linear-gradient(150deg,#2A1F13,#3D2A15 48%,#111110);">
+            <span style="position: absolute; left: 9px; top: 7px; font-size: 9px; letter-spacing: .2em; text-transform: uppercase; color: #C9762F;">Preview A</span>
+          </div>
+          <div style="position: relative; height: 74px; background: linear-gradient(150deg,#1A2124,#252E31 48%,#0F0F0F);">
+            <span style="position: absolute; left: 9px; top: 7px; font-size: 9px; letter-spacing: .2em; text-transform: uppercase; color: #7C8B91;">Preview B</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- surface -->
+      <div style="padding: 18px 20px 20px; display: flex; flex-direction: column; gap: 16px;">
+        <div style="display: flex; align-items: baseline; gap: 18px;">
+          <span class="lbl">Surface &#8212; Reloop Elite &#183; RP-8000 MK2</span>
+          <span style="font-size: 12.5px; color: #605D56;">En pointill&#233; : contr&#244;les non touch&#233;s depuis le lancement, position r&#233;elle inconnue.</span>
+        </div>
+
+        <div style="display: flex; gap: 34px; align-items: flex-start; flex-wrap: wrap;">
+
+          <div style="display: flex; gap: 16px; align-items: flex-end;">
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+              <div style="position: relative; width: 30px; height: 30px; border-radius: 50%; border: 1px solid #2E2D28; background: conic-gradient(from 225deg, #C9762F 0 167deg, transparent 167deg);">
+                <div style="position: absolute; inset: 2px; border-radius: 50%; background: #201F1C;"></div>
+                <div style="position: absolute; left: 50%; top: 6px; width: 1px; height: 8px; background: #E9E6DF; transform-origin: 50% 9px; transform: translateX(-50%) rotate(32deg);"></div>
+              </div>
+              <span class="lbl">Trim</span>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+              <div style="position: relative; width: 30px; height: 30px; border-radius: 50%; border: 1px solid #2E2D28; background: conic-gradient(from 225deg, #C9762F 0 135deg, transparent 135deg);">
+                <div style="position: absolute; inset: 2px; border-radius: 50%; background: #201F1C;"></div>
+                <div style="position: absolute; left: 50%; top: 6px; width: 1px; height: 8px; background: #E9E6DF; transform-origin: 50% 9px; transform: translateX(-50%) rotate(0deg);"></div>
+              </div>
+              <span class="lbl">Hi</span>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+              <div style="position: relative; width: 30px; height: 30px; border-radius: 50%; border: 1px solid #2E2D28; background: conic-gradient(from 225deg, #C9762F 0 119deg, transparent 119deg);">
+                <div style="position: absolute; inset: 2px; border-radius: 50%; background: #201F1C;"></div>
+                <div style="position: absolute; left: 50%; top: 6px; width: 1px; height: 8px; background: #E9E6DF; transform-origin: 50% 9px; transform: translateX(-50%) rotate(-16deg);"></div>
+              </div>
+              <span class="lbl">Mid</span>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+              <div style="position: relative; width: 30px; height: 30px; border-radius: 50%; border: 1px solid #2E2D28; background: conic-gradient(from 225deg, #C9762F 0 135deg, transparent 135deg);">
+                <div style="position: absolute; inset: 2px; border-radius: 50%; background: #201F1C;"></div>
+                <div style="position: absolute; left: 50%; top: 6px; width: 1px; height: 8px; background: #E9E6DF; transform-origin: 50% 9px; transform: translateX(-50%) rotate(0deg);"></div>
+              </div>
+              <span class="lbl">Low</span>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+              <div style="position: relative; width: 30px; height: 30px; border-radius: 50%; border: 1px solid #2E2D28; background: conic-gradient(from 225deg, #C9762F 0 89deg, transparent 89deg);">
+                <div style="position: absolute; inset: 2px; border-radius: 50%; background: #201F1C;"></div>
+                <div style="position: absolute; left: 50%; top: 6px; width: 1px; height: 8px; background: #E9E6DF; transform-origin: 50% 9px; transform: translateX(-50%) rotate(-46deg);"></div>
+              </div>
+              <span class="lbl">Filtre</span>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+              <div style="position: relative; width: 22px; height: 74px;">
+                <div style="position: absolute; left: 50%; transform: translateX(-50%); width: 1px; height: 100%; background: #2E2D28;"></div>
+                <div style="position: absolute; left: 50%; transform: translateX(-50%); bottom: 57px; width: 20px; height: 9px; background: #201F1C; border: 1px solid #2E2D28;">
+                  <div style="position: absolute; left: 2px; right: 2px; top: 3px; height: 1px; background: #605D56;"></div>
+                </div>
+              </div>
+              <span class="lbl">Voie 1</span>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 16px; align-items: flex-end;">
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+              <div style="position: relative; width: 30px; height: 30px; border-radius: 50%; border: 1px solid #2E2D28; background: conic-gradient(from 225deg, #7C8B91 0 149deg, transparent 149deg);">
+                <div style="position: absolute; inset: 2px; border-radius: 50%; background: #201F1C;"></div>
+                <div style="position: absolute; left: 50%; top: 6px; width: 1px; height: 8px; background: #E9E6DF; transform-origin: 50% 9px; transform: translateX(-50%) rotate(14deg);"></div>
+              </div>
+              <span class="lbl">Trim</span>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+              <div style="position: relative; width: 30px; height: 30px; border-radius: 50%; border: 1px solid #2E2D28; background: conic-gradient(from 225deg, #7C8B91 0 135deg, transparent 135deg);">
+                <div style="position: absolute; inset: 2px; border-radius: 50%; background: #201F1C;"></div>
+                <div style="position: absolute; left: 50%; top: 6px; width: 1px; height: 8px; background: #E9E6DF; transform-origin: 50% 9px; transform: translateX(-50%) rotate(0deg);"></div>
+              </div>
+              <span class="lbl">Hi</span>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+              <div style="position: relative; width: 30px; height: 30px; border-radius: 50%; border: 1px dashed #3A3833;">
+                <div style="position: absolute; inset: 2px; border-radius: 50%; background: #141412;"></div>
+              </div>
+              <span style="font-size: 9px; letter-spacing: .2em; text-transform: uppercase; color: #3A3833; font-weight: 500;">Mid</span>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+              <div style="position: relative; width: 30px; height: 30px; border-radius: 50%; border: 1px solid #2E2D28; background: conic-gradient(from 225deg, #7C8B91 0 103deg, transparent 103deg);">
+                <div style="position: absolute; inset: 2px; border-radius: 50%; background: #201F1C;"></div>
+                <div style="position: absolute; left: 50%; top: 6px; width: 1px; height: 8px; background: #E9E6DF; transform-origin: 50% 9px; transform: translateX(-50%) rotate(-32deg);"></div>
+              </div>
+              <span class="lbl">Low</span>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+              <div style="position: relative; width: 30px; height: 30px; border-radius: 50%; border: 1px dashed #3A3833;">
+                <div style="position: absolute; inset: 2px; border-radius: 50%; background: #141412;"></div>
+              </div>
+              <span style="font-size: 9px; letter-spacing: .2em; text-transform: uppercase; color: #3A3833; font-weight: 500;">Filtre</span>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+              <div style="position: relative; width: 22px; height: 74px;">
+                <div style="position: absolute; left: 50%; transform: translateX(-50%); width: 1px; height: 100%; background: #2E2D28;"></div>
+                <div style="position: absolute; left: 50%; transform: translateX(-50%); bottom: 48px; width: 20px; height: 9px; background: #201F1C; border: 1px solid #2E2D28;">
+                  <div style="position: absolute; left: 2px; right: 2px; top: 3px; height: 1px; background: #605D56;"></div>
+                </div>
+              </div>
+              <span class="lbl">Voie 2</span>
+            </div>
+          </div>
+
+          <div style="min-width: 250px; display: flex; flex-direction: column; gap: 11px;">
+            <span class="lbl">Crossfader &#8212; Innofader &#183; courbe sharp</span>
+            <div style="position: relative; height: 1px; background: #2E2D28; margin: 13px 0;">
+              <div style="position: absolute; left: 0; top: -5px; width: 1px; height: 11px; background: #2E2D28;"></div>
+              <div style="position: absolute; right: 0; top: -5px; width: 1px; height: 11px; background: #2E2D28;"></div>
+              <div style="position: absolute; left: 74%; top: -9px; transform: translateX(-50%); width: 11px; height: 19px; background: #201F1C; border: 1px solid #605D56;"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: baseline;">
+              <span class="lbl">A</span>
+              <span class="mono" style="font-size: 11px; color: #97938A;">0.74</span>
+              <span class="lbl">B</span>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 9px;">
+            <span class="lbl">Pads Elite &#183; A</span>
+            <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px;">
+              <div style="width: 24px; height: 16px; background: #C9762F;"></div>
+              <div style="width: 24px; height: 16px; background: #C9762F;"></div>
+              <div style="width: 24px; height: 16px; background: #A8564E;"></div>
+              <div style="width: 24px; height: 16px; background: #201F1C;"></div>
+              <div style="width: 24px; height: 16px; background: #7D8F6E;"></div>
+              <div style="width: 24px; height: 16px; background: #201F1C;"></div>
+              <div style="width: 24px; height: 16px; border: 1px dashed #3A3833;"></div>
+              <div style="width: 24px; height: 16px; border: 1px dashed #3A3833;"></div>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 9px;">
+            <span class="lbl">Pads Elite &#183; B</span>
+            <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px;">
+              <div style="width: 24px; height: 16px; background: #7C8B91;"></div>
+              <div style="width: 24px; height: 16px; background: #201F1C;"></div>
+              <div style="width: 24px; height: 16px; background: #8E7F9E;"></div>
+              <div style="width: 24px; height: 16px; background: #201F1C;"></div>
+              <div style="width: 24px; height: 16px; border: 1px dashed #3A3833;"></div>
+              <div style="width: 24px; height: 16px; border: 1px dashed #3A3833;"></div>
+              <div style="width: 24px; height: 16px; border: 1px dashed #3A3833;"></div>
+              <div style="width: 24px; height: 16px; border: 1px dashed #3A3833;"></div>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 9px;">
+            <span class="lbl">RP-8000 A &#183; couche 2</span>
+            <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px;">
+              <div style="width: 24px; height: 16px; background: #C9762F;"></div>
+              <div style="width: 24px; height: 16px; background: #C9762F;"></div>
+              <div style="width: 24px; height: 16px; background: #201F1C;"></div>
+              <div style="width: 24px; height: 16px; background: #201F1C;"></div>
+              <div style="width: 24px; height: 16px; background: #7D8F6E;"></div>
+              <div style="width: 24px; height: 16px; background: #201F1C;"></div>
+              <div style="width: 24px; height: 16px; background: #201F1C;"></div>
+              <div style="width: 24px; height: 16px; border: 1px dashed #3A3833;"></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>
