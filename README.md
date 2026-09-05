@@ -94,9 +94,21 @@ writing: real MIDI and audio devices, the xwax timecode decoder, the FFmpeg
 analysis pass, GPU rendering, the ImGui interface, the outputs, and the Unreal
 plugin.
 
+**For the full picture — the original design reasoning, a milestone-by-milestone
+status table, what's left, what's deliberately out of scope, and the two things
+that need to be tested against the real hardware — see
+[`docs/roadmap.md`](docs/roadmap.md).** That document is the durable record of
+everything that has been decided; this README only summarises the current state.
+
+**Picking this up on a different machine, or with a fresh Claude Code session?**
+See [`docs/passation.md`](docs/passation.md) — cloning, installing Claude Code,
+and what loads automatically (`CLAUDE.md`, read on every session start in this
+repo, points straight at the roadmap).
+
 ## Design notes
 
-Longer reasoning lives in `docs/`: the wiring and the two audio modes
+Longer reasoning lives in `docs/`: the full roadmap and design rationale
+([`roadmap.md`](docs/roadmap.md)), the wiring and the two audio modes
 ([`cablage.md`](docs/cablage.md)), the wire format
 ([`protocole.md`](docs/protocole.md)), the clip format and the VRAM window
 ([`format-cache.md`](docs/format-cache.md)), and the audio-to-video effect
