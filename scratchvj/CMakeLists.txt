@@ -18,6 +18,7 @@ endif()
 add_library(scratchvj_core STATIC
   src/core/anchor.cpp
   src/core/bc1.cpp
+  src/core/compose.cpp
   src/core/curve.cpp
   src/core/effect.cpp
   src/core/framewindow.cpp
@@ -108,6 +109,7 @@ if(SCRATCHVJ_BUILD_TESTS)
     tests/harness.cpp
     tests/test_anchor.cpp
     tests/test_bc1.cpp
+    tests/test_compose.cpp
     tests/test_app.cpp
     tests/test_config.cpp
     tests/test_curve.cpp

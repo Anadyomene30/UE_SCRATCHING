@@ -37,6 +37,12 @@ public:
     // index actually changed. Null when nothing is loaded or a read fails.
     SDL_Texture* frame_at(SDL_Renderer* renderer, double position_s);
 
+    // The last frame decoded by frame_at, as CPU pixels -- what the program
+    // compositor consumes. Null until a first frame has been shown.
+    const std::uint8_t* pixels() const { return rgba_.empty() ? nullptr : rgba_.data(); }
+    std::uint32_t width() const { return reader_.header().width; }
+    std::uint32_t height() const { return reader_.header().height; }
+
 private:
     CacheReader reader_;
     SDL_Texture* texture_ = nullptr;

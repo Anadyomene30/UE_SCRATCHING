@@ -30,6 +30,12 @@ struct Frame {
     // (SDL_Texture* today). Null draws the honest empty well instead.
     void* tex_a = nullptr;
     void* tex_b = nullptr;
+
+    // The composited program, when the compositor ran this frame: the same
+    // pixels the Spout output publishes.
+    void* tex_program = nullptr;
+    unsigned int program_width = 0;
+    unsigned int program_height = 0;
 };
 
 // The three faces the mockup uses. Archivo carries the interface, DM Mono every

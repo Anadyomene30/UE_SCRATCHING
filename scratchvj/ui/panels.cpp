@@ -579,9 +579,29 @@ void draw_deck(Deck& deck, const Engine& engine, const Frame& frame, void* textu
     ImGui::PopID();
 }
 
-void draw_mix(Engine& engine, float width, float height) {
+void draw_mix(Engine& engine, const Frame& frame, float width, float height) {
     ImGui::BeginChild("mix", ImVec2(width, height), ImGuiChildFlags_Borders);
     eyebrow("PROGRAM");
+
+    // The program preview, top-right of the panel: the exact pixels the Spout
+    // output carries, so what the interface shows is what a receiver gets.
+    if (frame.tex_program != nullptr && frame.program_height > 0) {
+        const float ph = std::max(90.0f, ImGui::GetContentRegionAvail().y - 14.0f);
+        const float pw = ph * static_cast<float>(frame.program_width) /
+                         static_cast<float>(frame.program_height);
+        const ImVec2 window = ImGui::GetWindowPos();
+        const ImVec2 region_max = ImGui::GetWindowContentRegionMax();
+        const ImVec2 region_min = ImGui::GetWindowContentRegionMin();
+        const ImVec2 lo(window.x + region_max.x - pw, window.y + region_min.y);
+        ImDrawList* draw = ImGui::GetWindowDrawList();
+        draw->AddImage(ImTextureRef(reinterpret_cast<ImTextureID>(frame.tex_program)), lo,
+                       ImVec2(lo.x + pw, lo.y + ph));
+        draw->AddRect(lo, ImVec2(lo.x + pw, lo.y + ph), kHair);
+        push_small();
+        draw->AddText(ImVec2(lo.x + 8.0f, lo.y + 6.0f), kFaint, "SPOUT scratchvj");
+        pop_font();
+    }
+
     ImGui::Dummy(ImVec2(0.0f, 6.0f));
 
     const StackWeights stack = engine.stack();
@@ -713,7 +733,7 @@ void draw_surface(Engine& engine, float width, float height) {
 
 // --- EFFETS: the whole battery, with its correspondences stated honestly ------
 
-void draw_effects_screen(Engine& engine) {
+void draw_effects_screen(Engine& engine, const Frame& frame) {
     eyebrow("LA BATTERIE — chaque effet audio et son pendant visuel");
     push_small();
     ImGui::PushStyleColor(ImGuiCol_Text, rgba(kFaint));
@@ -759,7 +779,7 @@ void draw_effects_screen(Engine& engine) {
     ImGui::Dummy(ImVec2(0.0f, 14.0f));
     eyebrow("LE RACK — ce qui est charg\xC3\xA9 maintenant");
     ImGui::Dummy(ImVec2(0.0f, 4.0f));
-    draw_mix(engine, 0.0f, 0.0f);
+    draw_mix(engine, frame, 0.0f, 0.0f);
 }
 
 // --- MAPPING ------------------------------------------------------------------
@@ -1027,14 +1047,14 @@ void draw(Engine& engine, const Frame& frame) {
             ImGui::SameLine();
             draw_deck(engine.deck_b(), engine, frame, frame.tex_b, kSlate, false, deck_w,
                       deck_h);
-            draw_mix(engine, decks_w, mix_h);
+            draw_mix(engine, frame, decks_w, mix_h);
             ImGui::EndGroup();
 
             draw_surface(engine, 0.0f, surface_h);
             ImGui::EndTabItem();
         }
         if (ImGui::BeginTabItem("EFFETS")) {
-            draw_effects_screen(engine);
+            draw_effects_screen(engine, frame);
             ImGui::EndTabItem();
         }
         if (ImGui::BeginTabItem("MAPPING")) {

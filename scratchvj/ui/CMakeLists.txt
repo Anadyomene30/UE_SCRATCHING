@@ -51,8 +51,31 @@ target_include_directories(scratchvj_imgui PUBLIC
   ${imgui_SOURCE_DIR} ${imgui_SOURCE_DIR}/backends)
 target_link_libraries(scratchvj_imgui PUBLIC SDL3::SDL3)
 
-add_executable(scratchvj_ui WIN32 main_ui.cpp media.cpp panels.cpp)
+if(WIN32)
+  # Spout, pinned like the other dependencies. Only SpoutDX is built: the GL
+  # half of the SDK serves applications that render with OpenGL, which this one
+  # never will. /MT is switched off so Spout links the same runtime as SDL.
+  set(SPOUT_BUILD_SPOUTDX ON CACHE BOOL "" FORCE)
+  set(SPOUT_BUILD_LIBRARY OFF CACHE BOOL "" FORCE)
+  set(SPOUT_BUILD_CMT OFF CACHE BOOL "" FORCE)
+  set(SKIP_INSTALL_ALL ON CACHE BOOL "" FORCE)
+  FetchContent_Declare(spout2
+    GIT_REPOSITORY https://github.com/leadedge/Spout2.git
+    GIT_TAG c2bcc12147711d12ace7d5f08e869d774d840f8a  # 2.007.017
+  )
+  FetchContent_MakeAvailable(spout2)
+endif()
+
+add_executable(scratchvj_ui WIN32 main_ui.cpp media.cpp panels.cpp share.cpp)
 target_link_libraries(scratchvj_ui PRIVATE scratchvj_app scratchvj_imgui SDL3::SDL3)
+if(WIN32)
+  target_link_libraries(scratchvj_ui PRIVATE SpoutDX_static d3d11 dxgi)
+
+  # The proof of the output: a receiver built from the same SDK, so the Spout
+  # path is testable end to end with no third-party software installed.
+  add_executable(spout_check tools/spout_check.cpp)
+  target_link_libraries(spout_check PRIVATE SpoutDX_static d3d11 dxgi)
+endif()
 
 # The vendored sources are not ours to keep warning-clean, so the strict flags
 # apply to our own translation units only.

@@ -28,8 +28,10 @@
 #include "imgui.h"
 #include "imgui_impl_sdl3.h"
 #include "imgui_impl_sdlrenderer3.h"
+#include "core/compose.h"
 #include "media.h"
 #include "panels.h"
+#include "share.h"
 
 namespace {
 
@@ -134,6 +136,14 @@ int main(int, char**) {
     // With no caches at all, the fabricated demo decks stay and the wells say
     // honestly why they are empty.
     svj::ui::DeckMedia media_a, media_b, media_overlay;
+    std::vector<std::uint8_t> program;
+    SDL_Texture* program_tex = nullptr;
+
+    // The Spout sender is opened unconditionally: receivers that are not
+    // listening cost nothing, and an output that must be switched on before it
+    // can be discovered never gets discovered.
+    svj::ui::ProgramShare share;
+    share.open("scratchvj");
     {
         std::vector<std::filesystem::path> caches;
         std::error_code missing;
@@ -242,6 +252,49 @@ int main(int, char**) {
         view.phase = simulation.phase();
         view.tex_a = media_a.frame_at(renderer, engine.deck_a().played.position_s);
         view.tex_b = media_b.frame_at(renderer, engine.deck_b().played.position_s);
+        media_overlay.frame_at(renderer, engine.overlay().played.position_s);
+
+        // The program: what actually leaves the machine. Composited on the CPU
+        // (core/compose, tested) at deck A's resolution, shown in the interface
+        // and published over Spout -- the same bytes for both, so the preview
+        // can never flatter what a receiver gets.
+        if (media_a.ready() || media_b.ready()) {
+            const std::uint32_t pw = media_a.ready() ? media_a.width() : media_b.width();
+            const std::uint32_t ph = media_a.ready() ? media_a.height() : media_b.height();
+            const StackWeights stack = engine.stack();
+
+            clear_program(program, pw, ph);
+            accumulate_layer(program, pw, ph,
+                             ComposeLayer{media_a.pixels(), media_a.width(),
+                                          media_a.height(), stack.a, BlendMode::Normal});
+            // B rides on top additively: with the constant-power crossfader that
+            // is a fade, and it keeps a transform cut from going through black.
+            accumulate_layer(program, pw, ph,
+                             ComposeLayer{media_b.pixels(), media_b.width(),
+                                          media_b.height(), stack.b, BlendMode::Add});
+            accumulate_layer(program, pw, ph,
+                             ComposeLayer{media_overlay.pixels(), media_overlay.width(),
+                                          media_overlay.height(), stack.overlay,
+                                          engine.overlay_layer().blend});
+
+            if (program_tex == nullptr) {
+                program_tex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA32,
+                                                SDL_TEXTUREACCESS_STREAMING,
+                                                static_cast<int>(pw),
+                                                static_cast<int>(ph));
+                if (program_tex != nullptr) {
+                    SDL_SetTextureScaleMode(program_tex, SDL_SCALEMODE_LINEAR);
+                }
+            }
+            if (program_tex != nullptr) {
+                SDL_UpdateTexture(program_tex, nullptr, program.data(),
+                                  static_cast<int>(pw) * 4);
+                view.tex_program = program_tex;
+                view.program_width = pw;
+                view.program_height = ph;
+            }
+            share.send(program.data(), pw, ph);
+        }
         svj::ui::draw(engine, view);
 
         ImGui::Render();
