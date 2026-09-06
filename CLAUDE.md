@@ -111,11 +111,18 @@ l'aveugle :
   réveillé — voir la section « Le casque » du roadmap avant d'y toucher
 - Le test en scène du plugin Unreal `ScratchLink` — il compile contre UE 5.7 et le flux UDP est vérifié, mais personne n'a encore scratché une scène avec
 
-**Deux tests qui reviennent à l'utilisateur, devant le matériel** (voir le
-roadmap pour le détail) :
-1. Est-ce que l'Elite émet son état MIDI à la connexion ?
-2. Est-ce que le second port USB de l'Elite reçoit le timecode en parallèle de
-   Serato ?
+**Deux tests devant le matériel** (voir le roadmap pour ce qui est déjà établi).
+Le matériel est branché et deux sondes existent :
+
+```sh
+./build-ui/scratchvj/ui/Release/midi_probe.exe all 45      # puis balayer tout
+./build-ui/scratchvj/ui/Release/audio_probe.exe "Reloop ELITE" 5
+```
+
+1. Est-ce que l'Elite émet son état MIDI à l'ouverture du port ? (`midi_probe`)
+2. Est-ce que son entrée ligne WASAPI porte le timecode ? (`audio_probe`, avec
+   une platine qui lit un disque de contrôle). Si oui, la voie « WASAPI partagé »
+   est ouverte et la deuxième machine tombe.
 
 Ne pas commencer une nouvelle brique sans avoir lu la section correspondante du
 roadmap — plusieurs choix (le profil `wireless` du timecode, la fraîcheur plutôt

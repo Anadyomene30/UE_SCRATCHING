@@ -221,6 +221,20 @@ if(WIN32)
                                            SpoutDX_static d3d11 dxgi)
   target_include_directories(live_check PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
+  # What a real controller sends, and when. Settles the roadmap's first hardware
+  # question -- whether the mixer dumps its state on connect -- and puts
+  # core/midi in front of real bytes. winmm rather than RtMidi: this is a probe,
+  # and an OS library answers it without adding a dependency to decide on.
+  add_executable(midi_probe tools/midi_probe.cpp)
+  target_link_libraries(midi_probe PRIVATE scratchvj_core winmm)
+
+  # And what arrives on an audio input: whether the mixer's USB output carries
+  # the TIMECODE, and whether it can be read in SHARED mode while Serato has the
+  # ASIO driver. That is the question the whole audio architecture rests on, and
+  # the roadmap explicitly refuses to presume the answer.
+  add_executable(audio_probe tools/audio_probe.cpp)
+  target_link_libraries(audio_probe PRIVATE ole32)
+
   # What OpenXR this machine offers: which runtime, which graphics binding,
   # which renderer bgfx picked, and whether a headset is awake. Every VR
   # decision rests on those four facts and none of them can be guessed.

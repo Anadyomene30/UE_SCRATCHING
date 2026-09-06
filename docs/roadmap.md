@@ -51,12 +51,30 @@ est fait et vérifié — voir le tableau ci-dessus.
 > passage **Studio Monitor**, donc un récepteur indépendant pour la vérifier,
 > exactement comme `spout_check` vérifie Spout.
 
-**Deux tests qui reviennent à l'utilisateur, devant le matériel :**
-1. Est-ce que l'Elite émet son état MIDI à la connexion ? Ça décide du sort du
-   mode fantôme des potards absolus.
-2. Est-ce que le **second port USB** de l'Elite reçoit le timecode en parallèle de
-   Serato ? C'est la seule inconnue qui pourrait imposer une deuxième machine —
-   voir le tableau des quatre voies plus bas.
+**Deux tests qui reviennent à l'utilisateur, devant le matériel.** Le matériel a
+été branché le 2026-09-06 et deux outils existent maintenant pour y répondre —
+`midi_probe` et `audio_probe`, tous deux sous `ui/tools`. Ce qui est déjà établi :
+
+| Fait | Établi par |
+|---|---|
+| Windows voit `ELITE`, `Phase`, et **deux** `RP8000mk2` (chemins USB parents distincts : ce sont les deux platines, pas deux ports d'une) | `midi_probe` sans argument |
+| Aucun port MIDI n'est pris par une autre application | `midi_probe all` les ouvre tous |
+| L'Elite expose un pilote **ASIO** *et* un point de terminaison **WASAPI** « Entrée ligne » | énumération Windows |
+| Cette entrée s'ouvre en **mode partagé**, 48 kHz, stéréo, flottant | `audio_probe "Reloop ELITE"` |
+| L'Elite n'expose à WASAPI qu'**une seule paire stéréo** — sa nature 10x10 vit du côté ASIO | énumération des points de terminaison |
+
+Restent à mesurer, et il faut des mains sur le matériel :
+
+1. **Est-ce que l'Elite émet son état MIDI à la connexion ?** Ça décide du sort du
+   mode fantôme des potards absolus. `midi_probe all 45`, puis balayer tout.
+   Rien n'est encore arrivé, mais rien n'a encore été touché pendant un test.
+2. **Est-ce que cette entrée WASAPI porte le timecode ?** C'est la reformulation
+   concrète de la question du second port : si oui, la voie « WASAPI partagé » du
+   tableau des quatre voies est ouverte et la deuxième machine tombe.
+   `audio_probe "Reloop ELITE" 5` avec une platine qui lit un disque de contrôle
+   et la voie en PHONO. Mesuré à vide : silence (crête 0,0006, le bruit de fond).
+   L'outil ne se contente pas d'un niveau — il cherche la **quadrature** entre
+   les deux voies, la signature qu'aucune musique n'a.
 
 ---
 
