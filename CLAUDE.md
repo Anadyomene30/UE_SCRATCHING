@@ -25,7 +25,7 @@ Toute nouvelle fonctionnalité doit respecter ces deux règles.
 
 ```sh
 cmake -S . -B build && cmake --build build
-ctest --test-dir build --output-on-failure    # 388 tests, doivent tous passer
+ctest --test-dir build --output-on-failure    # 402 tests, doivent tous passer
 ./build/scratchvj/scratchvj demo              # démo sans matériel
 ./build/scratchvj/scratchvj effects           # catalogue d'effets
 ./build/scratchvj/scratchvj layout            # checklist MIDI learn
@@ -101,8 +101,9 @@ l'aveugle :
 - Un vrai backend MIDI (RtMidi) et audio (miniaudio/ASIO)
 - Le rendu GPU est complet et vérifié : compositeur (`fs_program.sc` / `gpu_check`),
   360 (`fs_view360.sc` / `sphere_check`), effets une-frame (`fs_effects.sc` /
-  `fx_check`) et multi-taps (`fs_taps.sc` / `taps_check`). Restent la FFT
-  audio-réactive et les entrées live.
+  `fx_check`) et multi-taps (`fs_taps.sc` / `taps_check`). La FFT audio-réactive
+  est faite aussi (`core/spectrum`) et attend une vraie entrée audio ; restent
+  les entrées live.
 - Les sorties Syphon (macOS) et NDI — Spout est fait et vérifié (ui/share, spout_check)
 - La **session** OpenXR pour voir l'équirect scratché dans le Quest. La géométrie
   est faite et vérifiée (`core/headset`, `fs_view360_eye.sc`, `eye_check`) ;

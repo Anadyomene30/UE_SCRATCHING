@@ -32,6 +32,7 @@
 #include "core/modulator.h"
 #include "core/playback.h"
 #include "core/protocol.h"
+#include "core/spectrum.h"
 #include "core/sphere.h"
 #include "core/surface.h"
 #include "core/timecode.h"
@@ -190,7 +191,23 @@ public:
     const Mask& mask() const { return mask_; }
 
     const MappingEngine& mapping() const { return mapping_; }
+    // Mutable because mappings are edited at run time: MIDI learn binds them, a
+    // preset replaces them, and the interface will let one be added by hand.
+    // Anything added after configure() needs bind() called again to resolve its
+    // control ids against the surface.
+    MappingEngine& mapping() { return mapping_; }
     const ModulatorBank& modulators() const { return modulators_; }
+
+    // Live audio for the reactive bands. Called from whoever owns the input --
+    // an audio callback once miniaudio exists, the demo script until then. The
+    // engine does not open a device and never will: `core/` has no dependency,
+    // and an instrument that grabs the sound card in follower mode would stop
+    // Serato from working. See the roadmap's two audio modes.
+    //
+    // Nothing calls this in a set where no audio arrives, and that is fine: the
+    // bands decay to zero and every AudioBand mapping simply reads 0.
+    void analyse_audio(const float* samples, std::size_t count);
+    const SpectrumAnalyser& spectrum() const { return spectrum_; }
     const EffectRack& rack() const { return rack_; }
     const CutDetector& cuts() const { return cuts_; }
     const Anchor& anchor() const { return anchor_; }
@@ -220,6 +237,10 @@ private:
     Queue queue_;
     MappingEngine mapping_;
     ModulatorBank modulators_;
+    // 1024 at 48 kHz: 21 ms of resolution and of latency together, inside the
+    // 30 ms the roadmap allows for the whole hand-to-screen chain.
+    SpectrumAnalyser spectrum_{1024, 48000.0, SpectrumSettings{}};
+    double audio_silent_s_ = 0.0;
     EffectRack rack_{3};
     CutDetector cuts_;
     Anchor anchor_;

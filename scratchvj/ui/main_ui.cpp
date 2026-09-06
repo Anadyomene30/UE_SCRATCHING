@@ -337,6 +337,7 @@ int main(int, char**) {
             std::chrono::duration<double>(std::chrono::steady_clock::now() - started).count();
         const double t = std::fmod(wall_s, kScriptSeconds);
         const float dt = static_cast<float>(t >= previous_s ? t - previous_s : t);
+        const double span_from = previous_s;
         previous_s = t;
 
         // A clip the panel asked for LAST frame, served now -- before anything
@@ -364,6 +365,19 @@ int main(int, char**) {
         view.load_clip = kNoClip;
 
         const auto now_us = static_cast<std::uint64_t>(wall_s * 1e6);
+
+        // The sound the script is notionally playing, into the reactive bands.
+        // Synthetic until an audio device exists -- but the analyser, the
+        // mapping and everything downstream are the real ones, so what is on
+        // screen is the actual behaviour rather than a mock of it. Skipped on
+        // the frame the script wraps, where the span would run backwards.
+        if (t > span_from) {
+            static std::vector<float> audio(4096);
+            const std::size_t written =
+                simulation.audio(span_from, t, kBpm, 48000.0, audio.data(), audio.size());
+            engine.analyse_audio(audio.data(), written);
+        }
+
         simulation.step(t, engine.surface(), now_us);
         for (const auto& owned : hand.owned) {
             engine.surface().set(owned.first, owned.second, now_us);

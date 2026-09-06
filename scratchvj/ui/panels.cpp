@@ -703,6 +703,70 @@ void draw_deck(Deck& deck, Engine& engine, Frame& frame, void* texture,
     ImGui::PopID();
 }
 
+// --- the reactive spectrum ---------------------------------------------------
+//
+// Eight log-spaced bands, drawn as bars with their edges in hertz underneath.
+// The frequency labels are not decoration: an AudioBand mapping names a band by
+// INDEX, and a band whose range is invisible is a number nobody can map on
+// purpose. Seeing that band 0 stops at 90 Hz is what makes "graves -> bloom" a
+// decision rather than a guess.
+void draw_spectrum(const Engine& engine) {
+    const SpectrumAnalyser& analyser = engine.spectrum();
+    const std::size_t count = analyser.band_count();
+    if (count == 0) return;
+
+    eyebrow("SPECTRE \xE2\x80\x94 sources audio-r\xC3\xA9""actives");
+    ImGui::Dummy(ImVec2(0.0f, 4.0f));
+
+    const float height = 34.0f;
+    const float gap = 3.0f;
+    const float full = ImGui::GetContentRegionAvail().x;
+    const float bar = (full - gap * static_cast<float>(count - 1)) /
+                      static_cast<float>(count);
+    const ImVec2 origin = ImGui::GetCursorScreenPos();
+    ImDrawList* draw = ImGui::GetWindowDrawList();
+
+    for (std::size_t i = 0; i < count; ++i) {
+        const float x = origin.x + static_cast<float>(i) * (bar + gap);
+        const float level = analyser.bands()[i];
+
+        draw->AddRectFilled(ImVec2(x, origin.y), ImVec2(x + bar, origin.y + height),
+                            kWell);
+        const float filled = height * level;
+        if (filled > 0.5f) {
+            // Amber low, sage high: the bass end is what a VJ reaches for first,
+            // and giving it the accent colour makes the kick findable at a
+            // glance across a dark booth.
+            const float mix = static_cast<float>(i) / static_cast<float>(count - 1 ? count - 1 : 1);
+            const ImU32 colour = mix < 0.5f ? kAccent : kSage;
+            draw->AddRectFilled(ImVec2(x, origin.y + height - filled),
+                                ImVec2(x + bar, origin.y + height), colour);
+        }
+    }
+    ImGui::Dummy(ImVec2(full, height + 2.0f));
+
+    push_small();
+    ImGui::PushStyleColor(ImGuiCol_Text, rgba(kFaint));
+    for (std::size_t i = 0; i < count; ++i) {
+        if (i > 0) ImGui::SameLine(0.0f, gap);
+        const double hz = analyser.band_high_hz(i);
+        char label[16];
+        if (hz >= 1000.0) {
+            std::snprintf(label, sizeof(label), "%.0fk", hz / 1000.0);
+        } else {
+            std::snprintf(label, sizeof(label), "%.0f", hz);
+        }
+        // Fixed-width cells, so the labels stay under their own bars instead of
+        // drifting as the numbers change width.
+        ImGui::BeginGroup();
+        ImGui::Dummy(ImVec2(bar, 0.0f));
+        ImGui::TextUnformatted(label);
+        ImGui::EndGroup();
+    }
+    ImGui::PopStyleColor();
+    pop_font();
+}
+
 void draw_mix(Engine& engine, Frame& frame, float width, float height) {
     ImGui::BeginChild("mix", ImVec2(width, height), ImGuiChildFlags_Borders);
     eyebrow("PROGRAM");
@@ -1171,7 +1235,14 @@ void draw_effects_screen(Engine& engine, Frame& frame) {
         "pr\xC3\xA9sent\xC3\xA9""e comme identique.");
     ImGui::PopStyleColor();
     pop_font();
-    ImGui::Dummy(ImVec2(0.0f, 8.0f));
+    ImGui::Dummy(ImVec2(0.0f, 12.0f));
+
+    // The audio side of the correspondence, live. This screen argues that an
+    // effect has a temporal reading and a spatial one; the spectrum is the
+    // temporal reading made visible, and it is where a performer picks which
+    // band to point at which parameter.
+    draw_spectrum(engine);
+    ImGui::Dummy(ImVec2(0.0f, 14.0f));
 
     if (ImGui::BeginTable("catalogue", 4,
                           ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_RowBg)) {

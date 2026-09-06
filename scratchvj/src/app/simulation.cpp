@@ -1,5 +1,6 @@
 #include "app/simulation.h"
 
+#include <algorithm>
 #include <cmath>
 
 namespace svj {
@@ -127,6 +128,48 @@ void Simulation::step(double t_s, Surface& surface, std::uint64_t now_us) {
 
     surface.set(fader1_, 0.92f, now_us);
     surface.set(fader2_, static_cast<float>(0.6 + 0.3 * triangle(t, 9.0)), now_us);
+}
+
+std::size_t Simulation::audio(double from_s, double to_s, double bpm,
+                              double sample_rate, float* out,
+                              std::size_t capacity) const {
+    if (out == nullptr || capacity == 0 || sample_rate <= 1.0) return 0;
+    if (to_s <= from_s) return 0;
+
+    const double beat_s = 60.0 / (bpm > 1.0 ? bpm : 124.0);
+    const auto count = std::min(
+        capacity, static_cast<std::size_t>((to_s - from_s) * sample_rate));
+
+    for (std::size_t i = 0; i < count; ++i) {
+        const double t = from_s + static_cast<double>(i) / sample_rate;
+
+        // Where we are inside the current beat. Everything below is a function
+        // of this rather than of a running counter, so any span of the script
+        // renders identically however the caller chops it up -- the same rule
+        // the rest of the simulation follows.
+        const double beat_phase = std::fmod(t / beat_s, 1.0);
+        const double since_beat = beat_phase * beat_s;
+
+        // Kick: a 55 Hz tone under a fast decay. Low enough to land in the
+        // bottom band and nowhere else.
+        const double kick_env = std::exp(-since_beat * 28.0);
+        const double kick = 0.9 * kick_env * std::sin(2.0 * kPi * 55.0 * since_beat);
+
+        // Hat on the off-beat: a burst of high content, deterministic rather
+        // than random so the script stays reproducible. Two close frequencies
+        // beating against each other read as noise to a band this wide.
+        const double since_off = std::fmod(since_beat + beat_s * 0.5, beat_s);
+        const double hat_env = std::exp(-since_off * 90.0);
+        const double hat = 0.35 * hat_env *
+                           (std::sin(2.0 * kPi * 9100.0 * t) +
+                            std::sin(2.0 * kPi * 11300.0 * t)) * 0.5;
+
+        // A bass line holding the middle, so the mid bands are not silent.
+        const double bass = 0.25 * std::sin(2.0 * kPi * 440.0 * t);
+
+        out[i] = static_cast<float>(std::clamp(kick + hat + bass, -1.0, 1.0));
+    }
+    return count;
 }
 
 }  // namespace svj

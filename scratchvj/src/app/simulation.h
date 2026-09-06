@@ -10,6 +10,7 @@
 // numbers, so a change in behaviour is a change in the code and not in the noise.
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <string>
 
@@ -43,6 +44,18 @@ public:
 
     // A one-line description of what the script is doing right now.
     const std::string& phase() const { return phase_; }
+
+    // The sound the script is notionally playing, for the reactive bands: a kick
+    // on every beat, a hat on every off-beat, and a bass note under both, at the
+    // BPM passed in. Synthetic on purpose -- the point is to exercise the
+    // analyser and everything mapped to it without a sound card, exactly as the
+    // rest of this file exercises the engine without turntables.
+    //
+    // `from_s` to `to_s` is the span to render; the phase is derived from the
+    // absolute time, so the result does not depend on how the caller chops it
+    // up. Writes into `out` and returns how many samples it wrote.
+    std::size_t audio(double from_s, double to_s, double bpm, double sample_rate,
+                      float* out, std::size_t capacity) const;
 
 private:
     DecoderSample deck_a_;

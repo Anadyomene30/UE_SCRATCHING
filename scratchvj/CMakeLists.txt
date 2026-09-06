@@ -34,6 +34,7 @@ add_library(scratchvj_core STATIC
   src/core/modulator.cpp
   src/core/playback.cpp
   src/core/protocol.cpp
+  src/core/spectrum.cpp
   src/core/sphere.cpp
   src/core/surface.cpp
   src/core/take.cpp
@@ -132,6 +133,7 @@ if(SCRATCHVJ_BUILD_TESTS)
     tests/test_modulator.cpp
     tests/test_playback.cpp
     tests/test_protocol.cpp
+    tests/test_spectrum.cpp
     tests/test_sphere.cpp
     tests/test_surface.cpp
     tests/test_take.cpp

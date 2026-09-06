@@ -16,7 +16,7 @@ tout ce qui reste à faire survive à la session qui l'a produit.
 | 6. Transport | Fait en entier : boucles, hot cues, beat jump, slip, ABS/REL/INT, plus la source de position et les modes de lecture par deck | `core/transport`, `core/playback` |
 | 7. 360 | Fait à l'image : la passe GPU (`fs_view360.sc`) reprojette l'équirect en perspective / little planet / fisheye, tenue conforme à `core/sphere` par `sphere_check` (écart max 1/255) ; le regard suit le mapping (potards EQ), le program composite la vue projetée | `core/sphere`, `ui/gpu_view360` |
 | 8. Mode autonome | Non commencé (a besoin d'un vrai backend audio) | — |
-| 9. Effets et modulateurs | Rack, catalogue, LFO/enveloppes faits ; les effets **une-frame** sont dessinés (`fs_effects.sc` / `fx_check`) et les **multi-taps** aussi — traînées et slit scan lisent le clip à huit moments par tableau de textures (`core/videotaps`, `fs_taps.sc`, `taps_check`), calculés depuis position et vitesse donc scratchables et réversibles ; FFT non faite | `core/effect`, `core/videofx`, `core/videotaps`, `core/modulator`, `ui/gpu_effects`, `ui/gpu_taps` |
+| 9. Effets et modulateurs | Rack, catalogue, LFO/enveloppes faits ; les effets **une-frame** sont dessinés (`fs_effects.sc` / `fx_check`) et les **multi-taps** aussi — traînées et slit scan lisent le clip à huit moments par tableau de textures (`core/videotaps`, `fs_taps.sc`, `taps_check`), calculés depuis position et vitesse donc scratchables et réversibles ; la **FFT audio-réactive** est faite (`core/spectrum`, bandes log affichées dans l'onglet EFFETS) et attend une vraie entrée audio | `core/effect`, `core/videofx`, `core/videotaps`, `core/modulator`, `core/spectrum`, `ui/gpu_effects`, `ui/gpu_taps` |
 | 10. Entrées live | Non commencé | — |
 | 11. Sorties | Corner pin, **warp maillé bézier** avec ajout/retrait de lignes et **presets de mapping** sauvegardables (`core/mesh`, `config/warp_io`, testés), masque, compositeur GPU, et **sortie Spout vérifiée** par un récepteur indépendant (`spout_check`) ; Syphon/NDI restants | `core/warp`, `core/mesh`, `config/warp_io`, `ui/share` |
 | 12. Unreal | L'app émet le flux UDP (vérifié par `net_check`) et le plugin `ScratchLink` existe — subsystem + échantillonnage Hermite + dilation temporelle — compilé contre UE 5.7 ; le test en scène reste à faire | `core/protocol`, `ui/netout`, `unreal/ScratchLink` |
@@ -36,8 +36,20 @@ passe GPU (`ui/gpu_eye`, `fs_view360_eye.sc`) tenue à sa référence par
 **Ce qui reste, dans les grandes lignes** : le décodeur `timecoder.c` de xwax,
 un vrai périphérique MIDI (RtMidi) et audio (miniaudio/ASIO), Syphon/NDI, la
 **session** OpenXR (la géométrie est faite, la boucle de frame attend le casque),
-la FFT audio-réactive, les entrées live, et le test en scène du plugin Unreal. Le
-reste du plan initial est fait et vérifié — voir le tableau ci-dessus.
+les entrées live, et le test en scène du plugin Unreal. Le reste du plan initial
+est fait et vérifié — voir le tableau ci-dessus.
+
+> **NDI : bloqué sur une licence, pas sur du code.** La machine a bien le
+> *runtime* NDI (v5 et les NDI 6 Tools, avec `NDI_RUNTIME_DIR_V6` posée), donc le
+> chargement dynamique de `Processing.NDI.Lib.x64.dll` — la voie que NDI lui-même
+> recommande, sans DLL à redistribuer — fonctionnerait. Il manque les **en-têtes
+> du SDK**, dont le téléchargement suppose d'accepter l'EULA NDI. C'est à
+> l'utilisateur de le faire, pas à l'outil. Le SDK ne doit pas être versionné
+> dans ce dépôt (il sera GPL-3 via xwax) : le motif à suivre est celui d'`obs-ndi`
+> — une option CMake pointant sur un SDK installé localement, et la sortie NDI
+> compilée hors du binaire quand il est absent. Les NDI Tools fournissent au
+> passage **Studio Monitor**, donc un récepteur indépendant pour la vérifier,
+> exactement comme `spout_check` vérifie Spout.
 
 **Deux tests qui reviennent à l'utilisateur, devant le matériel :**
 1. Est-ce que l'Elite émet son état MIDI à la connexion ? Ça décide du sort du
@@ -400,7 +412,7 @@ déjà été traité.
 
 | Manque | Vient de | Pourquoi c'est bloquant |
 |---|---|---|
-| **Réactivité audio (FFT)** | Resolume | Le geste reste le différenciateur, mais l'audio-réactif est attendu et se branche sur la mécanique de `core/modulator` (`SourceKind::AudioBand` existe déjà côté mapping). |
+| ~~**Réactivité audio (FFT)**~~ | Resolume | **Fait** : `core/spectrum` (fenêtre de Hann, FFT radix-2, bandes log) remplit le tableau `bands` que `SourceKind::AudioBand` lisait déjà. Reste à lui donner du vrai son plutôt que celui du script — c'est-à-dire le backend audio. |
 | **Entrées live** | Resolume | Un deck dont la source est une caméra, une entrée NDI ou Spout, au lieu d'un fichier. |
 | **Scope de calibration timecode** | Serato | Un `--monitor` en ligne de commande existe déjà (`core/timecode` exposé par la démo) ; l'UI affiche confiance et vitesse par deck, mais pas encore la figure de Lissajous qui permet de régler une cellule à l'oreille et à l'œil. |
 

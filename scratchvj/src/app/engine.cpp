@@ -352,6 +352,17 @@ void Engine::step(const EngineFrame& frame) {
     if (a_.gestures.backspin()) inputs.gesture_bits |= kGestureBackspinA;
     inputs.modulators = modulators_.values().data();
     inputs.modulator_count = modulators_.size();
+
+    // The reactive bands. A set where no audio ever arrives leaves them decaying
+    // to zero rather than frozen: a disconnected input must not pin the video on
+    // whatever the last sound happened to be, which reads as a hung machine.
+    audio_silent_s_ += frame.dt_s;
+    if (audio_silent_s_ > 0.05) {
+        spectrum_.advance_silent(audio_silent_s_);
+        audio_silent_s_ = 0.0;
+    }
+    inputs.bands = spectrum_.bands().data();
+    inputs.band_count = spectrum_.band_count();
     mapping_.evaluate(surface_, inputs, frame.dt_s);
 
     // The rack's video parameters follow the mapping too, so a knob, an LFO or
@@ -393,6 +404,15 @@ void Engine::step(const EngineFrame& frame) {
             view_a_.pitch_deg = static_cast<double>(mapping_.value(i));
         }
     }
+}
+
+void Engine::analyse_audio(const float* samples, std::size_t count) {
+    if (samples == nullptr || count == 0) return;
+    // Any window this produces resets the silence timer, so the decay in step()
+    // only runs once audio has genuinely stopped arriving -- not merely because
+    // a block was shorter than one window.
+    spectrum_.push(samples, count);
+    audio_silent_s_ = 0.0;
 }
 
 SchemaPacket Engine::schema() const {

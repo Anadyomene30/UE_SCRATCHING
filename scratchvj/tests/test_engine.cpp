@@ -106,6 +106,84 @@ SVJ_TEST("engine: the modulators follow the platter, backwards included") {
     CHECK(during < before);
 }
 
+SVJ_TEST("engine: the script's kick reaches a mapping through the spectrum") {
+    // The whole reactive path in one test: synthetic audio -> the analyser ->
+    // Engine's `bands` pointer -> the mapping engine. Each link is covered on
+    // its own elsewhere; this is the only thing that proves they are connected,
+    // and a mistyped pointer here would leave every AudioBand mapping silently
+    // reading zero forever.
+    Rig rig;
+
+    Mapping m;
+    m.name = "graves -> test";
+    m.source.kind = SourceKind::AudioBand;
+    m.source.index = 0;  // the bottom band, where the 55 Hz kick lives
+    const std::size_t index = rig.engine.mapping().add(m);
+    rig.engine.bind();
+
+    float peak = 0.0f;
+    const double dt = 1.0 / 60.0;
+    std::vector<float> block(2048);
+    for (double t = 0.0; t < 2.0; t += dt) {
+        const std::size_t written =
+            rig.simulation.audio(t, t + dt, rig.engine.bpm(), 48000.0, block.data(),
+                                 block.size());
+        rig.engine.analyse_audio(block.data(), written);
+
+        const auto now_us = static_cast<std::uint64_t>(t * 1e6);
+        rig.simulation.step(t, rig.engine.surface(), now_us);
+        EngineFrame frame;
+        frame.time_s = t;
+        frame.dt_s = static_cast<float>(dt);
+        frame.now_us = now_us;
+        frame.deck_a = rig.simulation.deck_a();
+        frame.deck_b = rig.simulation.deck_b();
+        rig.engine.step(frame);
+
+        peak = std::max(peak, rig.engine.mapping().value(index));
+    }
+    CHECK(peak > 0.3f);
+}
+
+SVJ_TEST("engine: the bass band pumps on the beat instead of sitting pinned") {
+    // A band that never comes back down is not reactive, it is a lamp. The kick
+    // rings for about 35 ms out of every 484 ms at 124 BPM, so band 0 has to
+    // spend most of the beat well below its peak -- otherwise anything mapped to
+    // it is effectively a constant.
+    Rig rig;
+    std::vector<float> block(4096);
+    float low = 1.0f;
+    float high = 0.0f;
+
+    const double dt = 1.0 / 120.0;
+    for (double t = 0.0; t < 2.0; t += dt) {
+        const std::size_t written =
+            rig.simulation.audio(t, t + dt, rig.engine.bpm(), 48000.0, block.data(),
+                                 block.size());
+        rig.engine.analyse_audio(block.data(), written);
+        if (t < 1.0) continue;  // let the follower settle before measuring
+        const float band = rig.engine.spectrum().bands()[0];
+        low = std::min(low, band);
+        high = std::max(high, band);
+    }
+    CHECK(high > 0.4f);
+    CHECK(low < high * 0.5f);
+}
+
+SVJ_TEST("engine: the bands fall back to zero when the audio stops") {
+    // A disconnected input must not pin the video on the last sound it heard.
+    Rig rig;
+    std::vector<float> block(2048);
+    const std::size_t written =
+        rig.simulation.audio(0.0, 0.25, rig.engine.bpm(), 48000.0, block.data(),
+                             block.size());
+    rig.engine.analyse_audio(block.data(), written);
+    CHECK(rig.engine.spectrum().bands()[0] > 0.2f);
+
+    rig.run(3.0, 60.0);  // three seconds of the script, and no audio at all
+    CHECK(rig.engine.spectrum().bands()[0] < 0.02f);
+}
+
 SVJ_TEST("engine: a loop is set where the platter was, not where it has reached") {
     // The command is applied before advance(), so a loop dropped on the beat is
     // quantised from the position the button was pressed at. A frame's worth of

@@ -87,7 +87,7 @@ looking plausible on a moving picture.
 
 ## Current state
 
-The engine's logic is written and covered by **388 tests**; the parts that touch
+The engine's logic is written and covered by **402 tests**; the parts that touch
 hardware are not.
 
 | Module | What it does |
@@ -107,6 +107,8 @@ hardware are not.
 | `core/mixer` | Crossfader curves, mix weights, transform detection, the overlay layer |
 | `core/effect` | The paired audio/video effect rack and its catalogue |
 | `core/sphere` | 360 reprojection: perspective, little planet, fisheye |
+| `core/headset` | The same sphere seen through a headset: head pose, per-eye asymmetric field of view |
+| `core/spectrum` | Windowed FFT and log-spaced bands, the source audio-reactive mappings read |
 | `core/videocache` | The `.svcache` clip format: fixed-size block-compressed frames |
 | `core/framewindow` | The budget-driven rolling window of frames in video memory |
 | `core/library` | Clips, crates, and the play queue |
@@ -117,10 +119,11 @@ hardware are not.
 | `app/engine` | The per-frame composition: two decks, the surface, the mixer, the rack |
 | `app/` | The simulation and the terminal dashboard |
 
-Not yet written, and all of it needs hardware or heavy dependencies to be worth
-writing: real MIDI and audio devices, the xwax timecode decoder, the FFmpeg
-analysis pass, GPU rendering, the ImGui interface, the outputs, and the Unreal
-plugin.
+Not yet written, and all of it needs hardware or a licence to be worth writing:
+real MIDI and audio devices, the xwax timecode decoder, the OpenXR session (the
+geometry is done and checked; the frame loop needs a headset awake), NDI output
+(the runtime is here, the SDK headers need its EULA accepted), Syphon on macOS,
+and live camera inputs.
 
 **For the full picture — the original design reasoning, a milestone-by-milestone
 status table, what's left, what's deliberately out of scope, and the two things
