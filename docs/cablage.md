@@ -53,6 +53,15 @@ studio par exemple, sans toucher à l'Elite. Trois câblages selon l'usage :
 MWM à Serato et rekordbox seulement. Le lire relèverait de la rétro-ingénierie :
 projet à part, résultat non garanti, et le RCA marche aujourd'hui.)
 
+> **Question ouverte, mesurable en une commande : le récepteur émet-il encore
+> sur ses RCA pendant qu'il est en HID ?** La doc MWM présente HID et DVS comme
+> des alternatives, sans dire que le HID coupe les RCA. Si les deux coexistent,
+> la meilleure configuration suiveur devient : **Serato en HID** (son intégration
+> native, sans REL) **+ scratchvj sur les RCA** (vers la MOTU, sans toucher à la
+> table). Test : Phase en HID avec Serato, RCA dans la MOTU, remote qui tourne,
+> `audio_probe all 3` — si `<<< TIMECODE` apparaît, cette variante remplace la
+> ligne « Serato + vidéo » du tableau ci-dessus.
+
 **Le format du signal se choisit dans Phase Manager** (Configuration DVS :
 Serato DJ, Traktor, rekordbox, VirtualDJ…). Pour ce projet, **rester sur
 « Serato DJ » dans tous les cas** :
