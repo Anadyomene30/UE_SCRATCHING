@@ -138,7 +138,7 @@ target_link_libraries(scratchvj_gpu PUBLIC bgfx bx bimg scratchvj_core)
 add_executable(scratchvj_ui WIN32 imgui_impl_bgfx.cpp main_ui.cpp media.cpp netout.cpp
                                   panels.cpp share.cpp
                                   ${SVJ_IMGUI_VS_HEADERS} ${SVJ_IMGUI_FS_HEADERS})
-target_link_libraries(scratchvj_ui PRIVATE scratchvj_app scratchvj_imgui SDL3::SDL3 bgfx
+target_link_libraries(scratchvj_ui PRIVATE scratchvj_app scratchvj_config scratchvj_imgui SDL3::SDL3 bgfx
                                            scratchvj_gpu)
 
 # The proof the shader matches its reference: same layers through core/compose

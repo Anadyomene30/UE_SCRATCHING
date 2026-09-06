@@ -27,6 +27,7 @@
 #include "core/gestures.h"
 #include "core/library.h"
 #include "core/mapping.h"
+#include "core/mesh.h"
 #include "core/mixer.h"
 #include "core/modulator.h"
 #include "core/playback.h"
@@ -176,6 +177,15 @@ public:
     // and every output (screen, Spout, NDI) must see the same ones.
     CornerPin& pin() { return pin_; }
     const CornerPin& pin() const { return pin_; }
+
+    // The warp grid, for surfaces a homography cannot describe. Off until
+    // asked for: the pin alone is right for the ordinary flat wall, and a grid
+    // switched on by default would put sixteen handles between a performer and
+    // the four they actually need.
+    WarpMesh& mesh() { return mesh_; }
+    const WarpMesh& mesh() const { return mesh_; }
+    bool mesh_enabled() const { return mesh_enabled_; }
+    void set_mesh_enabled(bool on) { mesh_enabled_ = on; }
     Mask& mask() { return mask_; }
     const Mask& mask() const { return mask_; }
 
@@ -203,6 +213,8 @@ private:
     StackWeights stack_;
     SphereView view_a_;
     CornerPin pin_;
+    WarpMesh mesh_;
+    bool mesh_enabled_ = false;
     Mask mask_;
     Library library_;
     Queue queue_;

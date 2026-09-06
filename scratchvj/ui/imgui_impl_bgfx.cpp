@@ -57,13 +57,23 @@ bgfx::TextureHandle handle_of(ImTextureID id) {
 void process_texture(ImTextureData* texture) {
     if (texture->Status == ImTextureStatus_WantCreate) {
         IM_ASSERT(texture->Format == ImTextureFormat_RGBA32);
-        const bgfx::Memory* memory =
-            bgfx::copy(texture->GetPixels(), static_cast<std::uint32_t>(
-                                                 texture->Width * texture->Height * 4));
+        // Created EMPTY, then filled. Handing bgfx the pixels at creation makes
+        // the texture immutable (D3D11_USAGE_IMMUTABLE and its equivalents), and
+        // every later updateTexture2D is silently dropped. ImGui 1.92 rasterises
+        // glyphs on demand, so that failure looks like this: the text drawn on
+        // the first frame is perfect and every accent that first appears later
+        // is a blank space -- which is exactly how this bug was found, on a
+        // screenshot where "quadrilatere" had lost its grave accent.
         const bgfx::TextureHandle handle = bgfx::createTexture2D(
             static_cast<std::uint16_t>(texture->Width),
             static_cast<std::uint16_t>(texture->Height), false, 1,
-            bgfx::TextureFormat::RGBA8, BGFX_SAMPLER_NONE, memory);
+            bgfx::TextureFormat::RGBA8, BGFX_SAMPLER_NONE);
+        if (!bgfx::isValid(handle)) return;
+        bgfx::updateTexture2D(
+            handle, 0, 0, 0, 0, static_cast<std::uint16_t>(texture->Width),
+            static_cast<std::uint16_t>(texture->Height),
+            bgfx::copy(texture->GetPixels(),
+                       static_cast<std::uint32_t>(texture->Width * texture->Height * 4)));
         texture->SetTexID(ImGuiBgfx_TextureId(handle.idx));
         texture->SetStatus(ImTextureStatus_OK);
         return;

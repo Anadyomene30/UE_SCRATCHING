@@ -18,7 +18,7 @@ tout ce qui reste à faire survive à la session qui l'a produit.
 | 8. Mode autonome | Non commencé (a besoin d'un vrai backend audio) | — |
 | 9. Effets et modulateurs | Rack, catalogue et LFO/enveloppes faits ; FFT audio-réactive non faite | `core/effect`, `core/modulator` |
 | 10. Entrées live | Non commencé | — |
-| 11. Sorties | Corner pin, masque, compositeur du program (`core/compose`, testé) et **sortie Spout vérifiée** par un récepteur indépendant (`spout_check`) ; Syphon/NDI/plein écran restants | `core/warp`, `core/compose`, `ui/share` |
+| 11. Sorties | Corner pin, **warp maillé bézier** avec ajout/retrait de lignes et **presets de mapping** sauvegardables (`core/mesh`, `config/warp_io`, testés), masque, compositeur GPU, et **sortie Spout vérifiée** par un récepteur indépendant (`spout_check`) ; Syphon/NDI restants | `core/warp`, `core/mesh`, `config/warp_io`, `ui/share` |
 | 12. Unreal | L'app émet le flux UDP (vérifié par `net_check`) et le plugin `ScratchLink` existe — subsystem + échantillonnage Hermite + dilation temporelle — compilé contre UE 5.7 ; le test en scène reste à faire | `core/protocol`, `ui/netout`, `unreal/ScratchLink` |
 
 Plus, hors plan initial : `core/playback` (source de transport et modes de
@@ -345,7 +345,7 @@ déjà été traité.
 
 | Écarté | Raison |
 |---|---|
-| **Mapping avancé : warp maillé, edge blending multi-projecteurs, slices** | Projet à soi seul. On sort en **Spout / NDI** vers Resolume ou MadMapper pour ces cas-là. |
+| **Edge blending multi-projecteurs, slices** | Projet à soi seul. On sort en **Spout / NDI** vers Resolume ou MadMapper pour ces cas-là. |
 | **Compositing N couches, groupes, matrice de clips** | On construit un instrument de scratch, pas un VJ compositeur généraliste. Trois couches suffisent. |
 | **Sync, beatmatch, détection de tonalité, mix harmonique** | Antithétique au turntablisme, et couvert par Serato en mode suiveur. |
 | **Ableton Link, horloge MIDI** | Reporté. Le mapping OSC ouvre déjà une porte. |

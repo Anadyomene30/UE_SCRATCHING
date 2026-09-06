@@ -1,5 +1,7 @@
 #include "panels.h"
 
+#include "config/warp_io.h"
+
 #include <algorithm>
 #include <cmath>
 #include <cstdarg>
@@ -1213,21 +1215,62 @@ void draw_mapping_screen(Engine& engine) {
     pop_font();
 }
 
-// --- SORTIE: corner pin and mask, editable ------------------------------------
+// --- SORTIE: corner pin, warp mesh, mask, and the presets that keep them -----
+
+// Where the presets live. Beside the executable's working directory, so a
+// venue's mapping travels with the project rather than hiding in an app-data
+// folder nobody thinks to copy.
+const char* kPresetDirectory = "mappings";
+
+// The state the preset panel keeps between frames: the name being typed, the
+// list as last read from disk, and whatever the last save or load had to say.
+struct PresetPanel {
+    char name[64] = "";
+    std::vector<std::string> names;
+    std::string message;
+    bool listed = false;
+};
+
+PresetPanel g_presets;
+
+void refresh_presets() {
+    g_presets.names = preset_names(kPresetDirectory);
+    g_presets.listed = true;
+}
+
+// One draggable handle. Returns true while the hand is on it.
+bool handle(const char* id, ImVec2 at, ImU32 colour, float radius) {
+    ImDrawList* draw = ImGui::GetWindowDrawList();
+    ImGui::SetCursorScreenPos(ImVec2(at.x - radius - 3.0f, at.y - radius - 3.0f));
+    ImGui::PushID(id);
+    ImGui::InvisibleButton("h", ImVec2(radius * 2.0f + 6.0f, radius * 2.0f + 6.0f));
+    const bool active = ImGui::IsItemActive();
+    const bool hot = active || ImGui::IsItemHovered();
+    ImGui::PopID();
+    draw->AddRectFilled(ImVec2(at.x - radius, at.y - radius),
+                        ImVec2(at.x + radius, at.y + radius), hot ? kInk : colour);
+    return active;
+}
 
 void draw_output_screen(Engine& engine) {
-    eyebrow("SORTIE — corner pin et masque");
+    if (!g_presets.listed) refresh_presets();
+
+    eyebrow("SORTIE \xE2\x80\x94 g\xC3\xA9om\xC3\xA9trie de projection");
     push_small();
     ImGui::PushStyleColor(ImGuiCol_Text, rgba(kFaint));
     ImGui::TextUnformatted(
         "Le pin est une homographie, pas un \xC3\xA9tirement bilin\xC3\xA9""aire : sous un "
         "vrai projecteur le centre de l'image ne tombe pas au centre du quadrilat\xC3\xA8re. "
-        "Tirer les poign\xC3\xA9""es.");
+        "La grille prend le relais quand la surface n'est pas plane.");
     ImGui::PopStyleColor();
     pop_font();
     ImGui::Dummy(ImVec2(0.0f, 10.0f));
 
-    const float width = std::min(720.0f, ImGui::GetContentRegionAvail().x - 20.0f);
+    CornerPin& pin = engine.pin();
+    WarpMesh& mesh = engine.mesh();
+    const bool mesh_on = engine.mesh_enabled();
+
+    const float width = std::min(760.0f, ImGui::GetContentRegionAvail().x - 320.0f);
     const float height = width * 9.0f / 16.0f;
     ImDrawList* draw = ImGui::GetWindowDrawList();
     const ImVec2 origin = ImGui::GetCursorScreenPos();
@@ -1235,76 +1278,272 @@ void draw_output_screen(Engine& engine) {
     draw->AddRectFilled(origin, ImVec2(origin.x + width, origin.y + height), kWell);
     draw->AddRect(origin, ImVec2(origin.x + width, origin.y + height), kHair);
 
-    CornerPin& pin = engine.pin();
-    Point* corners[4] = {&pin.top_left, &pin.top_right, &pin.bottom_right, &pin.bottom_left};
-
     const auto to_screen = [&](const Point& p) {
         return ImVec2(origin.x + static_cast<float>(p.x) * width,
                       origin.y + static_cast<float>(p.y) * height);
     };
+    const auto from_screen = [&](ImVec2 at) {
+        return Point{std::clamp(static_cast<double>(at.x - origin.x) / width, -0.2, 1.2),
+                     std::clamp(static_cast<double>(at.y - origin.y) / height, -0.2, 1.2)};
+    };
 
-    // The warped grid, through the actual homography from core/warp -- the same
-    // matrix the shader will get. Drawing it any other way would be a preview of
-    // something the output does not do.
-    const Homography h = homography_from(pin);
-    const int kGrid = 8;
-    for (int i = 0; i <= kGrid; ++i) {
-        const double t = static_cast<double>(i) / kGrid;
-        ImVec2 prev_row, prev_col;
-        for (int j = 0; j <= kGrid; ++j) {
-            const double u = static_cast<double>(j) / kGrid;
-            const ImVec2 row = to_screen(apply(h, Point{u, t}));
-            const ImVec2 col = to_screen(apply(h, Point{t, u}));
-            if (j > 0) {
-                draw->AddLine(prev_row, row, kHair);
-                draw->AddLine(prev_col, col, kHair);
+    if (mesh_on) {
+        // The grid as the surface actually is: every cell edge sampled, so a
+        // Bezier mesh shows its curve rather than a polygon that lies about it.
+        const int steps = 10;
+        for (int row = 0; row < mesh.rows(); ++row) {
+            ImVec2 previous;
+            for (int col = 0; col < mesh.cols() - 1; ++col) {
+                for (int s = 0; s <= steps; ++s) {
+                    const double u = mesh.column_u(col) +
+                                     (mesh.column_u(col + 1) - mesh.column_u(col)) * s / steps;
+                    const ImVec2 point = to_screen(mesh.map(u, mesh.row_v(row)));
+                    if (col > 0 || s > 0) draw->AddLine(previous, point, kHair, 1.2f);
+                    previous = point;
+                }
             }
-            prev_row = row;
-            prev_col = col;
+        }
+        for (int col = 0; col < mesh.cols(); ++col) {
+            ImVec2 previous;
+            for (int row = 0; row < mesh.rows() - 1; ++row) {
+                for (int s = 0; s <= steps; ++s) {
+                    const double v = mesh.row_v(row) +
+                                     (mesh.row_v(row + 1) - mesh.row_v(row)) * s / steps;
+                    const ImVec2 point = to_screen(mesh.map(mesh.column_u(col), v));
+                    if (row > 0 || s > 0) draw->AddLine(previous, point, kHair, 1.2f);
+                    previous = point;
+                }
+            }
+        }
+        // The outline last, over the grid, so the shape reads at a glance.
+        for (int s = 0; s < 4; ++s) {
+            const int steps_edge = 32;
+            ImVec2 previous;
+            for (int i = 0; i <= steps_edge; ++i) {
+                const double t = static_cast<double>(i) / steps_edge;
+                const Point p = s == 0   ? mesh.map(t, 0.0)
+                                : s == 1 ? mesh.map(1.0, t)
+                                : s == 2 ? mesh.map(1.0 - t, 1.0)
+                                         : mesh.map(0.0, 1.0 - t);
+                const ImVec2 point = to_screen(p);
+                if (i > 0) draw->AddLine(previous, point, kAccent, 2.0f);
+                previous = point;
+            }
+        }
+
+        // A handle on every control point. Corners drawn larger: they are the
+        // four a hand reaches for first and must never be lost in the grid.
+        for (int row = 0; row < mesh.rows(); ++row) {
+            for (int col = 0; col < mesh.cols(); ++col) {
+                const bool corner = (col == 0 || col == mesh.cols() - 1) &&
+                                    (row == 0 || row == mesh.rows() - 1);
+                char id[32];
+                std::snprintf(id, sizeof(id), "m%d_%d", col, row);
+                if (handle(id, to_screen(mesh.at(col, row)),
+                           corner ? kAccent : kSlate, corner ? 5.0f : 3.5f)) {
+                    mesh.set(col, row, from_screen(ImGui::GetIO().MousePos));
+                }
+            }
+        }
+    } else {
+        // The pin's own grid, through the real homography from core/warp -- the
+        // same matrix the shader will get. Previewing it any other way would
+        // show a warp the output does not do.
+        const Homography h = homography_from(pin);
+        const int kGrid = 8;
+        for (int i = 0; i <= kGrid; ++i) {
+            const double t = static_cast<double>(i) / kGrid;
+            ImVec2 prev_row, prev_col;
+            for (int j = 0; j <= kGrid; ++j) {
+                const double u = static_cast<double>(j) / kGrid;
+                const ImVec2 row = to_screen(apply(h, Point{u, t}));
+                const ImVec2 col = to_screen(apply(h, Point{t, u}));
+                if (j > 0) {
+                    draw->AddLine(prev_row, row, kHair);
+                    draw->AddLine(prev_col, col, kHair);
+                }
+                prev_row = row;
+                prev_col = col;
+            }
+        }
+        Point* corners[4] = {&pin.top_left, &pin.top_right, &pin.bottom_right,
+                             &pin.bottom_left};
+        for (int i = 0; i < 4; ++i) {
+            draw->AddLine(to_screen(*corners[i]), to_screen(*corners[(i + 1) % 4]), kAccent,
+                          2.0f);
+        }
+        for (int i = 0; i < 4; ++i) {
+            char id[16];
+            std::snprintf(id, sizeof(id), "pin%d", i);
+            if (handle(id, to_screen(*corners[i]), kAccent, 5.0f)) {
+                *corners[i] = from_screen(ImGui::GetIO().MousePos);
+            }
         }
     }
 
-    // The quad's edges, and a draggable handle on each corner.
-    for (int i = 0; i < 4; ++i) {
-        draw->AddLine(to_screen(*corners[i]), to_screen(*corners[(i + 1) % 4]), kAccent,
-                      2.0f);
+    ImGui::SetCursorScreenPos(ImVec2(origin.x + width + 24.0f, origin.y));
+    ImGui::BeginGroup();
+
+    // --- which tool -----------------------------------------------------------
+    eyebrow("SURFACE");
+    ImGui::Dummy(ImVec2(0.0f, 4.0f));
+    if (ImGui::SmallButton("Corner pin")) engine.set_mesh_enabled(false);
+    if (!mesh_on) {
+        const ImVec2 lo = ImGui::GetItemRectMin();
+        const ImVec2 hi = ImGui::GetItemRectMax();
+        draw->AddLine(ImVec2(lo.x, hi.y), ImVec2(hi.x, hi.y), kAccent, 2.0f);
     }
-    for (int i = 0; i < 4; ++i) {
-        const ImVec2 at = to_screen(*corners[i]);
-        ImGui::SetCursorScreenPos(ImVec2(at.x - 8.0f, at.y - 8.0f));
-        ImGui::PushID(i);
-        ImGui::InvisibleButton("corner", ImVec2(16.0f, 16.0f));
-        if (ImGui::IsItemActive()) {
-            const ImVec2 mouse = ImGui::GetIO().MousePos;
-            corners[i]->x = std::clamp(static_cast<double>(mouse.x - origin.x) / width,
-                                       -0.2, 1.2);
-            corners[i]->y = std::clamp(static_cast<double>(mouse.y - origin.y) / height,
-                                       -0.2, 1.2);
+    ImGui::SameLine(0.0f, 8.0f);
+    if (ImGui::SmallButton("Grille")) engine.set_mesh_enabled(true);
+    if (mesh_on) {
+        const ImVec2 lo = ImGui::GetItemRectMin();
+        const ImVec2 hi = ImGui::GetItemRectMax();
+        draw->AddLine(ImVec2(lo.x, hi.y), ImVec2(hi.x, hi.y), kAccent, 2.0f);
+    }
+
+    if (mesh_on) {
+        ImGui::Dummy(ImVec2(0.0f, 12.0f));
+        eyebrow("INTERPOLATION");
+        ImGui::Dummy(ImVec2(0.0f, 4.0f));
+        const bool bezier = mesh.interpolation() == WarpInterpolation::Bezier;
+        if (ImGui::SmallButton("Lin\xC3\xA9""aire")) {
+            mesh.set_interpolation(WarpInterpolation::Bilinear);
         }
-        const bool hot = ImGui::IsItemHovered() || ImGui::IsItemActive();
-        draw->AddRectFilled(ImVec2(at.x - 5.0f, at.y - 5.0f), ImVec2(at.x + 5.0f, at.y + 5.0f),
-                            hot ? kInk : kAccent);
+        if (!bezier) {
+            const ImVec2 lo = ImGui::GetItemRectMin();
+            const ImVec2 hi = ImGui::GetItemRectMax();
+            draw->AddLine(ImVec2(lo.x, hi.y), ImVec2(hi.x, hi.y), kAccent, 2.0f);
+        }
+        ImGui::SameLine(0.0f, 8.0f);
+        if (ImGui::SmallButton("B\xC3\xA9zier")) {
+            mesh.set_interpolation(WarpInterpolation::Bezier);
+        }
+        if (bezier) {
+            const ImVec2 lo = ImGui::GetItemRectMin();
+            const ImVec2 hi = ImGui::GetItemRectMax();
+            draw->AddLine(ImVec2(lo.x, hi.y), ImVec2(hi.x, hi.y), kAccent, 2.0f);
+        }
+
+        ImGui::Dummy(ImVec2(0.0f, 12.0f));
+        eyebrow("GRILLE");
+        push_mono();
+        text_c(kInk, "%d x %d", mesh.cols(), mesh.rows());
+        pop_font();
+        ImGui::Dummy(ImVec2(0.0f, 4.0f));
+        // Insertion goes in the middle of the grid, which is where a hand
+        // reaching for more control is almost always looking.
+        if (ImGui::SmallButton("+ colonne")) mesh.insert_column(mesh.cols() / 2);
+        ImGui::SameLine(0.0f, 8.0f);
+        if (ImGui::SmallButton("\xE2\x88\x92 colonne")) mesh.remove_column(mesh.cols() / 2);
+        if (ImGui::SmallButton("+ ligne")) mesh.insert_row(mesh.rows() / 2);
+        ImGui::SameLine(0.0f, 8.0f);
+        if (ImGui::SmallButton("\xE2\x88\x92 ligne")) mesh.remove_row(mesh.rows() / 2);
+        ImGui::SameLine(0.0f, 16.0f);
+        if (ImGui::SmallButton("R\xC3\xA9initialiser##mesh")) {
+            mesh.reset(mesh.cols(), mesh.rows());
+        }
+
+        push_small();
+        ImGui::PushStyleColor(ImGuiCol_Text, rgba(kFaint));
+        ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + 290.0f);
+        ImGui::TextUnformatted(
+            "Ajouter une ligne ne bouge pas l'image : les nouveaux points sont "
+            "\xC3\xA9""chantillonn\xC3\xA9s sur la surface actuelle. Exact en "
+            "lin\xC3\xA9""aire, \xC3\xA0 0,4 % pr\xC3\xA8s en b\xC3\xA9zier.");
+        ImGui::PopTextWrapPos();
+        ImGui::PopStyleColor();
+        pop_font();
+    } else {
+        ImGui::Dummy(ImVec2(0.0f, 12.0f));
+        if (ImGui::SmallButton("R\xC3\xA9initialiser##pin")) pin = CornerPin{};
+        ImGui::SameLine(0.0f, 12.0f);
+        push_small();
+        ImGui::PushStyleColor(ImGuiCol_Text, rgba(kFaint));
+        ImGui::TextUnformatted(pin.is_identity() ? "identit\xC3\xA9 \xE2\x80\x94 plein cadre"
+                                                 : "homographie active");
+        ImGui::PopStyleColor();
+        pop_font();
+    }
+
+    // --- presets --------------------------------------------------------------
+    ImGui::Dummy(ImVec2(0.0f, 18.0f));
+    eyebrow("PRESETS DE MAPPING");
+    push_small();
+    ImGui::PushStyleColor(ImGuiCol_Text, rgba(kFaint));
+    ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + 290.0f);
+    ImGui::TextUnformatted(
+        "Une g\xC3\xA9om\xC3\xA9trie vise UNE salle. La perdre au red\xC3\xA9marrage, "
+        "c'est refaire l'\xC3\xA9""chelle.");
+    ImGui::PopTextWrapPos();
+    ImGui::PopStyleColor();
+    pop_font();
+    ImGui::Dummy(ImVec2(0.0f, 6.0f));
+
+    ImGui::SetNextItemWidth(200.0f);
+    ImGui::InputTextWithHint("##presetname", "nom de la salle", g_presets.name,
+                             sizeof(g_presets.name));
+    ImGui::SameLine(0.0f, 8.0f);
+    if (ImGui::SmallButton("Enregistrer") && g_presets.name[0] != '\0') {
+        OutputPreset preset;
+        preset.name = g_presets.name;
+        preset.pin = pin;
+        preset.mesh = mesh;
+        preset.mesh_enabled = engine.mesh_enabled();
+        std::string error;
+        if (preset_save(preset, preset_path(kPresetDirectory, preset.name), error)) {
+            g_presets.message = "enregistr\xC3\xA9 : " + preset.name;
+            refresh_presets();
+        } else {
+            g_presets.message = error;
+        }
+    }
+
+    ImGui::Dummy(ImVec2(0.0f, 6.0f));
+    if (g_presets.names.empty()) {
+        push_small();
+        dim("aucun preset enregistr\xC3\xA9");
+        pop_font();
+    }
+    for (const std::string& name : g_presets.names) {
+        ImGui::PushID(name.c_str());
+        if (ImGui::SmallButton("Charger")) {
+            OutputPreset preset;
+            std::string error;
+            if (preset_load(preset_path(kPresetDirectory, name), preset, error)) {
+                pin = preset.pin;
+                mesh = preset.mesh;
+                engine.set_mesh_enabled(preset.mesh_enabled);
+                std::snprintf(g_presets.name, sizeof(g_presets.name), "%s", name.c_str());
+                g_presets.message = "charg\xC3\xA9 : " + name;
+            } else {
+                g_presets.message = error;
+            }
+        }
+        ImGui::SameLine(0.0f, 10.0f);
+        text_c(kInk, "%s", name.c_str());
         ImGui::PopID();
     }
-    ImGui::SetCursorScreenPos(ImVec2(origin.x, origin.y + height + 10.0f));
 
-    if (ImGui::SmallButton("R\xC3\xA9initialiser")) pin = CornerPin{};
-    ImGui::SameLine(0.0f, 20.0f);
+    if (!g_presets.message.empty()) {
+        ImGui::Dummy(ImVec2(0.0f, 6.0f));
+        push_small();
+        ImGui::PushStyleColor(ImGuiCol_Text, rgba(kSage));
+        ImGui::TextUnformatted(g_presets.message.c_str());
+        ImGui::PopStyleColor();
+        pop_font();
+    }
+
+    ImGui::Dummy(ImVec2(0.0f, 16.0f));
     push_small();
     ImGui::PushStyleColor(ImGuiCol_Text, rgba(kFaint));
-    ImGui::TextUnformatted(pin.is_identity() ? "identit\xC3\xA9 — plein cadre"
-                                             : "homographie active");
-    ImGui::PopStyleColor();
-    pop_font();
-
-    ImGui::Dummy(ImVec2(0.0f, 12.0f));
-    push_small();
-    ImGui::PushStyleColor(ImGuiCol_Text, rgba(kFaint));
+    ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + 290.0f);
     ImGui::TextUnformatted(
-        "Warp maill\xC3\xA9 et edge blending : volontairement absents. La sortie part "
-        "en Spout / NDI vers Resolume ou MadMapper pour ces cas-l\xC3\xA0.");
+        "Edge blending multi-projecteurs : toujours absent. La sortie part en "
+        "Spout vers Resolume ou MadMapper pour ce cas-l\xC3\xA0.");
+    ImGui::PopTextWrapPos();
     ImGui::PopStyleColor();
     pop_font();
+    ImGui::EndGroup();
 }
 
 // --- the layouts -------------------------------------------------------------

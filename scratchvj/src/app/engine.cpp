@@ -195,6 +195,8 @@ void Engine::configure(double bpm) {
     queue_.push(vhs, DeckTarget::B);
     queue_.push(crowd);
 
+    mesh_.reset(3, 3);
+
     a_.transport.set_cue(0, 0.0, 1);
     a_.transport.set_cue(1, 30.0, 2);
     a_.transport.set_cue(2, 96.0, 3);
