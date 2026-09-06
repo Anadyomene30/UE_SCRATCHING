@@ -38,6 +38,21 @@ Elite**, etc.), you need to go to Serato settings > Audio tab > Click on CDJ. »
 > non par position absolue) était le bon choix. Un needle drop absolu n'existe
 > pas dans cette chaîne.
 
+**La table n'est pas obligatoire.** Le timecode est un signal analogique, donc il
+lui faut *une* entrée audio — mais n'importe laquelle. Le récepteur (alimenté en
+5 V USB) peut entrer directement dans une interface ligne quelconque, la MOTU du
+studio par exemple, sans toucher à l'Elite. Trois câblages selon l'usage :
+
+| Usage | Câblage |
+|---|---|
+| Vidéo seule | Récepteur Phase → RCA → entrées ligne de n'importe quelle interface (MOTU). Pas de table. |
+| Vidéo seule + surface de contrôle | Pareil, plus l'Elite en USB comme simple surface MIDI — aucun routage audio. |
+| Serato + vidéo (mode suiveur) | Récepteur → RCA → LINE de l'Elite ; Serato sur USB-B1, scratchvj sur USB-B2. La table ne sert au timecode que parce que Serato doit lire le même signal. |
+
+(Le « zéro câble » serait le mode HID, mais son protocole est fermé — ouvert par
+MWM à Serato et rekordbox seulement. Le lire relèverait de la rétro-ingénierie :
+projet à part, résultat non garanti, et le RCA marche aujourd'hui.)
+
 **Le format du signal se choisit dans Phase Manager** (Configuration DVS :
 Serato DJ, Traktor, rekordbox, VirtualDJ…). Pour ce projet, **rester sur
 « Serato DJ » dans tous les cas** :
