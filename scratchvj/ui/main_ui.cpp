@@ -243,41 +243,65 @@ int main(int, char**) {
         (void)remaining;
     }
 
-    if (media_a.ready() || media_b.ready()) {
-        const std::uint32_t pw = media_a.ready() ? media_a.width() : media_b.width();
-        const std::uint32_t ph = media_a.ready() ? media_a.height() : media_b.height();
-        if (!gpu.init(pw, ph, 3, 9)) {
-            std::fprintf(stderr, "compositeur GPU: init a echoue\n");
-        }
-    }
-    if (gpu.ready() && !effects.init(gpu.width(), gpu.height(), 4)) {
-        std::fprintf(stderr, "effets GPU: init a echoue\n");
-    }
-    // The taps passes run at each deck's own clip resolution: they read the
-    // clip, so they belong to the clip's grid rather than to the program's.
-    if (media_a.ready() && !taps_a.init(media_a.width(), media_a.height(), 0)) {
-        std::fprintf(stderr, "passe taps A: init a echoue\n");
-    }
-    if (media_b.ready() && !taps_b.init(media_b.width(), media_b.height(), 1)) {
-        std::fprintf(stderr, "passe taps B: init a echoue\n");
-    }
-    if (media_a.ready() && media_a.header().is_equirect()) {
-        // Deck A gets the 360 view pass: downstream of it -- compositor and
-        // interface alike -- a 360 deck behaves as an ordinary flat deck
-        // showing the projected view.
-        if (view360a.init(1024, 576, 2)) {
-            engine.view_a().aspect = 1024.0 / 576.0;
-        } else {
-            std::fprintf(stderr, "passe 360: init a echoue\n");
-        }
-    }
-
     // Controls the hand has claimed from the demo script; applied after every
     // simulation step so the hand always wins, exactly as MIDI will.
     svj::ui::HandState hand;
     // The view state that outlives a frame: which layout is up. Everything else
     // in Frame is refilled each pass.
     svj::ui::Frame view;
+
+    // The GPU passes are sized from the clips, so loading a different clip has
+    // to rebuild them. Doing it in one place means a load cannot leave half the
+    // pipeline addressing the old resolution -- which does not crash, it just
+    // shows a corner of the new clip stretched over the old target.
+    const auto rebuild_passes = [&]() {
+        if (media_a.ready() || media_b.ready()) {
+            const std::uint32_t pw = media_a.ready() ? media_a.width() : media_b.width();
+            const std::uint32_t ph = media_a.ready() ? media_a.height() : media_b.height();
+            if (!gpu.ready() || gpu.width() != pw || gpu.height() != ph) {
+                if (!gpu.init(pw, ph, 3, 9)) {
+                    std::fprintf(stderr, "compositeur GPU: init a echoue\n");
+                }
+                if (gpu.ready() && !effects.init(pw, ph, 4)) {
+                    std::fprintf(stderr, "effets GPU: init a echoue\n");
+                }
+            }
+        }
+        // The taps passes run at each deck's own clip resolution: they read the
+        // clip, so they belong to the clip's grid rather than to the program's.
+        // init() destroys first, so the guard is only there to avoid
+        // recompiling a shader whose target has not moved.
+        const auto fit_taps = [](svj::ui::TapsGpu& pass, const svj::ui::DeckMedia& media,
+                                 std::uint16_t view_id, const char* name) {
+            if (!media.ready()) return;
+            if (pass.ready() && pass.width() == media.width() &&
+                pass.height() == media.height()) {
+                return;
+            }
+            if (!pass.init(media.width(), media.height(), view_id)) {
+                std::fprintf(stderr, "passe taps %s: init a echoue\n", name);
+            }
+        };
+        fit_taps(taps_a, media_a, 0, "A");
+        fit_taps(taps_b, media_b, 1, "B");
+
+        // The 360 pass exists only while deck A actually holds spherical
+        // footage. Loading a flat clip onto it must take the pass away, or the
+        // interface would keep showing a reprojection of a picture that is not
+        // a sphere.
+        if (media_a.ready() && media_a.header().is_equirect()) {
+            if (!view360a.ready()) {
+                if (view360a.init(1024, 576, 2)) {
+                    engine.view_a().aspect = 1024.0 / 576.0;
+                } else {
+                    std::fprintf(stderr, "passe 360: init a echoue\n");
+                }
+            }
+        } else {
+            view360a.destroy();
+        }
+    };
+    rebuild_passes();
 
     const auto started = std::chrono::steady_clock::now();
     double previous_s = 0.0;
@@ -314,6 +338,30 @@ int main(int, char**) {
         const double t = std::fmod(wall_s, kScriptSeconds);
         const float dt = static_cast<float>(t >= previous_s ? t - previous_s : t);
         previous_s = t;
+
+        // A clip the panel asked for LAST frame, served now -- before anything
+        // builds a draw list. Loading closes the deck's cache, and an ImGui
+        // draw list already holds that texture as an ImTextureID; destroying it
+        // between draw() and Render() submits a dead handle. It survived the
+        // first time only because bgfx handed the same recycled index back, so
+        // the bug hid until a load also freed the 360 pass and shifted which
+        // index came back. The panel names the clip; the frame boundary applies
+        // it.
+        if (view.load_clip != kNoClip && view.load_target != DeckTarget::None) {
+            const ClipEntry& entry = engine.library().at(view.load_clip);
+            const bool to_a = view.load_target == DeckTarget::A;
+            svj::ui::DeckMedia& media = to_a ? media_a : media_b;
+            Deck& deck = to_a ? engine.deck_a() : engine.deck_b();
+
+            std::string error;
+            if (media.open(entry.path, error)) {
+                deck.load(media.header(), entry.name, kBpm);
+                rebuild_passes();
+            } else {
+                std::fprintf(stderr, "%s: %s\n", entry.path.c_str(), error.c_str());
+            }
+        }
+        view.load_clip = kNoClip;
 
         const auto now_us = static_cast<std::uint64_t>(wall_s * 1e6);
         simulation.step(t, engine.surface(), now_us);
@@ -401,6 +449,7 @@ int main(int, char**) {
         }
         view.scrubbing = nullptr;
         svj::ui::draw(engine, view);
+
         // Whatever no widget claimed this frame is not being held. Hand it back
         // to its platter through the Grab takeover, so the picture stays put.
         for (Deck* deck : {&engine.deck_a(), &engine.deck_b()}) {

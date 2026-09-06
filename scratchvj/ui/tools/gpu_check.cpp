@@ -126,6 +126,13 @@ int main() {
 
         gpu.render(tex_a, tex_b, tex_o, test.gains[0], test.gains[1], test.gains[2],
                    static_cast<int>(test.mode));
+        // The readback is queued separately from render() so the app can read
+        // the picture the EFFECT RACK produced rather than the compositor's own
+        // target. There is no rack here, so the compositor's target IS the
+        // program -- but the call has to be made, and forgetting it is what let
+        // this tool keep passing from a stale binary while it could no longer
+        // read anything at all.
+        gpu.queue_readback(gpu.texture_index());
 
         const std::uint8_t* pixels = nullptr;
         for (int i = 0; i < 8 && pixels == nullptr; ++i) {

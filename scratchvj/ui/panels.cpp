@@ -406,7 +406,7 @@ void draw_status(Engine& engine, Frame& frame) {
     ImGui::EndChild();
 }
 
-void draw_library(Engine& engine, float width, float height) {
+void draw_library(Engine& engine, Frame& frame, float width, float height) {
     ImGui::BeginChild("library", ImVec2(width, height), ImGuiChildFlags_Borders);
     eyebrow("BIBLIOTH\xC3\x88QUE");
     ImGui::Dummy(ImVec2(0.0f, 4.0f));
@@ -443,6 +443,30 @@ void draw_library(Engine& engine, float width, float height) {
                         clip.equirect ? "360\xC2\xB0" : "plan");
         }
         ImGui::PopStyleColor();
+
+        // Two buttons rather than a click on the row: a DJ loading a clip has
+        // already decided which deck, and a "which deck?" step between the
+        // decision and the load is one beat too many at the wrong moment. Only
+        // a ready clip gets them -- loading an unanalysed one would mean
+        // decoding in real time, the thing this whole design refuses.
+        if (clip.playable()) {
+            ImGui::SameLine(0.0f, 12.0f);
+            ImGui::PushID(static_cast<int>(i));
+            ImGui::PushStyleColor(ImGuiCol_Text, rgba(kAmber));
+            if (ImGui::SmallButton("A")) {
+                frame.load_clip = static_cast<ClipId>(i);
+                frame.load_target = DeckTarget::A;
+            }
+            ImGui::PopStyleColor();
+            ImGui::SameLine(0.0f, 4.0f);
+            ImGui::PushStyleColor(ImGuiCol_Text, rgba(kSlate));
+            if (ImGui::SmallButton("B")) {
+                frame.load_clip = static_cast<ClipId>(i);
+                frame.load_target = DeckTarget::B;
+            }
+            ImGui::PopStyleColor();
+            ImGui::PopID();
+        }
         pop_font();
     }
 
@@ -460,13 +484,27 @@ void draw_library(Engine& engine, float width, float height) {
         pop_font();
         ImGui::SameLine(0.0f, 8.0f);
         text_c(kInk, "%s", clip.name.c_str());
+        push_small();
         if (item.target != DeckTarget::None) {
-            push_small();
+            ImGui::SameLine(0.0f, 8.0f);
             ImGui::PushStyleColor(ImGuiCol_Text, rgba(kAccent));
-            ImGui::Text("  \xE2\x86\x92 Deck %s", item.target == DeckTarget::A ? "A" : "B");
+            ImGui::Text("\xE2\x86\x92 %s", item.target == DeckTarget::A ? "A" : "B");
             ImGui::PopStyleColor();
-            pop_font();
         }
+        if (clip.playable()) {
+            ImGui::SameLine(0.0f, 8.0f);
+            ImGui::PushID(1000 + static_cast<int>(i));
+            if (ImGui::SmallButton("Charger")) {
+                frame.load_clip = item.clip;
+                // A queued clip with no deck named goes to A: the queue is a
+                // running order, and refusing to act because nobody said which
+                // deck would make the button a riddle.
+                frame.load_target =
+                    item.target == DeckTarget::None ? DeckTarget::A : item.target;
+            }
+            ImGui::PopID();
+        }
+        pop_font();
     }
 
     ImGui::EndChild();
@@ -1666,7 +1704,7 @@ void draw_layout_booth(Engine& engine, Frame& frame) {
     const float mix_h = 222.0f;
     const float deck_h = body_h - mix_h - ImGui::GetStyle().ItemSpacing.y;
 
-    draw_library(engine, rail, body_h);
+    draw_library(engine, frame, rail, body_h);
     ImGui::SameLine();
 
     ImGui::BeginGroup();
@@ -1717,7 +1755,7 @@ void draw_layout_prepare(Engine& engine, Frame& frame) {
     const float decks_w = std::max(480.0f, ImGui::GetContentRegionAvail().x - rail - gap);
     const float deck_h = (body_h - gap) * 0.5f;
 
-    draw_library(engine, rail, body_h);
+    draw_library(engine, frame, rail, body_h);
     ImGui::SameLine();
 
     ImGui::BeginGroup();

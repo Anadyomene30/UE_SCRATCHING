@@ -24,13 +24,16 @@ tout ce qui reste à faire survive à la session qui l'a produit.
 Plus, hors plan initial : `core/playback` (source de transport et modes de
 lecture par deck), `core/library` (bibliothèque et queue), `core/take`
 (enregistrement/relecture d'une prise), `app/` (démo et tableau de bord qui font
-tourner tout ça sans matériel).
+tourner tout ça sans matériel), et `ui/` — l'interface ImGui réelle : cinq
+dispositions (cabine, scène, prépa, 360, plein cadre), scrub à la souris sur la
+timeline, faders et crossfader, éditeur de warp, et **chargement d'un clip de la
+bibliothèque sur un deck** en un clic.
 
 **Ce qui reste, dans les grandes lignes** : le décodeur `timecoder.c` de xwax,
-un vrai périphérique MIDI (RtMidi) et audio (miniaudio/ASIO), les effets vidéo et
-l'échantillonnage 360 en shaders, Syphon/NDI, la FFT audio-réactive, les entrées
-live, et le test en scène du plugin Unreal. Le reste du plan initial est fait et
-vérifié — voir le tableau ci-dessus.
+un vrai périphérique MIDI (RtMidi) et audio (miniaudio/ASIO), Syphon/NDI,
+OpenXR pour le casque, la FFT audio-réactive, les entrées live, et le test en
+scène du plugin Unreal. Le reste du plan initial est fait et vérifié — voir le
+tableau ci-dessus.
 
 **Deux tests qui reviennent à l'utilisateur, devant le matériel :**
 1. Est-ce que l'Elite émet son état MIDI à la connexion ? Ça décide du sort du
@@ -339,7 +342,7 @@ déjà été traité.
 |---|---|---|
 | **Réactivité audio (FFT)** | Resolume | Le geste reste le différenciateur, mais l'audio-réactif est attendu et se branche sur la mécanique de `core/modulator` (`SourceKind::AudioBand` existe déjà côté mapping). |
 | **Entrées live** | Resolume | Un deck dont la source est une caméra, une entrée NDI ou Spout, au lieu d'un fichier. |
-| **Scope de calibration timecode** | Serato | Un `--monitor` en ligne de commande existe déjà (`core/timecode` exposé par la démo) ; il faut le voir à l'écran, en set, une fois l'UI ImGui écrite. |
+| **Scope de calibration timecode** | Serato | Un `--monitor` en ligne de commande existe déjà (`core/timecode` exposé par la démo) ; l'UI affiche confiance et vitesse par deck, mais pas encore la figure de Lissajous qui permet de régler une cellule à l'oreille et à l'œil. |
 
 ### À ne pas faire — et pourquoi
 

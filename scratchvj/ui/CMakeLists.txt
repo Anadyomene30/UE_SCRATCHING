@@ -161,6 +161,19 @@ target_link_libraries(fx_check PRIVATE scratchvj_core scratchvj_gpu SDL3::SDL3 b
 # layer looks "roughly right" on a moving picture and is invisible by eye.
 add_executable(taps_check tools/taps_check.cpp)
 target_link_libraries(taps_check PRIVATE scratchvj_core scratchvj_gpu SDL3::SDL3 bgfx bx bimg)
+
+# Registered with ctest so `ctest` rebuilds and runs them like any other test.
+# Run by hand they had gone stale: gpu_check kept passing from an old binary
+# after queue_readback was split out of render(), while the tool it was built
+# from could no longer read a single pixel. A check nobody runs is not a check.
+#
+# spout_check and net_check stay out on purpose -- they listen to a RUNNING
+# scratchvj_ui, so they are integration checks with a prerequisite ctest cannot
+# satisfy, not unit tests.
+foreach(check gpu_check sphere_check fx_check taps_check)
+  add_test(NAME ${check} COMMAND ${check})
+endforeach()
+
 if(WIN32)
   target_link_libraries(scratchvj_ui PRIVATE SpoutDX_static d3d11 dxgi)
 

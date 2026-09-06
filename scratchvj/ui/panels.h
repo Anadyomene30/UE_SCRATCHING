@@ -18,6 +18,7 @@
 struct ImFont;
 
 #include "app/engine.h"
+#include "core/library.h"
 
 namespace svj::ui {
 
@@ -92,6 +93,20 @@ struct Frame {
     // How many distinct moments of the clip each multi-tap slot read. One means
     // the record is standing still, which is a state worth showing.
     int tap_moments[3] = {};
+
+    // A clip the performer asked to put on a deck this frame. The panel decides
+    // WHICH clip and WHICH deck; the front end does the opening, because that
+    // is file I/O and resizing GPU targets, neither of which belongs in a view.
+    // kNoClip means nothing was asked. A MIDI pad will write the same two
+    // fields, which is the reason this is a request rather than a call.
+    //
+    // The request MUST be served at a frame boundary, not between draw() and
+    // ImGui::Render(): loading closes the deck's cache, and the draw list built
+    // by draw() still carries those textures as ImTextureIDs. Serving it inline
+    // submits destroyed bgfx handles -- which appears to work whenever bgfx
+    // hands the same recycled index back, so it fails only sometimes.
+    ClipId load_clip = kNoClip;
+    DeckTarget load_target = DeckTarget::None;
 };
 
 // The three faces the mockup uses. Archivo carries the interface, DM Mono every

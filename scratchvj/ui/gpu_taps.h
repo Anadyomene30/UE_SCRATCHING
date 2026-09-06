@@ -24,6 +24,8 @@ public:
     bool init(std::uint32_t width, std::uint32_t height, std::uint16_t view_id);
     void destroy();
     bool ready() const { return ready_; }
+    std::uint32_t width() const { return width_; }
+    std::uint32_t height() const { return height_; }
 
     // Renders `taps` (a bgfx texture ARRAY handle index) through `plan` for
     // `unit`, and returns the handle index holding the result. Returns

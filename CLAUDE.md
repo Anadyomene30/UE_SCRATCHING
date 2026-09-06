@@ -31,6 +31,19 @@ ctest --test-dir build --output-on-failure    # 379 tests, doivent tous passer
 ./build/scratchvj/scratchvj layout            # checklist MIDI learn
 ```
 
+Avec l'interface (nécessite un GPU, donc jamais en CI) :
+
+```sh
+cmake -S . -B build-ui -DSCRATCHVJ_BUILD_UI=ON && cmake --build build-ui --config Release
+ctest --test-dir build-ui -C Release --output-on-failure
+```
+
+Ce `ctest`-là ajoute les quatre outils qui tiennent les shaders à leur référence
+CPU : `gpu_check`, `sphere_check`, `fx_check`, `taps_check`. **Les lancer par
+`ctest` et non à la main** — lancés à la main ils ont déjà passé depuis un binaire
+périmé alors que leur source ne lisait plus rien. `spout_check` et `net_check`
+restent en dehors : ils écoutent un `scratchvj_ui` en cours d'exécution.
+
 Compiler avec gcc **et** clang avant de pousser (`-DCMAKE_CXX_COMPILER=clang++`) :
 la CI tourne sur Linux, macOS et Windows à chaque push, mais les deux compilateurs
 locaux attrapent déjà l'essentiel des warnings avant même d'y arriver.
@@ -84,10 +97,12 @@ l'aveugle :
 
 - Le décodeur de timecode `timecoder.c` (xwax, GPL-3)
 - Un vrai backend MIDI (RtMidi) et audio (miniaudio/ASIO)
-- La suite du rendu GPU : bgfx rend l'interface, les frames BC1 montent sans
-  décodage CPU, et le compositeur du program tourne en shader (`fs_program.sc`),
-  validé contre `core/compose` par `gpu_check` ; restent les effets vidéo en shaders — la 360 est faite (fs_view360.sc, sphere_check)
+- Le rendu GPU est complet et vérifié : compositeur (`fs_program.sc` / `gpu_check`),
+  360 (`fs_view360.sc` / `sphere_check`), effets une-frame (`fs_effects.sc` /
+  `fx_check`) et multi-taps (`fs_taps.sc` / `taps_check`). Restent la FFT
+  audio-réactive et les entrées live.
 - Les sorties Syphon (macOS) et NDI — Spout est fait et vérifié (ui/share, spout_check)
+- OpenXR pour voir l'équirect scratché dans le Quest
 - Le test en scène du plugin Unreal `ScratchLink` — il compile contre UE 5.7 et le flux UDP est vérifié, mais personne n'a encore scratché une scène avec
 
 **Deux tests qui reviennent à l'utilisateur, devant le matériel** (voir le

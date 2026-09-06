@@ -67,20 +67,27 @@ cmake -S . -B build-ui -DSCRATCHVJ_BUILD_UI=ON && cmake --build build-ui --confi
 ./build-ui/scratchvj/ui/scratchvj_ui
 ```
 
-It is off by default because turning it on fetches SDL3 and Dear ImGui, and the
-default build having **no external dependencies at all** is what lets the core
+It is off by default because turning it on fetches SDL3, Dear ImGui and bgfx, and
+the default build having **no external dependencies at all** is what lets the core
 and its tests run from a bare checkout on three operating systems. The CI job
 builds the default configuration, so that guarantee is enforced rather than
 merely stated.
 
-There is no bgfx yet, on purpose: bgfx exists to draw decoded video frames, and
-there are none until the FFmpeg analysis pass is written. Dear ImGui's own
-renderer carries the interface until then, and the seam it leaves — the two deck
-panels and the filmstrip — is exactly where bgfx attaches.
+The window carries five layouts — booth, stage, prep, 360 and full-frame — a
+library you load onto either deck in one click, mouse scrubbing on the timeline,
+faders and a crossfader, and a warp editor with bézier meshes and saveable
+mapping presets.
+
+Everything that runs on the GPU is held to a CPU reference in `core/`: the
+program compositor, the 360 reprojection, the single-frame effects and the
+multi-tap sampler each have a headless `*_check` tool that renders the shader and
+compares it channel-for-channel against the same computation done on the CPU. A
+shader that drifts fails loudly instead of merely looking plausible on a moving
+picture.
 
 ## Current state
 
-The engine's logic is written and covered by **329 tests**; the parts that touch
+The engine's logic is written and covered by **379 tests**; the parts that touch
 hardware are not.
 
 | Module | What it does |
