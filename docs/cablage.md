@@ -1,5 +1,59 @@
 # Câblage et modes audio
 
+## La chaîne complète : Phase + Elite + Serato (établie le 2026-09-07)
+
+Documentation constructeur (MWM, Reloop, VirtualDJ) recoupée avec le matériel
+réel branché. Deux corrections sur ce qui était supposé avant :
+
+1. **Le récepteur Phase sort au niveau LIGNE, pas phono**, et se branche sur les
+   entrées **LINE** du mixeur. Il n'y a pas de disque de contrôle : le dock
+   synthétise le signal à partir du mouvement des remotes posées sur n'importe
+   quel vinyle.
+2. **Le sélecteur de voie de l'Elite choisit ce qu'on écoute, pas ce que
+   l'ordinateur reçoit.** En DVS il reste sur **USB A/B** ; le trajet entrée
+   analogique → USB est interne, réglé par **Utilities → USB OUT ROUTING**
+   (SHIFT + BACK tenus 3 s) : DECK 1 / DECK 2 sur **CD** (= entrée ligne), pas
+   PHONO, puisque le Phase entre en ligne.
+
+**Le Phase a deux modes de liaison, et ils s'excluent :**
+
+- **Mode HID** : le récepteur se branche en USB directement au laptop, Serato
+  règle le deck sur « WIR », aucun câble RCA. Intégration native, mais fermée —
+  Serato (et rekordbox) seulement, et **rien à lire pour nous** : pas de signal
+  analogique.
+- **Mode DVS/RCA** : le récepteur est alimenté en USB (5 V), ses RCA vont aux
+  entrées LINE de l'Elite, les voies restent sur USB A/B, USB OUT ROUTING sur
+  CD, et Serato lit le timecode. C'est **le mode qu'il faut à scratchvj** : un
+  signal analogique existe, et deux lecteurs peuvent le décoder en parallèle.
+
+**Réglages Serato officiels pour cette chaîne** (doc MWM) : decks virtuels en
+**REL**, et — cité tel quel — « For some specific mixers (DJM-S11, **Reloop
+Elite**, etc.), you need to go to Serato settings > Audio tab > Click on CDJ. »
+
+> **REL n'est pas un détail : c'est une propriété du signal.** Le timecode
+> synthétisé par le Phase n'a pas de position absolue significative — il avance
+> depuis un point arbitraire. Serato le prescrit donc en mode relatif, et
+> `scratchvj` doit faire pareil : c'est exactement ce que le profil `wireless`
+> de `core/timecode` anticipe, et ça confirme que l'ancrage par fraîcheur (et
+> non par position absolue) était le bon choix. Un needle drop absolu n'existe
+> pas dans cette chaîne.
+
+**Le format du signal se choisit dans Phase Manager** (Configuration DVS :
+Serato DJ, Traktor, rekordbox, VirtualDJ…). Pour ce projet, **rester sur
+« Serato DJ » dans tous les cas** :
+
+- en mode suiveur, c'est forcé — Serato ne lit que son propre signal ;
+- en mode autonome, le `timecoder.c` de xwax décode le format Serato nativement
+  (profils `serato_2a`/`serato_cd` — lequel se verrouille sera mesuré, pas
+  deviné) ;
+- un seul réglage pour les deux modes = zéro manipulation en passant de l'un à
+  l'autre.
+
+Sources : [setup Phase + Serato (MWM)](https://www.phasedj.com/phase-essential/set-up/serato),
+[setup Phase + Traktor (MWM)](https://www.phasedj.com/phase-essential/set-up/traktor),
+[Elite advanced setup (VirtualDJ)](https://virtualdj.com/manuals/hardware/reloop/elite/advanced.html),
+[manuel Reloop Elite](https://www.manualslib.com/manual/1613440/Reloop-Elite.html).
+
 ## Les deux modes
 
 Le décodeur de timecode et tout le moteur vidéo sont **identiques dans les deux
@@ -36,7 +90,7 @@ fonctionner — c'est l'erreur à ne pas commettre.
 
 ### Mode autonome (l'app joue le son)
 
-Boucle DVS complète : entrées USB 1/2 et 3/4 en PHONO (timecode), sorties USB 1/2
+Boucle DVS complète : entrées USB 1/2 et 3/4 en CD/LINE (le timecode du Phase entre au niveau ligne), sorties USB 1/2
 et 3/4 vers les canaux de l'Elite. Périphérique ouvert en **duplex exclusif**.
 Synchronisation parfaite par construction, et possibilité de scratcher un clip qui
 n'a aucun équivalent dans Serato.
@@ -60,7 +114,7 @@ réel du Mac pour ce projet.
 
 ## Réglages de l'Elite
 
-- Utilities → basculer les canaux concernés en **PHONO** pour recevoir le timecode.
+- Utilities → USB OUT ROUTING des decks concernés sur **CD** — le Phase entre au niveau ligne. (PHONO ne servirait qu'avec de vraies cellules et un disque de contrôle.)
 - Utilities → **USB OUT ROUTING** : à vérifier pour savoir si le timecode part vers
   les deux ports USB simultanément. C'est le test qui tranche le tableau ci-dessus.
 

@@ -87,7 +87,7 @@ sélecteur de voie choisit ce qu'on **écoute**, pas ce que l'ordinateur
 > **deux ports USB-B** et se présente comme deux interfaces 10×10 indépendantes.
 > Windows n'en voit **qu'une seule instance** (`VID_26AD&PID_94F0\201709`) : un
 > seul câble est branché. Brancher le second câble donne à cette application sa
-> propre interface, portant les mêmes entrées phono, **sans rien partager avec
+> propre interface, portant les mêmes entrées, **sans rien partager avec
 > Serato** — ni ASIO, ni WASAPI, ni exclusivité. C'est le plan d'origine, il est
 > à un câble de distance, et il rend la question du partage sans objet.
 
@@ -219,7 +219,7 @@ l'app ne peut pas l'ouvrir. Quatre issues, par ordre de préférence :
 
 | Voie | Détail | Verdict |
 |---|---|---|
-| **2ᵉ port USB de l'Elite** | Interface double 10x10 : Serato sur USB-B1, l'app sur USB-B2, les deux reçoivent les entrées phono | Matériel déjà possédé — **à tester en premier**, y compris sur une seule machine |
+| **2ᵉ port USB de l'Elite** | Interface double 10x10 : Serato sur USB-B1, l'app sur USB-B2, les deux reçoivent les mêmes entrées | Matériel déjà possédé — **à tester en premier**, y compris sur une seule machine |
 | **Split RCA passif** | Sortie du Phase dupliquée vers une petite interface d'entrée dédiée | Toujours fonctionnel, ~50 € |
 | **WASAPI partagé** | Si le pilote Reloop expose WASAPI à côté d'ASIO | Dépend du pilote, à tester mais pas à présumer |
 | **Deux machines** | Laptop Serato + PC vidéo | Le repli qui marche toujours |
@@ -254,7 +254,7 @@ la table complète, tenue en code dans `core/effect.h`.
 ## Architecture cible
 
 ```
-Phase RX ──RCA timecode──> Elite (canaux PHONO) ──USB──┐
+Phase RX ──RCA timecode (niveau ligne)──> Elite (entrées LINE) ──USB──┐
 Elite : faders, EQ, filtres, FX, 16 pads ──USB MIDI────┤
 RP-8000 MK2 : 8 pads x 3 couches ─────────USB MIDI─────┤
                                                        v
