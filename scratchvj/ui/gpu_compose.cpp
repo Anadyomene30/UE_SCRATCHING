@@ -195,22 +195,27 @@ void ProgramGpu::render(std::uint16_t deck_a, std::uint16_t deck_b, std::uint16_
     p.idx = program_;
     bgfx::submit(view_id_, p);
 
-    // Queue this frame's readback into the next slot. Two slots cover the
-    // GPU's natural two-frame latency without ever stalling on it.
-    Slot& slot = slots_[next_slot_];
-    if (!slot.pending) {
-        bgfx::TextureRegion destination;
-        destination.init(tex_of(readback_), 0, 0);
-        bgfx::TextureRegion source;
-        source.init(tex_of(target_), 0, 0);
-        bgfx::blit(blit_view_id_, destination, source);
+}
 
-        bgfx::TextureRegion whole;
-        whole.init(tex_of(readback_), 0, 0);
-        slot.ready_frame = bgfx::read(whole, slot.pixels.data());
-        slot.pending = true;
-        next_slot_ = 1 - next_slot_;
-    }
+void ProgramGpu::queue_readback(std::uint16_t source) {
+    if (!ready_ || source == 0xFFFF) return;
+
+    // Two slots cover the GPU's natural two-frame latency without ever stalling
+    // on it: one is in flight while the other is being filled.
+    Slot& slot = slots_[next_slot_];
+    if (slot.pending) return;
+
+    bgfx::TextureRegion destination;
+    destination.init(tex_of(readback_), 0, 0);
+    bgfx::TextureRegion origin;
+    origin.init(tex_of(source), 0, 0);
+    bgfx::blit(blit_view_id_, destination, origin);
+
+    bgfx::TextureRegion whole;
+    whole.init(tex_of(readback_), 0, 0);
+    slot.ready_frame = bgfx::read(whole, slot.pixels.data());
+    slot.pending = true;
+    next_slot_ = 1 - next_slot_;
 }
 
 void* ProgramGpu::imgui_texture() const {

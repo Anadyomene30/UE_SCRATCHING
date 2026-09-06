@@ -1,6 +1,7 @@
 #include "panels.h"
 
 #include "config/warp_io.h"
+#include "core/videofx.h"
 
 #include <algorithm>
 #include <cmath>
@@ -762,8 +763,15 @@ void draw_mix(Engine& engine, Frame& frame, float width, float height) {
         meter(unit.video_params().mix, 70.0f, kAccent, false);
         ImGui::SameLine(0.0f, 10.0f);
         push_small();
-        ImGui::PushStyleColor(ImGuiCol_Text, rgba(kFaint));
-        ImGui::Text("%s", info->video != nullptr ? info->video : "");
+        // An effect the video pass cannot draw yet is SAID so, here, next to its
+        // own meters. It reads the clip at several positions and that machinery
+        // is not built; a knob that silently does nothing teaches a performer to
+        // distrust every other knob on the panel.
+        const bool drawn = is_single_frame_effect(unit.type);
+        ImGui::PushStyleColor(ImGuiCol_Text, rgba(drawn ? kFaint : kAmber));
+        ImGui::Text("%s", drawn ? (info->video != nullptr ? info->video : "")
+                                : "pas encore \xC3\xA0 l'image \xE2\x80\x94 lit le clip "
+                                  "\xC3\xA0 plusieurs positions");
         ImGui::PopStyleColor();
         pop_font();
     }

@@ -33,8 +33,16 @@ public:
     void render(std::uint16_t deck_a, std::uint16_t deck_b, std::uint16_t overlay,
                 float gain_a, float gain_b, float gain_overlay, int overlay_mode);
 
+    // Queues a copy of `source` for readback. Separate from render() because
+    // the picture that leaves the machine is the one the EFFECT RACK produced,
+    // not the one the compositor did -- reading the compositor's own target
+    // would quietly send Spout a different image from the one on screen.
+    void queue_readback(std::uint16_t source);
+
     // The render target, for the interface's preview. ImTextureID-compatible.
     void* imgui_texture() const;
+    // The same target as a bgfx handle index, for the effect rack to read.
+    std::uint16_t texture_index() const { return target_; }
     std::uint32_t width() const { return width_; }
     std::uint32_t height() const { return height_; }
 

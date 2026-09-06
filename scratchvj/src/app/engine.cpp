@@ -1,5 +1,7 @@
 #include "app/engine.h"
 
+#include <algorithm>
+
 namespace svj {
 namespace {
 
@@ -223,7 +225,12 @@ void Engine::configure(double bpm) {
     rack_.load(1, EffectType::LowPass);
     rack_.at(1).shared.mix = 0.41f;
     // Unlinked on purpose, to show the one state where the two domains diverge.
-    rack_.load(2, EffectType::SlitScan);
+    // Kaleidoscope rather than slit scan in the demo, for one honest reason:
+    // slit scan reads the clip at several positions and nothing draws it yet,
+    // so it would be a knob that visibly does nothing. Slot 0's delay is left
+    // exactly that way on purpose, so the state IS visible somewhere -- one
+    // undrawn effect is a note about what is coming, three is a broken rack.
+    rack_.load(2, EffectType::Kaleidoscope);
     rack_.at(2).shared.mix = 0.77f;
     rack_.at(2).unlink();
     rack_.at(2).audio_override.mix = 0.0f;
@@ -346,6 +353,26 @@ void Engine::step(const EngineFrame& frame) {
     inputs.modulators = modulators_.values().data();
     inputs.modulator_count = modulators_.size();
     mapping_.evaluate(surface_, inputs, frame.dt_s);
+
+    // The rack's video parameters follow the mapping too, so a knob, an LFO or
+    // a gesture reaches an effect by the same door the gaze uses. Without this
+    // the rack would hold whatever configure() set and never move -- knobs that
+    // read as controls and behave as decoration.
+    for (std::size_t i = 0; i < mapping_.size(); ++i) {
+        if (!mapping_.active(i)) continue;
+        const std::string& target = mapping_.at(i).destination.target;
+        const float value = mapping_.value(i);
+        for (std::size_t slot = 0; slot < rack_.size(); ++slot) {
+            EffectUnit& unit = rack_.at(slot);
+            if (target == "fx.a.filter" && unit.type == EffectType::LowPass) {
+                unit.shared.amount = std::clamp(value, 0.0f, 1.0f);
+            } else if (target == "fx.a.kaleidoscope.rotation" &&
+                       unit.type == EffectType::Kaleidoscope) {
+                // The LFO runs 0..360 for the OSC mirror; the rack wants 0..1.
+                unit.video_override.amount = std::clamp(value / 360.0f, 0.0f, 1.0f);
+            }
+        }
+    }
 
     // The gaze follows the mapping's output rather than the knobs directly, so
     // an LFO, a gesture or a MIDI pot all steer it through the same door. A

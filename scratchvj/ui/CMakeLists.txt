@@ -101,6 +101,7 @@ bgfx_compile_shaders(
   TYPE FRAGMENT
   SHADERS ${CMAKE_CURRENT_SOURCE_DIR}/shaders/fs_program.sc
           ${CMAKE_CURRENT_SOURCE_DIR}/shaders/fs_view360.sc
+          ${CMAKE_CURRENT_SOURCE_DIR}/shaders/fs_effects.sc
   VARYING_DEF ${CMAKE_CURRENT_SOURCE_DIR}/shaders/varying.def.sc
   OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/generated_shaders
   AS_HEADERS
@@ -129,7 +130,7 @@ bgfx_compile_shaders(
 
 # In its own library so the headless gpu_check tool uses the exact object code
 # the application does -- validating a copy would validate nothing.
-add_library(scratchvj_gpu STATIC gpu_compose.cpp gpu_view360.cpp ${SVJ_VS_HEADERS} ${SVJ_FS_HEADERS})
+add_library(scratchvj_gpu STATIC gpu_compose.cpp gpu_effects.cpp gpu_view360.cpp ${SVJ_VS_HEADERS} ${SVJ_FS_HEADERS})
 target_include_directories(scratchvj_gpu PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_BINARY_DIR}/generated_shaders)
@@ -149,6 +150,11 @@ target_link_libraries(gpu_check PRIVATE scratchvj_core scratchvj_gpu SDL3::SDL3 
 # And the 360 view pass to core/sphere, same bar.
 add_executable(sphere_check tools/sphere_check.cpp)
 target_link_libraries(sphere_check PRIVATE scratchvj_core scratchvj_gpu SDL3::SDL3 bgfx bx bimg)
+
+# And every video effect to core/videofx. The rack is the instrument's thesis;
+# an effect drifting from its reference is that claim becoming untrue.
+add_executable(fx_check tools/fx_check.cpp)
+target_link_libraries(fx_check PRIVATE scratchvj_core scratchvj_gpu SDL3::SDL3 bgfx bx bimg)
 if(WIN32)
   target_link_libraries(scratchvj_ui PRIVATE SpoutDX_static d3d11 dxgi)
 

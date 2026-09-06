@@ -87,6 +87,8 @@ struct Frame {
     void* tex_equirect = nullptr;
     unsigned int program_width = 0;
     unsigned int program_height = 0;
+    // How many effect passes ran over the program this frame.
+    int effect_passes = 0;
 };
 
 // The three faces the mockup uses. Archivo carries the interface, DM Mono every

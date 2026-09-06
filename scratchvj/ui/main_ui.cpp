@@ -31,6 +31,7 @@
 
 #include "imgui_impl_bgfx.h"
 #include "gpu_compose.h"
+#include "gpu_effects.h"
 #include "gpu_view360.h"
 #include "media.h"
 #include "netout.h"
@@ -92,7 +93,7 @@ int main(int, char**) {
     }
     // The mockup's ground colour, painted by the clear rather than by a quad.
     // View 1 is the backbuffer; view 0 belongs to the program compositor.
-    bgfx::setViewClear(2, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x141412ff, 1.0f, 0);
+    bgfx::setViewClear(6, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x141412ff, 1.0f, 0);
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -137,10 +138,12 @@ int main(int, char**) {
         io.FontDefault = svj::ui::g_fonts.sans;
     }
     ImGui_ImplSDL3_InitForOther(window);
-    // View order is the pipeline order: 0 reprojects deck A's 360 view, 1
-    // composites the program offscreen, 2 draws the interface (which samples
-    // both), 3 blits the program out for readback.
-    if (!svj::ui::ImGuiBgfx_Init(2)) {
+    // View order IS pipeline order, and bgfx runs views by id: 0 reprojects
+    // deck A's 360 view, 1 composites the program, 2..5 are the effect rack's
+    // passes, 6 draws the interface (which samples the rack's output), and 7
+    // blits that same output for readback. Getting this order wrong is not a
+    // crash -- it is Spout quietly carrying last frame's picture.
+    if (!svj::ui::ImGuiBgfx_Init(6)) {
         std::fprintf(stderr, "backend ImGui bgfx: echec\n");
         return 1;
     }
@@ -162,6 +165,7 @@ int main(int, char**) {
     svj::ui::DeckMedia media_a, media_b, media_overlay;
     svj::ui::ProgramGpu gpu;
     svj::ui::View360Gpu view360a;
+    svj::ui::EffectsGpu effects;
 
     // The Spout sender is opened unconditionally: receivers that are not
     // listening cost nothing, and an output that must be switched on before it
@@ -238,9 +242,12 @@ int main(int, char**) {
     if (media_a.ready() || media_b.ready()) {
         const std::uint32_t pw = media_a.ready() ? media_a.width() : media_b.width();
         const std::uint32_t ph = media_a.ready() ? media_a.height() : media_b.height();
-        if (!gpu.init(pw, ph, 1, 3)) {
+        if (!gpu.init(pw, ph, 1, 7)) {
             std::fprintf(stderr, "compositeur GPU: init a echoue\n");
         }
+    }
+    if (gpu.ready() && !effects.init(gpu.width(), gpu.height(), 2)) {
+        std::fprintf(stderr, "effets GPU: init a echoue\n");
     }
     if (media_a.ready() && media_a.header().is_equirect()) {
         // Deck A gets the 360 view pass: downstream of it -- compositor and
@@ -345,7 +352,14 @@ int main(int, char**) {
                        media_overlay.texture_index(), engine.stack().a,
                        engine.stack().b, engine.stack().overlay,
                        static_cast<int>(engine.overlay_layer().blend));
-            view.tex_program = gpu.imgui_texture();
+            // The rack, over the composited program. What leaves the machine
+            // is what the effects made of it, so Spout and the preview see the
+            // same thing the audience does.
+            const std::uint16_t shown = effects.render(gpu.texture_index(), engine.rack());
+            view.tex_program =
+                reinterpret_cast<void*>(static_cast<std::uint64_t>(shown) + 1);
+            view.effect_passes = effects.passes();
+            gpu.queue_readback(shown);
             view.program_width = gpu.width();
             view.program_height = gpu.height();
         }
@@ -360,9 +374,9 @@ int main(int, char**) {
         }
 
         ImGui::Render();
-        bgfx::setViewRect(2, 0, 0, static_cast<std::uint16_t>(pixel_w),
+        bgfx::setViewRect(6, 0, 0, static_cast<std::uint16_t>(pixel_w),
                           static_cast<std::uint16_t>(pixel_h));
-        bgfx::touch(2);  // the clear runs even on a frame with nothing else
+        bgfx::touch(6);  // the clear runs even on a frame with nothing else
         svj::ui::ImGuiBgfx_Render(ImGui::GetDrawData());
         const std::uint32_t frame_number = bgfx::frame();
 
@@ -375,6 +389,7 @@ int main(int, char**) {
     media_a.close();
     media_b.close();
     media_overlay.close();
+    effects.destroy();
     view360a.destroy();
     gpu.destroy();
     svj::ui::ImGuiBgfx_Shutdown();
