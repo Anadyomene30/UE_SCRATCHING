@@ -64,6 +64,25 @@ if(WIN32)
     GIT_TAG c2bcc12147711d12ace7d5f08e869d774d840f8a  # 2.007.017
   )
   FetchContent_MakeAvailable(spout2)
+
+  # OpenXR, for watching the scratched sphere in a headset. Only the LOADER is
+  # built: it finds whichever runtime the machine has registered (Oculus,
+  # SteamVR, WMR) through the Khronos registry key, so nothing here is tied to
+  # one vendor's SDK. Linked statically, so there is no loader DLL to ship
+  # alongside a portable build.
+  #
+  # A machine with no runtime still builds and runs: the loader is present, it
+  # simply reports that there is no system. That is the difference between "VR
+  # is off" and "the build is broken", and it has to stay visible.
+  set(DYNAMIC_LOADER OFF CACHE BOOL "" FORCE)
+  set(BUILD_TESTS OFF CACHE BOOL "" FORCE)
+  set(BUILD_API_LAYERS OFF CACHE BOOL "" FORCE)
+  FetchContent_Declare(openxr
+    GIT_REPOSITORY https://github.com/KhronosGroup/OpenXR-SDK.git
+    GIT_TAG release-1.1.63
+    GIT_SHALLOW TRUE
+  )
+  FetchContent_MakeAvailable(openxr)
 endif()
 
 # bgfx, the renderer the roadmap chose: mature, permissive, native D3D/Vulkan/
@@ -101,6 +120,7 @@ bgfx_compile_shaders(
   TYPE FRAGMENT
   SHADERS ${CMAKE_CURRENT_SOURCE_DIR}/shaders/fs_program.sc
           ${CMAKE_CURRENT_SOURCE_DIR}/shaders/fs_view360.sc
+          ${CMAKE_CURRENT_SOURCE_DIR}/shaders/fs_view360_eye.sc
           ${CMAKE_CURRENT_SOURCE_DIR}/shaders/fs_effects.sc
           ${CMAKE_CURRENT_SOURCE_DIR}/shaders/fs_taps.sc
   VARYING_DEF ${CMAKE_CURRENT_SOURCE_DIR}/shaders/varying.def.sc
@@ -131,7 +151,7 @@ bgfx_compile_shaders(
 
 # In its own library so the headless gpu_check tool uses the exact object code
 # the application does -- validating a copy would validate nothing.
-add_library(scratchvj_gpu STATIC gpu_compose.cpp gpu_effects.cpp gpu_taps.cpp gpu_view360.cpp ${SVJ_VS_HEADERS} ${SVJ_FS_HEADERS})
+add_library(scratchvj_gpu STATIC gpu_compose.cpp gpu_effects.cpp gpu_eye.cpp gpu_taps.cpp gpu_view360.cpp ${SVJ_VS_HEADERS} ${SVJ_FS_HEADERS})
 target_include_directories(scratchvj_gpu PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_BINARY_DIR}/generated_shaders)
@@ -152,6 +172,12 @@ target_link_libraries(gpu_check PRIVATE scratchvj_core scratchvj_gpu SDL3::SDL3 
 add_executable(sphere_check tools/sphere_check.cpp)
 target_link_libraries(sphere_check PRIVATE scratchvj_core scratchvj_gpu SDL3::SDL3 bgfx bx bimg)
 
+# And the per-eye pass to core/headset. A shader that drops the head pose, or
+# aims through the centre pixel of an asymmetric lens, still looks like 360
+# video -- it is only wrong by tens of degrees, which is felt rather than seen.
+add_executable(eye_check tools/eye_check.cpp)
+target_link_libraries(eye_check PRIVATE scratchvj_core scratchvj_gpu SDL3::SDL3 bgfx bx bimg)
+
 # And every video effect to core/videofx. The rack is the instrument's thesis;
 # an effect drifting from its reference is that claim becoming untrue.
 add_executable(fx_check tools/fx_check.cpp)
@@ -170,7 +196,7 @@ target_link_libraries(taps_check PRIVATE scratchvj_core scratchvj_gpu SDL3::SDL3
 # spout_check and net_check stay out on purpose -- they listen to a RUNNING
 # scratchvj_ui, so they are integration checks with a prerequisite ctest cannot
 # satisfy, not unit tests.
-foreach(check gpu_check sphere_check fx_check taps_check)
+foreach(check gpu_check sphere_check eye_check fx_check taps_check)
   add_test(NAME ${check} COMMAND ${check})
 endforeach()
 
@@ -186,6 +212,13 @@ if(WIN32)
   # core/protocol the packets were encoded with.
   add_executable(net_check tools/net_check.cpp)
   target_link_libraries(net_check PRIVATE scratchvj_core ws2_32)
+
+  # What OpenXR this machine offers: which runtime, which graphics binding,
+  # which renderer bgfx picked, and whether a headset is awake. Every VR
+  # decision rests on those four facts and none of them can be guessed.
+  add_executable(xr_check tools/xr_check.cpp)
+  target_link_libraries(xr_check PRIVATE openxr_loader SDL3::SDL3 bgfx bx bimg
+                                         d3d11 d3d12)
 endif()
 
 # The vendored sources are not ours to keep warning-clean, so the strict flags

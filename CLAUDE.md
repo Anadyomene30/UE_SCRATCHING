@@ -25,7 +25,7 @@ Toute nouvelle fonctionnalité doit respecter ces deux règles.
 
 ```sh
 cmake -S . -B build && cmake --build build
-ctest --test-dir build --output-on-failure    # 379 tests, doivent tous passer
+ctest --test-dir build --output-on-failure    # 388 tests, doivent tous passer
 ./build/scratchvj/scratchvj demo              # démo sans matériel
 ./build/scratchvj/scratchvj effects           # catalogue d'effets
 ./build/scratchvj/scratchvj layout            # checklist MIDI learn
@@ -38,11 +38,13 @@ cmake -S . -B build-ui -DSCRATCHVJ_BUILD_UI=ON && cmake --build build-ui --confi
 ctest --test-dir build-ui -C Release --output-on-failure
 ```
 
-Ce `ctest`-là ajoute les quatre outils qui tiennent les shaders à leur référence
-CPU : `gpu_check`, `sphere_check`, `fx_check`, `taps_check`. **Les lancer par
-`ctest` et non à la main** — lancés à la main ils ont déjà passé depuis un binaire
-périmé alors que leur source ne lisait plus rien. `spout_check` et `net_check`
-restent en dehors : ils écoutent un `scratchvj_ui` en cours d'exécution.
+Ce `ctest`-là ajoute les cinq outils qui tiennent les shaders à leur référence
+CPU : `gpu_check`, `sphere_check`, `eye_check`, `fx_check`, `taps_check`. **Les
+lancer par `ctest` et non à la main** — lancés à la main ils ont déjà passé depuis
+un binaire périmé alors que leur source ne lisait plus rien. Restent en dehors :
+`spout_check` et `net_check`, qui écoutent un `scratchvj_ui` en cours
+d'exécution, et `xr_check`, qui rapporte ce que la machine offre en OpenXR (son
+verdict dépend du matériel branché, pas du code).
 
 Compiler avec gcc **et** clang avant de pousser (`-DCMAKE_CXX_COMPILER=clang++`) :
 la CI tourne sur Linux, macOS et Windows à chaque push, mais les deux compilateurs
@@ -102,7 +104,10 @@ l'aveugle :
   `fx_check`) et multi-taps (`fs_taps.sc` / `taps_check`). Restent la FFT
   audio-réactive et les entrées live.
 - Les sorties Syphon (macOS) et NDI — Spout est fait et vérifié (ui/share, spout_check)
-- OpenXR pour voir l'équirect scratché dans le Quest
+- La **session** OpenXR pour voir l'équirect scratché dans le Quest. La géométrie
+  est faite et vérifiée (`core/headset`, `fs_view360_eye.sc`, `eye_check`) ;
+  restent la swapchain et la boucle de frame, qui ne s'exercent pas sans casque
+  réveillé — voir la section « Le casque » du roadmap avant d'y toucher
 - Le test en scène du plugin Unreal `ScratchLink` — il compile contre UE 5.7 et le flux UDP est vérifié, mais personne n'a encore scratché une scène avec
 
 **Deux tests qui reviennent à l'utilisateur, devant le matériel** (voir le

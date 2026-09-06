@@ -79,15 +79,15 @@ faders and a crossfader, and a warp editor with bézier meshes and saveable
 mapping presets.
 
 Everything that runs on the GPU is held to a CPU reference in `core/`: the
-program compositor, the 360 reprojection, the single-frame effects and the
-multi-tap sampler each have a headless `*_check` tool that renders the shader and
-compares it channel-for-channel against the same computation done on the CPU. A
-shader that drifts fails loudly instead of merely looking plausible on a moving
-picture.
+program compositor, the 360 reprojection, the per-eye headset view, the
+single-frame effects and the multi-tap sampler each have a headless `*_check`
+tool that renders the shader and compares it channel-for-channel against the same
+computation done on the CPU. A shader that drifts fails loudly instead of merely
+looking plausible on a moving picture.
 
 ## Current state
 
-The engine's logic is written and covered by **379 tests**; the parts that touch
+The engine's logic is written and covered by **388 tests**; the parts that touch
 hardware are not.
 
 | Module | What it does |

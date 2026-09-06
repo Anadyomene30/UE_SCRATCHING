@@ -29,11 +29,15 @@ dispositions (cabine, scène, prépa, 360, plein cadre), scrub à la souris sur 
 timeline, faders et crossfader, éditeur de warp, et **chargement d'un clip de la
 bibliothèque sur un deck** en un clic.
 
+Et `core/headset` : la géométrie de la sphère vue à travers un casque, avec sa
+passe GPU (`ui/gpu_eye`, `fs_view360_eye.sc`) tenue à sa référence par
+`eye_check`. Voir [Le casque](#le-casque--scratcher-une-sphère-quon-regarde-de-lintérieur).
+
 **Ce qui reste, dans les grandes lignes** : le décodeur `timecoder.c` de xwax,
-un vrai périphérique MIDI (RtMidi) et audio (miniaudio/ASIO), Syphon/NDI,
-OpenXR pour le casque, la FFT audio-réactive, les entrées live, et le test en
-scène du plugin Unreal. Le reste du plan initial est fait et vérifié — voir le
-tableau ci-dessus.
+un vrai périphérique MIDI (RtMidi) et audio (miniaudio/ASIO), Syphon/NDI, la
+**session** OpenXR (la géométrie est faite, la boucle de frame attend le casque),
+la FFT audio-réactive, les entrées live, et le test en scène du plugin Unreal. Le
+reste du plan initial est fait et vérifié — voir le tableau ci-dessus.
 
 **Deux tests qui reviennent à l'utilisateur, devant le matériel :**
 1. Est-ce que l'Elite émet son état MIDI à la connexion ? Ça décide du sort du
@@ -253,6 +257,62 @@ décode le clip une fois, redimensionne, compresse chaque frame en **BCn** (déj
 formalisé dans `core/videocache`), et écrit un `.svcache`. Ensuite, plus jamais de
 décodage. File de jobs en arrière-plan avec progression dans l'UI. La même passe
 extrait vignette, métadonnées et **beatgrid**.
+
+### Le casque — scratcher une sphère qu'on regarde de l'intérieur
+
+L'idée : lire un équirect en live, le scratcher aux platines, et le voir dans le
+Quest branché en Link. Le moteur vidéo n'y change rien — un clip 360 est déjà un
+clip comme un autre, indexé par position. Ce qui change est **qui regarde**.
+
+**La décision structurante : le casque est la tête, le performeur est le monde.**
+En VR la tête *est* le regard, donc le potard de lacet ne peut pas être le regard
+aussi sans que les deux se disputent le même degré de liberté. Le potard tourne
+donc la **sphère** : le spectateur regarde librement autour de lui pendant que le
+DJ fait tourner le monde. Un rayon se compose `monde = R_regard(R_œil(rayon))`,
+et `R_regard` est exactement la rotation que `core/sphere` applique déjà — la vue
+plate et la vue casque restent un seul mécanisme, pas deux qui peuvent diverger.
+
+Deux propriétés d'OpenXR qui ont façonné l'interface de `core/headset` :
+
+- **Le champ de vision est asymétrique** : quatre demi-angles indépendants, pas
+  un `fov_deg` symétrique. Une lentille voit plus loin du côté du nez, donc le
+  pixel central n'est pas l'axe de vue. Une projection qui met à l'échelle un
+  seul demi-angle vise faux de cet écart, silencieusement.
+- **L'orientation est par œil, pas partagée.** Les Quest 3 et Quest Pro ont des
+  dalles inclinées : prendre une seule pose de tête pour les deux yeux penche une
+  des deux images, et un horizon penché en VR se sent bien avant de se voir.
+
+**La position de l'œil est délibérément absente.** Un équirect est une sphère à
+l'infini : aucun écart interoculaire ne peut en tirer de parallaxe. Y injecter
+l'IPD n'ajouterait pas de profondeur, seulement de l'erreur. Le 360 monoscopique
+dans un casque est réellement plat-mais-enveloppant, et c'est une propriété du
+format, pas une insuffisance ici. Le 360 **stéréoscopique** est un *format*
+différent (équirect haut/bas) : il relèverait de `core/videocache`, pas de la
+géométrie.
+
+État : `core/headset` est écrit et testé (9 tests), dont un qui prouve qu'une
+tête immobile redonne **exactement** la vue plate déjà validée — le chemin casque
+hérite ainsi de la preuve que `sphere_check` apporte au shader plutôt que d'en
+demander une seconde. Le shader `fs_view360_eye.sc` est tenu à cette référence
+par `eye_check` (écart max 1/255). `xr_check` établit ce que la machine offre
+vraiment : ici bgfx en **Direct3D 11**, runtime **Oculus 1.117.0**, extension
+`XR_KHR_D3D11_enable` présente.
+
+**Ce qui reste et pourquoi ça attend le matériel** : la session OpenXR
+proprement dite — swapchain partagée avec le device D3D11 de bgfx, puis la
+boucle `xrWaitFrame` / `xrLocateViews` / `xrEndFrame`. Rien de tout ça ne peut
+être exercé sans casque réveillé : `xrGetSystem` répond
+`XR_ERROR_FORM_FACTOR_UNAVAILABLE` et il n'existe aucun runtime de simulation
+côté Oculus. Écrire cette boucle à l'aveugle irait contre la règle du projet,
+donc elle attend que le Quest soit branché — tout ce qu'elle composera est déjà
+démontré.
+
+> **La latence, puisque la question s'est posée** : le Quest en Link ajoute
+> l'encodage et le transport USB au chemin, mais le reprojection asynchrone du
+> runtime compense le mouvement de tête indépendamment de l'app. Ce qui reste
+> exposé à la latence est le **scratch**, pas le regard — et c'est la même
+> latence qu'à l'écran, celle que la cible « sous 30 ms » du plan de test
+> mesure déjà.
 
 ### Retour LED et mapping en dur
 
