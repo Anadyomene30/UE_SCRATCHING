@@ -44,6 +44,14 @@ public:
     // 0xFFFF until a first frame has been shown.
     std::uint16_t texture_index() const { return texture_; }
 
+    // The same texture as an ImTextureID, for panels that show the SOURCE
+    // rather than the projected view -- the 360 layout's sight frame.
+    void* imgui_texture() const {
+        return texture_ == 0xFFFF
+                   ? nullptr
+                   : reinterpret_cast<void*>(static_cast<std::uint64_t>(texture_) + 1);
+    }
+
 private:
     CacheReader reader_;
     std::uint16_t texture_ = 0xFFFF;  // bgfx handle index; 0xFFFF = none

@@ -67,9 +67,12 @@ void DeckClock::configure(double duration_s, double bpm) {
     origin_position_s_ = 0.0;
     takeover_offset_s_ = 0.0;
     last_position_s_ = 0.0;
+    scrub_rate_ = 0.0;
+    scrub_time_s_ = 0.0;
 }
 
 double DeckClock::effective_rate() const {
+    if (source_ == DeckSource::Hand) return scrub_rate_;
     if (source_ != DeckSource::TempoLocked) return rate_;
     if (bpm_ <= 0.0 || beats_per_cycle_ <= 0.0 || duration_s_ <= 0.0) return rate_;
 
@@ -116,12 +119,35 @@ void DeckClock::set_source(DeckSource source, double time_s) {
     source_ = source;
 }
 
+void DeckClock::grab(double position_s, double time_s) {
+    source_ = DeckSource::Hand;
+    scrub_rate_ = 0.0;
+    scrub_time_s_ = time_s;
+    seek(position_s, time_s);
+}
+
+void DeckClock::scrub(double position_s, double time_s) {
+    const double dt = time_s - scrub_time_s_;
+    // Below a frame's worth of time the quotient is noise, not motion; the last
+    // rate stands rather than spiking to something the hand never did.
+    if (dt > 1e-4) {
+        scrub_rate_ = (position_s - origin_position_s_) / dt;
+        scrub_time_s_ = time_s;
+    }
+    seek(position_s, time_s);
+}
+
 SourceReading DeckClock::read_source(double time_s, double platter_position_s,
                                      float platter_velocity) const {
     SourceReading reading;
     if (source_ == DeckSource::Timecode) {
         reading.position_s = platter_position_s + takeover_offset_s_;
         reading.rate = static_cast<double>(platter_velocity);
+    } else if (source_ == DeckSource::Hand) {
+        // Held: the position is wherever the hand put it, full stop. No clock
+        // runs underneath, so letting go leaves the picture exactly here.
+        reading.position_s = origin_position_s_;
+        reading.rate = scrub_rate_;
     } else {
         reading.position_s = timeline_at(time_s);
         reading.rate = effective_rate();

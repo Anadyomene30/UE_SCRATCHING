@@ -219,10 +219,25 @@ void picture_well(const Deck& deck, void* texture, float aspect_override, float 
 // of the clip that is instantly scratchable, so it says how far the platter can
 // be thrown before it hits a load -- a question no number answers as fast as a
 // mark in the right place.
-void filmstrip(const Deck& deck, float width) {
+// The clip end to end -- loop, hot cues, the resident VRAM window, the playhead
+// -- and a HANDLE on it: press and the hand takes the clip, drag and it follows.
+//
+// Scrubbing is not a new mechanism. A hand holding the clip is the fourth kind
+// of position source (core/playback's DeckSource::Hand), and letting go returns
+// the deck to its platter through the same Grab takeover a real hand landing on
+// a moving record uses -- so the picture never jumps on release. The alternative
+// (a UI-only "preview position" beside the real one) would have put two truths
+// on screen and made the release a lie.
+// Where the mouse is pointing, in clip seconds, clamped to the clip.
+double position_under(const Deck& deck, float origin_x, float width) {
+    const float ratio = std::clamp((ImGui::GetIO().MousePos.x - origin_x) / width, 0.0f,
+                                   1.0f);
+    return static_cast<double>(ratio) * deck.clip.duration_s();
+}
+
+void filmstrip(Deck& deck, Frame& frame, float width, float height = 34.0f) {
     ImDrawList* draw = ImGui::GetWindowDrawList();
     const ImVec2 origin = ImGui::GetCursorScreenPos();
-    const float height = 34.0f;
     const std::uint32_t frames = deck.clip.frame_count;
 
     const auto x_of = [&](std::uint32_t frame) {
@@ -269,7 +284,40 @@ void filmstrip(const Deck& deck, float width) {
     draw->AddLine(ImVec2(head, origin.y), ImVec2(head, origin.y + height), kInk, 2.0f);
 
     draw->AddRect(origin, ImVec2(origin.x + width, origin.y + height), kHair);
-    ImGui::Dummy(ImVec2(width, height));
+
+    // The handle. An InvisibleButton over the strip we have just drawn, so the
+    // drawing stays declarative and only the interaction is stateful.
+    ImGui::SetCursorScreenPos(origin);
+    ImGui::PushID(&deck);
+    ImGui::InvisibleButton("scrub", ImVec2(width, height));
+    const bool hovered = ImGui::IsItemHovered();
+    if (hovered) ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
+
+    if (ImGui::IsItemActivated()) {
+        std::fprintf(stderr, "GRAB down=%d nav=%d\n",
+                     static_cast<int>(ImGui::IsMouseDown(ImGuiMouseButton_Left)),
+                     static_cast<int>(ImGui::GetIO().NavActive));
+        deck.clock.grab(position_under(deck, origin.x, width), frame.elapsed_s);
+    } else if (ImGui::IsItemActive()) {
+        deck.clock.scrub(position_under(deck, origin.x, width), frame.elapsed_s);
+    } else if (ImGui::IsItemDeactivated()) {
+        // Back to the platter, offset so this exact frame is the one that stays.
+        deck.clock.hand_over_to_timecode(deck.timecode.state().position_s,
+                                         frame.elapsed_s);
+    }
+    ImGui::PopID();
+
+    // While a hand holds it, say so on the strip itself rather than only in the
+    // transport row: the eye is here, not there.
+    if (deck.clock.source() == DeckSource::Hand) {
+        draw->AddRect(origin, ImVec2(origin.x + width, origin.y + height), kAccent, 0.0f,
+                      0, 2.0f);
+        push_small();
+        draw->AddText(ImVec2(origin.x + 6.0f, origin.y + 4.0f), kAccent, "MAIN");
+        pop_font();
+    } else if (hovered) {
+        draw->AddRect(origin, ImVec2(origin.x + width, origin.y + height), kMuted);
+    }
 
     // The scale under the strip, as the mockup has it: start, playhead, end.
     if (g_fonts.mono != nullptr && g_fonts.small != nullptr) {
@@ -288,7 +336,7 @@ void filmstrip(const Deck& deck, float width) {
 
 // ---------------------------------------------------------------------------
 
-void draw_status(Engine& engine, const Frame& frame) {
+void draw_status(Engine& engine, Frame& frame) {
     ImGui::BeginChild("status", ImVec2(0.0f, 46.0f), ImGuiChildFlags_None,
                       ImGuiWindowFlags_NoScrollbar);
     ImGui::Dummy(ImVec2(0.0f, 2.0f));
@@ -420,7 +468,7 @@ void draw_library(Engine& engine, float width, float height) {
     ImGui::EndChild();
 }
 
-void draw_deck(Deck& deck, Engine& engine, const Frame& frame, void* texture,
+void draw_deck(Deck& deck, Engine& engine, Frame& frame, void* texture,
                ImU32 accent, bool is_a, float width, float height) {
     ImGui::PushID(is_a ? "deck.a" : "deck.b");
     ImGui::BeginChild(is_a ? "deckA" : "deckB", ImVec2(width, height), ImGuiChildFlags_Borders);
@@ -453,7 +501,7 @@ void draw_deck(Deck& deck, Engine& engine, const Frame& frame, void* texture,
                 deck.window.window_seconds(deck.clip.frame_duration_s()));
     ImGui::PopStyleColor();
     pop_font();
-    filmstrip(deck, inner);
+    filmstrip(deck, frame, inner);
 
     ImGui::Dummy(ImVec2(0.0f, 8.0f));
     const TimecodeState& state = deck.timecode.state();
@@ -613,7 +661,7 @@ void draw_deck(Deck& deck, Engine& engine, const Frame& frame, void* texture,
     ImGui::PopID();
 }
 
-void draw_mix(Engine& engine, const Frame& frame, float width, float height) {
+void draw_mix(Engine& engine, Frame& frame, float width, float height) {
     ImGui::BeginChild("mix", ImVec2(width, height), ImGuiChildFlags_Borders);
     eyebrow("PROGRAM");
 
@@ -736,7 +784,7 @@ const Control* surface_control(const Surface& surface, const char* id,
     return index == kNoControl ? nullptr : &surface.at(index);
 }
 
-void claim(const Frame& frame, ControlIndex index, float value) {
+void claim(Frame& frame, ControlIndex index, float value) {
     if (frame.hand != nullptr && index != kNoControl) {
         frame.hand->take(index, std::clamp(value, 0.0f, 1.0f));
     }
@@ -758,7 +806,7 @@ void dashed_arc(ImDrawList* draw, ImVec2 centre, float radius, float a0, float a
 // hand moved it this frame; drag is vertical, half a pixel per unit percent, so
 // fine moves stay fine.
 bool rotary(const char* id, const char* label, const Control* control,
-            const Frame& frame, ControlIndex index, ImU32 accent) {
+            Frame& frame, ControlIndex index, ImU32 accent) {
     const float diameter = 46.0f;
     const float column = 64.0f;
 
@@ -837,7 +885,7 @@ bool rotary(const char* id, const char* label, const Control* control,
 
 // A vertical channel fader: track, cap, absolute drag.
 bool vertical_fader(const char* id, const char* label, const Control* control,
-                    const Frame& frame, ControlIndex index, ImU32 accent) {
+                    Frame& frame, ControlIndex index, ImU32 accent) {
     const float height = 96.0f;
     const float column = 46.0f;
 
@@ -898,7 +946,7 @@ bool vertical_fader(const char* id, const char* label, const Control* control,
 
 // THE crossfader. Wide, horizontal, with the battle curve stated next to it:
 // on SHARP a flick is a cut, and that is the whole reason this control exists.
-bool crossfader(const Control* control, const Frame& frame, ControlIndex index,
+bool crossfader(const Control* control, Frame& frame, ControlIndex index,
                 const Engine& engine, float width) {
     const float height = 34.0f;
 
@@ -974,7 +1022,7 @@ bool crossfader(const Control* control, const Frame& frame, ControlIndex index,
     return changed;
 }
 
-void draw_surface(Engine& engine, const Frame& frame, float width, float height) {
+void draw_surface(Engine& engine, Frame& frame, float width, float height) {
     ImGui::BeginChild("surface", ImVec2(width, height), ImGuiChildFlags_Borders);
     eyebrow("SURFACE \xE2\x80\x94 Reloop Elite \xC2\xB7 RP-8000 MK2 \xE2\x80\x94 la souris joue en attendant le MIDI");
     ImGui::Dummy(ImVec2(0.0f, 8.0f));
@@ -1054,7 +1102,7 @@ void draw_surface(Engine& engine, const Frame& frame, float width, float height)
 
 // --- EFFETS: the whole battery, with its correspondences stated honestly ------
 
-void draw_effects_screen(Engine& engine, const Frame& frame) {
+void draw_effects_screen(Engine& engine, Frame& frame) {
     eyebrow("LA BATTERIE — chaque effet audio et son pendant visuel");
     push_small();
     ImGui::PushStyleColor(ImGuiCol_Text, rgba(kFaint));
@@ -1259,6 +1307,321 @@ void draw_output_screen(Engine& engine) {
     pop_font();
 }
 
+// --- the layouts -------------------------------------------------------------
+//
+// One performance screen, five arrangements. They are not five skins: a set has
+// phases, and each phase wants a different thing large. Naming them after the
+// phase rather than the widget is deliberate -- you pick where you ARE, and the
+// arrangement follows.
+
+const char* layout_name(Layout layout) {
+    switch (layout) {
+        case Layout::Booth: return "CABINE";
+        case Layout::Stage: return "SC\xC3\x88NE";
+        case Layout::Prepare: return "PR\xC3\x89PA";
+        case Layout::Sphere: return "360";
+        case Layout::FullFrame: return "PLEIN CADRE";
+    }
+    return "?";
+}
+
+// The program, as large as the space given, letterboxed to its own aspect.
+void draw_program_view(const Frame& frame, float width, float height,
+                       const char* caption) {
+    ImDrawList* draw = ImGui::GetWindowDrawList();
+    const ImVec2 origin = ImGui::GetCursorScreenPos();
+    draw->AddRectFilled(origin, ImVec2(origin.x + width, origin.y + height), kWell);
+
+    if (frame.tex_program != nullptr && frame.program_height > 0) {
+        const float aspect = static_cast<float>(frame.program_width) /
+                             static_cast<float>(frame.program_height);
+        float w = width;
+        float h = w / aspect;
+        if (h > height) {
+            h = height;
+            w = h * aspect;
+        }
+        const ImVec2 lo(origin.x + (width - w) * 0.5f, origin.y + (height - h) * 0.5f);
+        draw->AddImage(ImTextureRef(reinterpret_cast<ImTextureID>(frame.tex_program)), lo,
+                       ImVec2(lo.x + w, lo.y + h));
+    } else {
+        push_small();
+        const char* waiting = "aucun program \xE2\x80\x94 charger un clip analys\xC3\xA9";
+        const ImVec2 size = ImGui::CalcTextSize(waiting);
+        draw->AddText(ImVec2(origin.x + (width - size.x) * 0.5f,
+                             origin.y + height * 0.5f - size.y),
+                      kFaint, waiting);
+        pop_font();
+    }
+    draw->AddRect(origin, ImVec2(origin.x + width, origin.y + height), kHair);
+
+    if (caption != nullptr) {
+        push_small();
+        draw->AddText(ImVec2(origin.x + 10.0f, origin.y + 8.0f), kFaint, caption);
+        pop_font();
+    }
+    ImGui::Dummy(ImVec2(width, height));
+}
+
+// A deck reduced to what a glance needs: name, position, a scrubbable strip,
+// and the transport source. Used where the decks are not the subject.
+void draw_deck_strip(Deck& deck, Frame& frame, ImU32 accent, const char* letter,
+                     float width, float height) {
+    ImGui::PushID(&deck);
+    ImGui::BeginChild(letter, ImVec2(width, height), ImGuiChildFlags_Borders);
+    const float inner = ImGui::GetContentRegionAvail().x;
+
+    ImGui::PushStyleColor(ImGuiCol_Text, rgba(accent));
+    ImGui::TextUnformatted(letter);
+    ImGui::PopStyleColor();
+    ImGui::SameLine(0.0f, 10.0f);
+    text_c(kInk, "%s", deck.name.c_str());
+
+    ImGui::SameLine();
+    push_mono();
+    const std::string now = clock_of(deck.played.position_s);
+    const float right = ImGui::GetContentRegionMax().x - ImGui::CalcTextSize(now.c_str()).x;
+    if (right > ImGui::GetCursorPosX()) ImGui::SameLine(right);
+    text_c(kInk, "%s", now.c_str());
+    pop_font();
+
+    ImGui::Dummy(ImVec2(0.0f, 4.0f));
+    filmstrip(deck, frame, inner, 26.0f);
+    ImGui::EndChild();
+    ImGui::PopID();
+}
+
+void draw_layout_booth(Engine& engine, Frame& frame) {
+    // The mockup's proportions: a fixed library rail, then the decks, then the
+    // surface across the bottom. Fixed because a browser that reflows while a
+    // set is running is one nobody can find anything in.
+    const float rail = 250.0f;
+    const float gap = ImGui::GetStyle().ItemSpacing.x;
+    const float surface_h = 208.0f;
+    const float body_h =
+        std::max(320.0f, ImGui::GetContentRegionAvail().y - surface_h - gap);
+    const float decks_w = std::max(520.0f, ImGui::GetContentRegionAvail().x - rail - gap);
+    const float deck_w = (decks_w - gap) * 0.5f;
+    // The program panel's fixed claim: three effect rows plus the preview, and
+    // never the thing that gets clipped.
+    const float mix_h = 222.0f;
+    const float deck_h = body_h - mix_h - ImGui::GetStyle().ItemSpacing.y;
+
+    draw_library(engine, rail, body_h);
+    ImGui::SameLine();
+
+    ImGui::BeginGroup();
+    draw_deck(engine.deck_a(), engine, frame, frame.tex_a, kAmber, true, deck_w, deck_h);
+    ImGui::SameLine();
+    draw_deck(engine.deck_b(), engine, frame, frame.tex_b, kSlate, false, deck_w, deck_h);
+    draw_mix(engine, frame, decks_w, mix_h);
+    ImGui::EndGroup();
+
+    draw_surface(engine, frame, 0.0f, surface_h);
+}
+
+void draw_layout_stage(Engine& engine, Frame& frame) {
+    // The show is running and the eyes are on the output. The program takes the
+    // room; the decks shrink to the two things a glance actually needs, a
+    // position and a strip to grab.
+    const float gap = ImGui::GetStyle().ItemSpacing.x;
+    const float surface_h = 208.0f;
+    const float body_h =
+        std::max(300.0f, ImGui::GetContentRegionAvail().y - surface_h - gap);
+    const float side = 360.0f;
+    const float program_w = std::max(420.0f, ImGui::GetContentRegionAvail().x - side - gap);
+
+    ImGui::BeginChild("stage.program", ImVec2(program_w, body_h), ImGuiChildFlags_Borders);
+    draw_program_view(frame, ImGui::GetContentRegionAvail().x,
+                      ImGui::GetContentRegionAvail().y, "PROGRAM \xC2\xB7 SPOUT scratchvj");
+    ImGui::EndChild();
+
+    ImGui::SameLine();
+    ImGui::BeginGroup();
+    const float strip_h = 86.0f;
+    draw_deck_strip(engine.deck_a(), frame, kAmber, "A", side, strip_h);
+    draw_deck_strip(engine.deck_b(), frame, kSlate, "B", side, strip_h);
+    draw_mix(engine, frame, side,
+             body_h - 2.0f * (strip_h + ImGui::GetStyle().ItemSpacing.y));
+    ImGui::EndGroup();
+
+    draw_surface(engine, frame, 0.0f, surface_h);
+}
+
+void draw_layout_prepare(Engine& engine, Frame& frame) {
+    // Before the set: find the moments. No program at all -- nothing is going
+    // out yet -- so the room goes to the library and to two tall strips that a
+    // hand can land on precisely.
+    const float gap = ImGui::GetStyle().ItemSpacing.x;
+    const float rail = 380.0f;
+    const float body_h = std::max(300.0f, ImGui::GetContentRegionAvail().y);
+    const float decks_w = std::max(480.0f, ImGui::GetContentRegionAvail().x - rail - gap);
+    const float deck_h = (body_h - gap) * 0.5f;
+
+    draw_library(engine, rail, body_h);
+    ImGui::SameLine();
+
+    ImGui::BeginGroup();
+    draw_deck(engine.deck_a(), engine, frame, frame.tex_a, kAmber, true, decks_w, deck_h);
+    draw_deck(engine.deck_b(), engine, frame, frame.tex_b, kSlate, false, decks_w, deck_h);
+    ImGui::EndGroup();
+}
+
+// The sight frame: where the current view lands on the equirect source. Four
+// corners of the screen pushed through core/sphere -- the same function the
+// shader transcribes -- so the outline cannot drift from what is rendered.
+void draw_sight_frame(const SphereView& view, ImVec2 origin, float width, float height) {
+    ImDrawList* draw = ImGui::GetWindowDrawList();
+    const int steps = 24;
+    ImVec2 previous;
+    bool have_previous = false;
+
+    // Walk the border of the view in screen space; each sample becomes a point
+    // on the equirect. Walking the border rather than drawing four straight
+    // lines matters: under a wide field of view those edges are curves.
+    for (int i = 0; i <= steps * 4; ++i) {
+        const int side = i / steps;
+        const double t = static_cast<double>(i % steps) / steps;
+        Vec2 uv;
+        switch (side) {
+            case 0: uv = Vec2{t, 0.0}; break;
+            case 1: uv = Vec2{1.0, t}; break;
+            case 2: uv = Vec2{1.0 - t, 1.0}; break;
+            default: uv = Vec2{0.0, 1.0 - t}; break;
+        }
+        const Vec2 hit = sample_equirect(view, uv);
+        const ImVec2 point(origin.x + static_cast<float>(hit.u) * width,
+                           origin.y + static_cast<float>(hit.v) * height);
+        // The equirect wraps, so a segment that crosses the seam would draw a
+        // line straight across the picture. Break it instead.
+        if (have_previous && std::fabs(point.x - previous.x) < width * 0.5f) {
+            draw->AddLine(previous, point, kAccent, 1.5f);
+        }
+        previous = point;
+        have_previous = true;
+    }
+}
+
+void draw_layout_sphere(Engine& engine, Frame& frame) {
+    // Working spherical material: the projected view large, the gaze under the
+    // hand, and the source with a sight frame showing where you are looking.
+    const float gap = ImGui::GetStyle().ItemSpacing.x;
+    const float side = 420.0f;
+    const float body_h = std::max(300.0f, ImGui::GetContentRegionAvail().y);
+    const float view_w = std::max(420.0f, ImGui::GetContentRegionAvail().x - side - gap);
+
+    Deck& deck = engine.deck_a();
+    SphereView& gaze = engine.view_a();
+    const bool is360 = deck.clip.width == deck.clip.height * 2;
+
+    ImGui::BeginChild("sphere.view", ImVec2(view_w, body_h), ImGuiChildFlags_Borders);
+    const float inner = ImGui::GetContentRegionAvail().x;
+    ImGui::PushStyleColor(ImGuiCol_Text, rgba(kAmber));
+    ImGui::TextUnformatted("A");
+    ImGui::PopStyleColor();
+    ImGui::SameLine(0.0f, 10.0f);
+    text_c(kInk, "%s", deck.name.c_str());
+    ImGui::SameLine(0.0f, 12.0f);
+    push_small();
+    ImGui::PushStyleColor(ImGuiCol_Text, rgba(is360 ? kFaint : kAlert));
+    ImGui::TextUnformatted(is360 ? "\xC3\xA9quirectangulaire"
+                                 : "ce clip n'est pas du 360");
+    ImGui::PopStyleColor();
+    pop_font();
+
+    ImGui::Dummy(ImVec2(0.0f, 6.0f));
+    const float picture_h = std::max(200.0f, body_h * 0.52f);
+    picture_well(deck, frame.tex_a, is360 ? static_cast<float>(gaze.aspect) : 0.0f, inner,
+                 picture_h);
+    ImGui::Dummy(ImVec2(0.0f, 6.0f));
+    filmstrip(deck, frame, inner, 30.0f);
+    ImGui::EndChild();
+
+    ImGui::SameLine();
+    ImGui::BeginGroup();
+    ImGui::BeginChild("sphere.gaze", ImVec2(side, body_h), ImGuiChildFlags_Borders);
+    eyebrow("REGARD");
+    ImGui::Dummy(ImVec2(0.0f, 4.0f));
+
+    const struct { const char* label; Projection value; } projections[] = {
+        {"Perspective", Projection::Perspective},
+        {"Little planet", Projection::LittlePlanet},
+        {"Fisheye", Projection::Fisheye},
+    };
+    for (const auto& option : projections) {
+        if (&option != &projections[0]) ImGui::SameLine(0.0f, 8.0f);
+        if (ImGui::SmallButton(option.label)) gaze.projection = option.value;
+        if (gaze.projection == option.value) {
+            ImDrawList* draw = ImGui::GetWindowDrawList();
+            const ImVec2 lo = ImGui::GetItemRectMin();
+            const ImVec2 hi = ImGui::GetItemRectMax();
+            draw->AddLine(ImVec2(lo.x, hi.y), ImVec2(hi.x, hi.y), kAccent, 2.0f);
+        }
+    }
+
+    ImGui::Dummy(ImVec2(0.0f, 10.0f));
+    // Doubles, because that is what core/sphere speaks; ImGui edits floats, so
+    // each one is bounced rather than the geometry being weakened to float.
+    const auto slider = [](const char* label, double& value, float lo, float hi,
+                           const char* format) {
+        float editable = static_cast<float>(value);
+        ImGui::SetNextItemWidth(220.0f);
+        if (ImGui::SliderFloat(label, &editable, lo, hi, format)) {
+            value = static_cast<double>(editable);
+        }
+    };
+    slider("lacet", gaze.yaw_deg, -180.0f, 180.0f, "%.0f\xC2\xB0");
+    slider("tangage", gaze.pitch_deg, -90.0f, 90.0f, "%.0f\xC2\xB0");
+    slider("roulis", gaze.roll_deg, -180.0f, 180.0f, "%.0f\xC2\xB0");
+    if (gaze.projection == Projection::Perspective) {
+        slider("champ", gaze.fov_deg, 20.0f, 170.0f, "%.0f\xC2\xB0");
+    } else {
+        slider("zoom", gaze.planet_zoom, 0.2f, 3.0f, "%.2f");
+    }
+
+    push_small();
+    ImGui::PushStyleColor(ImGuiCol_Text, rgba(kFaint));
+    ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + side - 24.0f);
+    ImGui::TextUnformatted(
+        "Le lacet et le tangage suivent aussi le mapping : un potard, un LFO ou "
+        "un casque les bougent par la m\xC3\xAAme porte. Bouger un curseur ici est "
+        "provisoire jusqu'au prochain pas du mapping.");
+    ImGui::PopTextWrapPos();
+    ImGui::PopStyleColor();
+    pop_font();
+    ImGui::EndChild();
+
+    ImGui::BeginChild("sphere.source",
+                      ImVec2(side, body_h - ImGui::GetItemRectSize().y -
+                                       ImGui::GetStyle().ItemSpacing.y),
+                      ImGuiChildFlags_Borders);
+    eyebrow("SOURCE \xC3\x89QUIRECTANGULAIRE \xE2\x80\x94 cadre de vis\xC3\xA9""e");
+    ImGui::Dummy(ImVec2(0.0f, 4.0f));
+    {
+        const float w = ImGui::GetContentRegionAvail().x;
+        const float h = w * 0.5f;  // an equirect is always 2:1
+        ImDrawList* draw = ImGui::GetWindowDrawList();
+        const ImVec2 origin = ImGui::GetCursorScreenPos();
+        draw->AddRectFilled(origin, ImVec2(origin.x + w, origin.y + h), kWell);
+        if (frame.tex_equirect != nullptr) {
+            draw->AddImage(ImTextureRef(reinterpret_cast<ImTextureID>(frame.tex_equirect)),
+                           origin, ImVec2(origin.x + w, origin.y + h));
+        }
+        if (is360) draw_sight_frame(gaze, origin, w, h);
+        draw->AddRect(origin, ImVec2(origin.x + w, origin.y + h), kHair);
+        ImGui::Dummy(ImVec2(w, h));
+    }
+    ImGui::EndChild();
+    ImGui::EndGroup();
+}
+
+void draw_layout_full(const Frame& frame) {
+    // Nothing but the output. For the screen the audience sees, or for judging
+    // the picture with no interface in the way.
+    draw_program_view(frame, ImGui::GetContentRegionAvail().x,
+                      ImGui::GetContentRegionAvail().y, nullptr);
+}
+
 }  // namespace
 
 void apply_style() {
@@ -1326,7 +1689,7 @@ void apply_style() {
     c[ImGuiCol_TitleBgActive] = rgba(kGround);
 }
 
-void draw(Engine& engine, const Frame& frame) {
+void draw(Engine& engine, Frame& frame) {
     const ImGuiViewport* viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(viewport->WorkPos);
     ImGui::SetNextWindowSize(viewport->WorkSize);
@@ -1339,41 +1702,36 @@ void draw(Engine& engine, const Frame& frame) {
     // The mockup's five screens, as tabs. Performance is the one a set lives in;
     // the others are preparation and configuration, which is why they can afford
     // to be screens at all instead of fighting for the same pixels.
+    // The layout picker, in the status bar's own row: keys 1-5 do the same
+    // thing, because in a set nobody aims at a small button.
+    for (int i = 0; i < kLayoutCount; ++i) {
+        const Layout candidate = static_cast<Layout>(i);
+        if (i > 0) ImGui::SameLine(0.0f, 6.0f);
+        push_small();
+        if (ImGui::SmallButton(layout_name(candidate))) frame.layout = candidate;
+        pop_font();
+        if (frame.layout == candidate) {
+            ImDrawList* draw = ImGui::GetWindowDrawList();
+            const ImVec2 lo = ImGui::GetItemRectMin();
+            const ImVec2 hi = ImGui::GetItemRectMax();
+            draw->AddLine(ImVec2(lo.x, hi.y), ImVec2(hi.x, hi.y), kAccent, 2.0f);
+        }
+        if (ImGui::IsKeyPressed(static_cast<ImGuiKey>(ImGuiKey_1 + i), false)) {
+            frame.layout = candidate;
+        }
+    }
+    ImGui::Dummy(ImVec2(0.0f, 2.0f));
+
     if (ImGui::BeginTabBar("screens")) {
         if (ImGui::BeginTabItem("PERFORMANCE")) {
-            // The mockup's proportions: a fixed library rail, then the decks,
-            // then the surface across the bottom. Fixed because a browser that
-            // reflows while a set is running is one nobody can find anything in.
-            const float rail = 250.0f;
-            const float gap = ImGui::GetStyle().ItemSpacing.x;
-            // Tall enough for a knob, its label and its value; a clipped value
-            // row reads as a bug even when everything above it is right.
-            const float surface_h = 208.0f;
-            const float body_h =
-                std::max(320.0f, ImGui::GetContentRegionAvail().y - surface_h - gap);
-            const float decks_w =
-                std::max(520.0f, ImGui::GetContentRegionAvail().x - rail - gap);
-            const float deck_w = (decks_w - gap) * 0.5f;
-            // The program panel has a fixed claim -- its three effect rows must never
-            // be the thing that gets clipped -- and the decks take what is left.
-            // The program panel's fixed claim: three effect rows plus the
-            // program preview, and never the thing that gets clipped.
-            const float mix_h = 222.0f;
-            const float deck_h = body_h - mix_h - ImGui::GetStyle().ItemSpacing.y;
-
-            draw_library(engine, rail, body_h);
-            ImGui::SameLine();
-
-            ImGui::BeginGroup();
-            draw_deck(engine.deck_a(), engine, frame, frame.tex_a, kAmber, true, deck_w,
-                      deck_h);
-            ImGui::SameLine();
-            draw_deck(engine.deck_b(), engine, frame, frame.tex_b, kSlate, false, deck_w,
-                      deck_h);
-            draw_mix(engine, frame, decks_w, mix_h);
-            ImGui::EndGroup();
-
-            draw_surface(engine, frame, 0.0f, surface_h);
+            switch (frame.layout) {
+                case Layout::Stage: draw_layout_stage(engine, frame); break;
+                case Layout::Prepare: draw_layout_prepare(engine, frame); break;
+                case Layout::Sphere: draw_layout_sphere(engine, frame); break;
+                case Layout::FullFrame: draw_layout_full(frame); break;
+                case Layout::Booth:
+                default: draw_layout_booth(engine, frame); break;
+            }
             ImGui::EndTabItem();
         }
         if (ImGui::BeginTabItem("EFFETS")) {

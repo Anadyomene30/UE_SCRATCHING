@@ -57,6 +57,7 @@ enum class DeckSource : std::uint8_t {
     Timecode,    // the platter, through the timecode tracker -- the scratch decks
     FreeRun,     // its own clock at its own rate, ignoring the platter entirely
     TempoLocked, // its own clock, but with the clip stretched to a beat count
+    Hand,        // a hand holding the clip directly: a scrub on the interface
 };
 
 // What a deck does when the platter comes alive under a clip that was running
@@ -130,6 +131,16 @@ public:
     // load, on a cue jump, and by a takeover.
     void seek(double position_s, double time_s);
 
+    // A hand takes the clip and holds it: the source becomes Hand and stays
+    // there until something hands it back. Call once to grab.
+    void grab(double position_s, double time_s);
+
+    // Moves the held clip. The velocity is DERIVED from how fast the hand is
+    // moving it -- a differentiated known position, never an integrator -- so
+    // the frame window prefetches the right way and a glitch mapped to velocity
+    // answers the drag. A hand that stops reports rest, as it should.
+    void scrub(double position_s, double time_s);
+
     // The unfolded free-run timeline at `time_s`. Public because it is the whole
     // claim of this file -- a function of absolute time, never an accumulator --
     // and a test says so directly.
@@ -167,6 +178,10 @@ private:
     double origin_position_s_ = 0.0;
 
     double takeover_offset_s_ = 0.0;
+
+    // The hand's last sample, for differentiating its motion.
+    double scrub_rate_ = 0.0;
+    double scrub_time_s_ = 0.0;
 
     // Where the deck actually was on the last resolve(), so that switching
     // source can hold it.

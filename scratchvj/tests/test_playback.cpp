@@ -265,3 +265,64 @@ SVJ_TEST("clock: switching to a free source holds the position the deck was at")
     CHECK_NEAR(clock.timeline_at(5.0), 42.0, 1e-9);
     CHECK_NEAR(run(clock, 6.0).position_s, 43.0, 1e-9);
 }
+
+// --- a hand on the clip -------------------------------------------------------
+
+SVJ_TEST("clock: a held clip stays exactly where the hand left it") {
+    // The point of Hand: no clock runs underneath, so letting go of a scrub
+    // does not resume from somewhere the hand never was.
+    DeckClock clock;
+    clock.configure(60.0, 120.0);
+    clock.grab(12.0, 1.0);
+
+    CHECK_NEAR(run(clock, 1.0).position_s, 12.0, 1e-9);
+    CHECK_NEAR(run(clock, 5.0).position_s, 12.0, 1e-9);  // four seconds later
+    CHECK_NEAR(run(clock, 90.0).position_s, 12.0, 1e-9);
+}
+
+SVJ_TEST("clock: SCRUBBING REPORTS THE VELOCITY THE HAND IMPLIES") {
+    // A differentiated known position, never an integrator. The frame window
+    // prefetches by this and a glitch mapped to velocity answers the drag, so
+    // reporting a flat zero while the picture flies past would be a lie the
+    // rest of the engine acts on.
+    DeckClock clock;
+    clock.configure(60.0, 120.0);
+    clock.grab(10.0, 0.0);
+
+    // Half a second of clip in a tenth of a second of wall: 5x, forwards.
+    clock.scrub(10.5, 0.1);
+    CHECK_NEAR(run(clock, 0.1).velocity, 5.0, 1e-6);
+
+    // And backwards, because a hand dragged left is a rewind.
+    clock.scrub(10.4, 0.2);
+    CHECK_NEAR(run(clock, 0.2).velocity, -1.0, 1e-6);
+}
+
+SVJ_TEST("clock: a hand that stops moving reports rest") {
+    DeckClock clock;
+    clock.configure(60.0, 120.0);
+    clock.grab(4.0, 0.0);
+    clock.scrub(6.0, 0.5);
+    CHECK(run(clock, 0.5).velocity > 0.0);
+
+    clock.scrub(6.0, 1.0);  // same place, later
+    CHECK_NEAR(run(clock, 1.0).velocity, 0.0, 1e-9);
+}
+
+SVJ_TEST("clock: releasing a scrub to the platter does not move the picture") {
+    // The whole reason Grab exists, exercised by the interface's scrub: the
+    // frame the hand lets go, the image must not jump -- whatever the platter
+    // happens to read at that instant.
+    DeckClock clock;
+    clock.configure(60.0, 120.0);
+    clock.set_takeover(TakeoverMode::Grab);
+    clock.grab(30.0, 0.0);
+    run(clock, 0.0);  // resolve, so the clock knows where the picture is
+
+    // The platter is somewhere else entirely; taking over must not show that.
+    clock.hand_over_to_timecode(7.5, 0.0);
+    CHECK_EQ(clock.source() == DeckSource::Timecode, true);
+
+    const SourceReading reading = clock.read_source(0.0, 7.5, 1.0f);
+    CHECK_NEAR(reading.position_s, 30.0, 1e-9);
+}

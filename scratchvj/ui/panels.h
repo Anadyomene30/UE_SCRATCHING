@@ -41,7 +41,24 @@ struct HandState {
     }
 };
 
+// How the performance screen is arranged. Not decoration: a set has phases,
+// and each wants a different thing large. The names are the phases, not the
+// widgets -- you pick where you ARE, and the arrangement follows.
+enum class Layout : int {
+    Booth = 0,   // CABINE: everything reachable, nothing large. The cockpit.
+    Stage,       // SCENE: the program dominates; decks reduced to what you glance at.
+    Prepare,     // PREPA: no program at all; library wide, filmstrips tall to scrub.
+    Sphere,      // 360: the projected view large, with the gaze and a sight frame.
+    FullFrame,   // PLEIN CADRE: the program edge to edge, and nothing else.
+};
+
+inline constexpr int kLayoutCount = 5;
+
 struct Frame {
+    // Which arrangement to draw. Written back when the performer picks another,
+    // so the front end owns it across frames and the keyboard can drive it.
+    Layout layout = Layout::Booth;
+
     double elapsed_s = 0.0;
     std::string phase;
     bool follower_mode = true;
@@ -49,6 +66,14 @@ struct Frame {
     // Where the mixer widgets deposit what the hand did this frame. Null makes
     // the whole surface read-only (a replayed take, for instance).
     HandState* hand = nullptr;
+
+    // The deck a hand is holding THIS frame, written by the filmstrip that owns
+    // the drag. The front end releases any deck left in Hand that nobody
+    // claimed: a widget can vanish mid-drag (the layout changed under it) and
+    // ImGui then never reports the release, which would freeze a deck for the
+    // rest of the set. Ownership is asserted every frame rather than assumed to
+    // persist, so the stuck state cannot exist.
+    const void* scrubbing = nullptr;
 
     // Live frames for the decks, as textures the render backend understands
     // (SDL_Texture* today). Null draws the honest empty well instead.
@@ -58,6 +83,8 @@ struct Frame {
     // The composited program, when the compositor ran this frame: the same
     // pixels the Spout output publishes.
     void* tex_program = nullptr;
+    // Deck A's raw equirect, for the 360 layout's source view. Null hides it.
+    void* tex_equirect = nullptr;
     unsigned int program_width = 0;
     unsigned int program_height = 0;
 };
@@ -88,6 +115,6 @@ void apply_style();
 // the platters, so it is the only thing this view is allowed to write. Every
 // other panel reads. When there is a MIDI surface, that same rule holds -- the
 // controls move the engine, the interface only ever shows what moved.
-void draw(Engine& engine, const Frame& frame);
+void draw(Engine& engine, Frame& frame);
 
 }  // namespace svj::ui

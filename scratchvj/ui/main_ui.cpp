@@ -256,6 +256,9 @@ int main(int, char**) {
     // Controls the hand has claimed from the demo script; applied after every
     // simulation step so the hand always wins, exactly as MIDI will.
     svj::ui::HandState hand;
+    // The view state that outlives a frame: which layout is up. Everything else
+    // in Frame is refilled each pass.
+    svj::ui::Frame view;
 
     const auto started = std::chrono::steady_clock::now();
     double previous_s = 0.0;
@@ -319,11 +322,11 @@ int main(int, char**) {
         ImGui_ImplSDL3_NewFrame();
         ImGui::NewFrame();
 
-        svj::ui::Frame view;
         view.elapsed_s = t;
         view.phase = simulation.phase();
         view.hand = &hand;
         view.tex_a = media_a.frame_at(engine.deck_a().played.position_s);
+        view.tex_equirect = media_a.imgui_texture();
         if (view360a.ready()) {
             view360a.render(media_a.texture_index(), engine.view_a());
             view.tex_a = view360a.imgui_texture();
@@ -346,7 +349,15 @@ int main(int, char**) {
             view.program_width = gpu.width();
             view.program_height = gpu.height();
         }
+        view.scrubbing = nullptr;
         svj::ui::draw(engine, view);
+        // Whatever no widget claimed this frame is not being held. Hand it back
+        // to its platter through the Grab takeover, so the picture stays put.
+        for (Deck* deck : {&engine.deck_a(), &engine.deck_b()}) {
+            if (deck->clock.source() == DeckSource::Hand && view.scrubbing != deck) {
+                deck->clock.hand_over_to_timecode(deck->timecode.state().position_s, t);
+            }
+        }
 
         ImGui::Render();
         bgfx::setViewRect(2, 0, 0, static_cast<std::uint16_t>(pixel_w),
