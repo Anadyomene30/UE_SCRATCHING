@@ -25,7 +25,7 @@ Toute nouvelle fonctionnalité doit respecter ces deux règles.
 
 ```sh
 cmake -S . -B build && cmake --build build
-ctest --test-dir build --output-on-failure    # 342 tests, doivent tous passer
+ctest --test-dir build --output-on-failure    # 343 tests, doivent tous passer
 ./build/scratchvj/scratchvj demo              # démo sans matériel
 ./build/scratchvj/scratchvj effects           # catalogue d'effets
 ./build/scratchvj/scratchvj layout            # checklist MIDI learn
@@ -86,8 +86,7 @@ l'aveugle :
 - Un vrai backend MIDI (RtMidi) et audio (miniaudio/ASIO)
 - La suite du rendu GPU : bgfx rend l'interface, les frames BC1 montent sans
   décodage CPU, et le compositeur du program tourne en shader (`fs_program.sc`),
-  validé contre `core/compose` par `gpu_check` ; restent les effets vidéo et
-  l'échantillonnage 360 en shaders
+  validé contre `core/compose` par `gpu_check` ; restent les effets vidéo en shaders — la 360 est faite (fs_view360.sc, sphere_check)
 - Les sorties Syphon (macOS) et NDI — Spout est fait et vérifié (ui/share, spout_check)
 - Le test en scène du plugin Unreal `ScratchLink` — il compile contre UE 5.7 et le flux UDP est vérifié, mais personne n'a encore scratché une scène avec
 

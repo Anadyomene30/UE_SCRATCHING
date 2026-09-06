@@ -339,3 +339,37 @@ SVJ_TEST("engine: the crossfader moves the decks and leaves the overlay alone") 
     }
     CHECK(seen > 0.0f);  // and it was actually showing, not merely constant at zero
 }
+
+SVJ_TEST("engine: the eq knobs steer the 360 gaze through the mapping") {
+    // The gaze must come out of the mapping engine, not straight off the knob:
+    // that is what lets an LFO or a headset drive it through the same door. And
+    // an untouched knob must leave the gaze alone -- a ghost control snapping
+    // the view to zero at startup would be a fabricated reading acted upon.
+    Engine engine;
+    engine.configure(124.0);
+    Simulation simulation;
+    simulation.configure(engine.surface());
+    engine.bind();
+
+    const double before = engine.view_a().yaw_deg;
+
+    EngineFrame frame;
+    frame.time_s = 0.5;
+    frame.dt_s = 1.0f / 60.0f;
+    engine.step(frame);
+    const double untouched = engine.view_a().yaw_deg;
+    CHECK_NEAR(untouched, before, 1e-9);  // nobody moved anything
+
+    const ControlIndex knob = engine.surface().find("ch1.eq.hi");
+    CHECK(knob != kNoControl);
+    engine.surface().set(knob, 0.75f, 1000);
+    // The mapping smooths its outputs, so the gaze eases to the knob rather
+    // than teleporting; two simulated seconds is ample for it to settle.
+    for (int i = 0; i < 120; ++i) {
+        frame.time_s = 0.6 + i / 60.0;
+        engine.step(frame);
+    }
+    // The rig maps the knob over -180..180 (a centre detent looks straight
+    // ahead), so three quarters of the throw is +90 degrees.
+    CHECK_NEAR(engine.view_a().yaw_deg, -180.0 + 0.75 * 360.0, 1.0);
+}

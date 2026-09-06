@@ -162,7 +162,8 @@ void knob_strip(const Control& control, float height) {
 // it is waiting for. Drawing a plausible still would be the one lie this
 // interface must not tell -- a performer has to be able to trust that what is
 // on screen is what the engine actually has.
-void picture_well(const Deck& deck, void* texture, float width, float height) {
+void picture_well(const Deck& deck, void* texture, float aspect_override, float width,
+                  float height) {
     ImDrawList* draw = ImGui::GetWindowDrawList();
     const ImVec2 origin = ImGui::GetCursorScreenPos();
     const ImVec2 corner(origin.x + width, origin.y + height);
@@ -171,8 +172,11 @@ void picture_well(const Deck& deck, void* texture, float width, float height) {
 
     if (texture != nullptr && deck.clip.width > 0 && deck.clip.height > 0) {
         // Fit inside the well, letterboxed; stretching would misstate the frame.
-        const float aspect = static_cast<float>(deck.clip.width) /
-                             static_cast<float>(deck.clip.height);
+        // A reprojected 360 deck shows the VIEW's aspect, not the equirect's.
+        const float aspect = aspect_override > 0.0f
+                                 ? aspect_override
+                                 : static_cast<float>(deck.clip.width) /
+                                       static_cast<float>(deck.clip.height);
         float dw = width;
         float dh = dw / aspect;
         if (dh > height) {
@@ -416,7 +420,7 @@ void draw_library(Engine& engine, float width, float height) {
     ImGui::EndChild();
 }
 
-void draw_deck(Deck& deck, const Engine& engine, const Frame& frame, void* texture,
+void draw_deck(Deck& deck, Engine& engine, const Frame& frame, void* texture,
                ImU32 accent, bool is_a, float width, float height) {
     ImGui::PushID(is_a ? "deck.a" : "deck.b");
     ImGui::BeginChild(is_a ? "deckA" : "deckB", ImVec2(width, height), ImGuiChildFlags_Borders);
@@ -437,7 +441,10 @@ void draw_deck(Deck& deck, const Engine& engine, const Frame& frame, void* textu
     pop_font();
 
     ImGui::Dummy(ImVec2(0.0f, 6.0f));
-    picture_well(deck, texture, inner, std::max(120.0f, height * 0.23f));
+    const bool projected_360 = is_a && deck.clip.width == deck.clip.height * 2;
+    picture_well(deck, texture,
+                 projected_360 ? static_cast<float>(engine.view_a().aspect) : 0.0f, inner,
+                 std::max(120.0f, height * 0.23f));
 
     ImGui::Dummy(ImVec2(0.0f, 8.0f));
     push_small();
@@ -507,6 +514,33 @@ void draw_deck(Deck& deck, const Engine& engine, const Frame& frame, void* textu
             const ImVec2 hi = ImGui::GetItemRectMax();
             draw->AddLine(ImVec2(lo.x, hi.y), ImVec2(hi.x, hi.y), kAccent, 2.0f);
         }
+    }
+
+    if (is_a && deck.clip.width == deck.clip.height * 2) {
+        ImGui::Dummy(ImVec2(0.0f, 4.0f));
+        eyebrow("VUE 360");
+        SphereView& gaze = engine.view_a();
+        const struct { const char* label; Projection value; } projections[] = {
+            {"Perspective", Projection::Perspective},
+            {"Little planet", Projection::LittlePlanet},
+            {"Fisheye", Projection::Fisheye},
+        };
+        for (const auto& option : projections) {
+            ImGui::SameLine(0.0f, 10.0f);
+            if (ImGui::SmallButton(option.label)) gaze.projection = option.value;
+            if (gaze.projection == option.value) {
+                ImDrawList* draw = ImGui::GetWindowDrawList();
+                const ImVec2 lo = ImGui::GetItemRectMin();
+                const ImVec2 hi = ImGui::GetItemRectMax();
+                draw->AddLine(ImVec2(lo.x, hi.y), ImVec2(hi.x, hi.y), kAccent, 2.0f);
+            }
+        }
+        ImGui::SameLine(0.0f, 14.0f);
+        push_small();
+        ImGui::PushStyleColor(ImGuiCol_Text, rgba(kFaint));
+        ImGui::Text("yaw %+.0f\xC2\xB0  pitch %+.0f\xC2\xB0", gaze.yaw_deg, gaze.pitch_deg);
+        ImGui::PopStyleColor();
+        pop_font();
     }
 
     ImGui::Dummy(ImVec2(0.0f, 4.0f));

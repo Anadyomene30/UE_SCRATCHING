@@ -344,6 +344,26 @@ void Engine::step(const EngineFrame& frame) {
     inputs.modulators = modulators_.values().data();
     inputs.modulator_count = modulators_.size();
     mapping_.evaluate(surface_, inputs, frame.dt_s);
+
+    // The gaze follows the mapping's output rather than the knobs directly, so
+    // an LFO, a gesture or a MIDI pot all steer it through the same door. A
+    // GHOST source -- an absolute pot never touched since launch -- leaves the
+    // gaze exactly where it is: its real position is unknown, and acting on the
+    // fabricated zero would wrench the view to dead centre at startup. This is
+    // the same rule the interface draws those pots dashed for.
+    for (std::size_t i = 0; i < mapping_.size(); ++i) {
+        if (!mapping_.active(i)) continue;
+        const Mapping& m = mapping_.at(i);
+        if (m.source.kind == SourceKind::Control) {
+            const ControlIndex control = surface_.find(m.source.control_id);
+            if (control == kNoControl || !surface_.at(control).known) continue;
+        }
+        if (m.destination.target == "deck.a.yaw") {
+            view_a_.yaw_deg = static_cast<double>(mapping_.value(i));
+        } else if (m.destination.target == "deck.a.pitch") {
+            view_a_.pitch_deg = static_cast<double>(mapping_.value(i));
+        }
+    }
 }
 
 SchemaPacket Engine::schema() const {

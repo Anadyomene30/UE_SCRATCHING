@@ -14,7 +14,7 @@ tout ce qui reste à faire survive à la session qui l'a produit.
 | 4. Le Mac tourne | CI verte sur macOS depuis le premier commit ; portage audio/GPU réel non fait | `.github/workflows/ci.yml` |
 | 5. Mixer | Courbes, blend modes, détection de transform faits ; le program est composité sur le GPU (`fs_program.sc`), tenu conforme à sa référence `core/compose` par l'outil `gpu_check` (écart max 1/255) | `core/mixer`, `core/compose` |
 | 6. Transport | Fait en entier : boucles, hot cues, beat jump, slip, ABS/REL/INT, plus la source de position et les modes de lecture par deck | `core/transport`, `core/playback` |
-| 7. 360 | Géométrie faite (perspective, little planet, fisheye) ; échantillonnage GPU non fait | `core/sphere` |
+| 7. 360 | Fait à l'image : la passe GPU (`fs_view360.sc`) reprojette l'équirect en perspective / little planet / fisheye, tenue conforme à `core/sphere` par `sphere_check` (écart max 1/255) ; le regard suit le mapping (potards EQ), le program composite la vue projetée | `core/sphere`, `ui/gpu_view360` |
 | 8. Mode autonome | Non commencé (a besoin d'un vrai backend audio) | — |
 | 9. Effets et modulateurs | Rack, catalogue et LFO/enveloppes faits ; FFT audio-réactive non faite | `core/effect`, `core/modulator` |
 | 10. Entrées live | Non commencé | — |

@@ -31,6 +31,7 @@
 #include "core/modulator.h"
 #include "core/playback.h"
 #include "core/protocol.h"
+#include "core/sphere.h"
 #include "core/surface.h"
 #include "core/timecode.h"
 #include "core/transport.h"
@@ -162,6 +163,14 @@ public:
     Queue& queue() { return queue_; }
     const Queue& queue() const { return queue_; }
 
+    // Deck A's gaze into a 360 clip. Yaw and pitch arrive through the mapping
+    // engine every step (the EQ knobs in the demo rig); projection, field of
+    // view and zoom are performance settings the interface writes, like the
+    // overlay. The view is deck state and NOT clip state: loading a new clip
+    // must not snap the gaze.
+    SphereView& view_a() { return view_a_; }
+    const SphereView& view_a() const { return view_a_; }
+
     // Output geometry: the corner pin and the mask, owned here for the same
     // reason the overlay layer is -- the performer sets them, every front end
     // and every output (screen, Spout, NDI) must see the same ones.
@@ -192,6 +201,7 @@ private:
     Deck overlay_;
     Layer overlay_layer_;
     StackWeights stack_;
+    SphereView view_a_;
     CornerPin pin_;
     Mask mask_;
     Library library_;

@@ -31,6 +31,7 @@
 
 #include "imgui_impl_bgfx.h"
 #include "gpu_compose.h"
+#include "gpu_view360.h"
 #include "media.h"
 #include "netout.h"
 #include "panels.h"
@@ -91,7 +92,7 @@ int main(int, char**) {
     }
     // The mockup's ground colour, painted by the clear rather than by a quad.
     // View 1 is the backbuffer; view 0 belongs to the program compositor.
-    bgfx::setViewClear(1, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x141412ff, 1.0f, 0);
+    bgfx::setViewClear(2, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x141412ff, 1.0f, 0);
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -136,10 +137,10 @@ int main(int, char**) {
         io.FontDefault = svj::ui::g_fonts.sans;
     }
     ImGui_ImplSDL3_InitForOther(window);
-    // View order is the pipeline order: 0 composites the program offscreen,
-    // 1 draws the interface (which samples the program), 2 blits the program
-    // out for readback.
-    if (!svj::ui::ImGuiBgfx_Init(1)) {
+    // View order is the pipeline order: 0 reprojects deck A's 360 view, 1
+    // composites the program offscreen, 2 draws the interface (which samples
+    // both), 3 blits the program out for readback.
+    if (!svj::ui::ImGuiBgfx_Init(2)) {
         std::fprintf(stderr, "backend ImGui bgfx: echec\n");
         return 1;
     }
@@ -160,6 +161,7 @@ int main(int, char**) {
     // honestly why they are empty.
     svj::ui::DeckMedia media_a, media_b, media_overlay;
     svj::ui::ProgramGpu gpu;
+    svj::ui::View360Gpu view360a;
 
     // The Spout sender is opened unconditionally: receivers that are not
     // listening cost nothing, and an output that must be switched on before it
@@ -236,8 +238,18 @@ int main(int, char**) {
     if (media_a.ready() || media_b.ready()) {
         const std::uint32_t pw = media_a.ready() ? media_a.width() : media_b.width();
         const std::uint32_t ph = media_a.ready() ? media_a.height() : media_b.height();
-        if (!gpu.init(pw, ph, 0, 2)) {
+        if (!gpu.init(pw, ph, 1, 3)) {
             std::fprintf(stderr, "compositeur GPU: init a echoue\n");
+        }
+    }
+    if (media_a.ready() && media_a.header().is_equirect()) {
+        // Deck A gets the 360 view pass: downstream of it -- compositor and
+        // interface alike -- a 360 deck behaves as an ordinary flat deck
+        // showing the projected view.
+        if (view360a.init(1024, 576, 0)) {
+            engine.view_a().aspect = 1024.0 / 576.0;
+        } else {
+            std::fprintf(stderr, "passe 360: init a echoue\n");
         }
     }
 
@@ -304,6 +316,10 @@ int main(int, char**) {
         view.elapsed_s = t;
         view.phase = simulation.phase();
         view.tex_a = media_a.frame_at(engine.deck_a().played.position_s);
+        if (view360a.ready()) {
+            view360a.render(media_a.texture_index(), engine.view_a());
+            view.tex_a = view360a.imgui_texture();
+        }
         view.tex_b = media_b.frame_at(engine.deck_b().played.position_s);
         media_overlay.frame_at(engine.overlay().played.position_s);
 
@@ -312,7 +328,9 @@ int main(int, char**) {
         // the render target itself; Spout receives the readback a couple of
         // frames later, which a video feed cannot see.
         if (gpu.ready()) {
-            gpu.render(media_a.texture_index(), media_b.texture_index(),
+            gpu.render(view360a.ready() ? view360a.texture_index()
+                                        : media_a.texture_index(),
+                       media_b.texture_index(),
                        media_overlay.texture_index(), engine.stack().a,
                        engine.stack().b, engine.stack().overlay,
                        static_cast<int>(engine.overlay_layer().blend));
@@ -323,9 +341,9 @@ int main(int, char**) {
         svj::ui::draw(engine, view);
 
         ImGui::Render();
-        bgfx::setViewRect(1, 0, 0, static_cast<std::uint16_t>(pixel_w),
+        bgfx::setViewRect(2, 0, 0, static_cast<std::uint16_t>(pixel_w),
                           static_cast<std::uint16_t>(pixel_h));
-        bgfx::touch(1);  // the clear runs even on a frame with nothing else
+        bgfx::touch(2);  // the clear runs even on a frame with nothing else
         svj::ui::ImGuiBgfx_Render(ImGui::GetDrawData());
         const std::uint32_t frame_number = bgfx::frame();
 
@@ -338,6 +356,7 @@ int main(int, char**) {
     media_a.close();
     media_b.close();
     media_overlay.close();
+    view360a.destroy();
     gpu.destroy();
     svj::ui::ImGuiBgfx_Shutdown();
     ImGui_ImplSDL3_Shutdown();
