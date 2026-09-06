@@ -49,7 +49,7 @@ par ordre de préférence :
 
 | Voie | Détail | Verdict |
 |---|---|---|
-| **2ᵉ port USB de l'Elite** | Interface double 10×10 : Serato sur USB-B1, l'app sur USB-B2, les deux reçoivent les entrées phono | Matériel déjà possédé — **à tester en premier** |
+| **2ᵉ port USB de l'Elite** | Interface double 10×10 : Serato sur USB-B1, l'app sur USB-B2, les deux reçoivent les entrées phono | Matériel déjà possédé — **à tester en premier**. Au 2026-09-07 : toujours pas essayé, un seul câble branché (Windows ne voit qu'une instance de l'Elite). C'est un câble de distance. |
 | **Split RCA passif** | Sortie du Phase dupliquée vers une petite interface d'entrée dédiée | Fonctionne toujours, ~50 € |
 | **WASAPI partagé** | Si le pilote Reloop expose WASAPI à côté d'ASIO | Dépend du pilote : à tester, pas à présumer |
 | **Deux machines** | Laptop Serato + PC vidéo | Le repli qui marche toujours |

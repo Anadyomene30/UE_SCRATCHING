@@ -65,6 +65,32 @@ est fait et vérifié — voir le tableau ci-dessus.
 | Les 11 entrées de capture s'ouvrent toutes en partagé, aucune n'est prise en exclusif | `audio_probe all` |
 | La MOTU expose **24 canaux sur un seul point de terminaison** — d'où le balayage de toutes les paires adjacentes | `audio_probe all` |
 
+**Comment l'Elite achemine réellement le timecode** (documentation constructeur +
+inspection du pilote, 2026-09-07). Corrige une erreur de raisonnement : le
+sélecteur de voie choisit ce qu'on **écoute**, pas ce que l'ordinateur
+**reçoit**.
+
+- **Le sélecteur de voie doit être sur USB A/B en DVS**, pas sur PHONO. Le trajet
+  entrée analogique → USB est interne et permanent ; mettre la voie sur PHONO
+  reviendrait à écouter le timecode au lieu de la musique que Serato renvoie.
+- **Utilities → USB OUT ROUTING** (SHIFT + BACK tenus 3 s) désigne, pour DECK 1
+  et DECK 2, si l'envoi USB prend l'entrée **PHONO** ou **CD/LINE**. C'est là que
+  se décide ce qui part vers l'ordinateur.
+- Le pilote est un **Ploytec** et n'expose que des noms génériques — `ELITE In
+  1..10`, `ELITE Out 1..10`. Aucun panneau de contrôle logiciel : tout se règle
+  sur le mixeur.
+- Côté WASAPI, une **seule paire stéréo** (« Entrée ligne »), très probablement
+  `ELITE In 1/2`. Donc le timecode y est lisible **si et seulement si** USB OUT
+  ROUTING met le deck concerné sur cette paire.
+
+> **La voie n° 1 du tableau des quatre voies n'a jamais été essayée.** L'Elite a
+> **deux ports USB-B** et se présente comme deux interfaces 10×10 indépendantes.
+> Windows n'en voit **qu'une seule instance** (`VID_26AD&PID_94F0\201709`) : un
+> seul câble est branché. Brancher le second câble donne à cette application sa
+> propre interface, portant les mêmes entrées phono, **sans rien partager avec
+> Serato** — ni ASIO, ni WASAPI, ni exclusivité. C'est le plan d'origine, il est
+> à un câble de distance, et il rend la question du partage sans objet.
+
 **Ce que dit Phase Manager (V 2.4.6), et qui oriente le décodeur :**
 
 - **Configuration DVS : « Serato DJ (default) ».** Le dock ne synthétise pas un
