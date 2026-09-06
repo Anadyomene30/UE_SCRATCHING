@@ -62,19 +62,57 @@ est fait et vérifié — voir le tableau ci-dessus.
 | L'Elite expose un pilote **ASIO** *et* un point de terminaison **WASAPI** « Entrée ligne » | énumération Windows |
 | Cette entrée s'ouvre en **mode partagé**, 48 kHz, stéréo, flottant | `audio_probe "Reloop ELITE"` |
 | L'Elite n'expose à WASAPI qu'**une seule paire stéréo** — sa nature 10x10 vit du côté ASIO | énumération des points de terminaison |
+| Les 11 entrées de capture s'ouvrent toutes en partagé, aucune n'est prise en exclusif | `audio_probe all` |
+| La MOTU expose **24 canaux sur un seul point de terminaison** — d'où le balayage de toutes les paires adjacentes | `audio_probe all` |
+
+**Ce que dit Phase Manager (V 2.4.6), et qui oriente le décodeur :**
+
+- **Configuration DVS : « Serato DJ (default) ».** Le dock ne synthétise pas un
+  signal maison : il **émule le disque de contrôle Serato**. C'est exactement ce
+  que le `timecoder.c` de xwax décode avec son profil Serato existant. La note du
+  plan sur un « profil `wireless` » reste pertinente pour la *qualité* du signal
+  (synthétisé, donc sans bruit de surface ni usure) mais pas pour son *format*.
+- **Vitesse des Remotes : 33 RPM.** La vitesse de référence attendue par le
+  décodeur.
+- **Un mode HID existe** (« Connectez Phase avec Serato DJ Pro en HID »), qui se
+  passe entièrement des câbles RCA. À vérifier : si le Phase est en HID, la
+  sortie RCA peut être inactive — ce qui expliquerait qu'aucune entrée n'ait
+  jamais reçu de signal pendant les mesures. Ce mode est propre à Serato et ne
+  nous est pas accessible, donc le DVS reste la voie.
 
 Restent à mesurer, et il faut des mains sur le matériel :
 
 1. **Est-ce que l'Elite émet son état MIDI à la connexion ?** Ça décide du sort du
    mode fantôme des potards absolus. `midi_probe all 45`, puis balayer tout.
    Rien n'est encore arrivé, mais rien n'a encore été touché pendant un test.
-2. **Est-ce que cette entrée WASAPI porte le timecode ?** C'est la reformulation
-   concrète de la question du second port : si oui, la voie « WASAPI partagé » du
-   tableau des quatre voies est ouverte et la deuxième machine tombe.
-   `audio_probe "Reloop ELITE" 5` avec une platine qui lit un disque de contrôle
-   et la voie en PHONO. Mesuré à vide : silence (crête 0,0006, le bruit de fond).
-   L'outil ne se contente pas d'un niveau — il cherche la **quadrature** entre
-   les deux voies, la signature qu'aucune musique n'a.
+2. **Sur quelle entrée arrive le timecode, et est-elle lisible en partagé ?**
+   C'est la reformulation concrète de la question du second port : si le signal
+   arrive sur un point de terminaison WASAPI ouvrable en partagé, la voie
+   « WASAPI partagé » est ouverte et la deuxième machine tombe.
+   `audio_probe all 3` **en faisant tourner un plateau pendant tout le
+   balayage** — il n'y a pas de disque de contrôle avec un Phase, le dock
+   synthétise le signal à partir du mouvement de la remote, donc à l'arrêt il
+   n'y a rien à mesurer. Mesuré à vide : toutes les entrées silencieuses.
+
+> **Le détecteur ne se contente pas d'un niveau, et il a fallu deux essais.**
+> « L'entrée n'est pas silencieuse » est vrai d'un micro dans une pièce. La
+> première version cherchait la **quadrature** entre les deux voies — et a
+> déclaré « TIMECODE » sur le micro d'une webcam captant une pièce calme : sur du
+> bruit, la fréquence et la phase estimées sont aléatoires, donc environ une
+> paire sur quatre tombe près de ±90°. Le niveau ne sauve pas non plus (la pièce
+> était à 0,012, un niveau plausible pour une cellule faible).
+>
+> Ce qui discrimine est la **tonalité** : le rapport entre la magnitude à la
+> porteuse et l'énergie totale du signal, qui vaut ~0,71 pour une sinusoïde pure
+> et ~1/√N pour du bruit. `audio_probe selftest` construit les six cas (timecode
+> fort, faible, dans les deux sens, bruit, musique, silence) et les juge sans
+> matériel — c'est le test qui aurait attrapé le faux positif du premier coup.
+>
+> **Le signe du déphasage n'est pas interprété.** Les deux sens de rotation
+> donnent des signes opposés, et le selftest l'exige ; mais lequel veut dire
+> « avant » dépend de la convention du dock et du câblage L/R. Le nommer sans
+> l'avoir mesuré serait refaire le défaut du lacet 360 inversé. C'est un tour de
+> plateau dans un sens connu qui le tranchera.
 
 ---
 

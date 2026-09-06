@@ -116,13 +116,16 @@ Le matériel est branché et deux sondes existent :
 
 ```sh
 ./build-ui/scratchvj/ui/Release/midi_probe.exe all 45      # puis balayer tout
-./build-ui/scratchvj/ui/Release/audio_probe.exe "Reloop ELITE" 5
+./build-ui/scratchvj/ui/Release/audio_probe.exe all 3        # en tournant un plateau
+./build-ui/scratchvj/ui/Release/audio_probe.exe selftest    # le detecteur, sans materiel
 ```
 
 1. Est-ce que l'Elite émet son état MIDI à l'ouverture du port ? (`midi_probe`)
-2. Est-ce que son entrée ligne WASAPI porte le timecode ? (`audio_probe`, avec
-   une platine qui lit un disque de contrôle). Si oui, la voie « WASAPI partagé »
-   est ouverte et la deuxième machine tombe.
+2. Sur quelle entrée arrive le timecode, et est-elle lisible en partagé ?
+   **Il n'y a pas de disque de contrôle** : le Phase synthétise le signal à
+   partir du mouvement de la remote, donc il faut faire tourner un plateau
+   pendant tout le balayage. Si le signal arrive sur un point WASAPI ouvrable en
+   partagé, la voie « WASAPI partagé » est ouverte et la deuxième machine tombe.
 
 Ne pas commencer une nouvelle brique sans avoir lu la section correspondante du
 roadmap — plusieurs choix (le profil `wireless` du timecode, la fraîcheur plutôt
