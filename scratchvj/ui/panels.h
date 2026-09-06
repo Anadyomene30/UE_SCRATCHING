@@ -12,6 +12,8 @@
 #pragma once
 
 #include <string>
+#include <utility>
+#include <vector>
 
 struct ImFont;
 
@@ -21,10 +23,32 @@ namespace svj::ui {
 
 // What the front end knows that the engine does not: how long it has been
 // running and what the scripted performance calls this moment.
+// Controls the hand has claimed from the demo script. The interface is a
+// controller here, not a view: the mouse writes into the surface through the
+// SAME door MIDI will use, and once a hand owns a control the script never
+// writes it again -- exactly what happens when a real fader arrives.
+struct HandState {
+    std::vector<std::pair<ControlIndex, float>> owned;
+
+    void take(ControlIndex index, float value) {
+        for (auto& entry : owned) {
+            if (entry.first == index) {
+                entry.second = value;
+                return;
+            }
+        }
+        owned.emplace_back(index, value);
+    }
+};
+
 struct Frame {
     double elapsed_s = 0.0;
     std::string phase;
     bool follower_mode = true;
+
+    // Where the mixer widgets deposit what the hand did this frame. Null makes
+    // the whole surface read-only (a replayed take, for instance).
+    HandState* hand = nullptr;
 
     // Live frames for the decks, as textures the render backend understands
     // (SDL_Texture* today). Null draws the honest empty well instead.

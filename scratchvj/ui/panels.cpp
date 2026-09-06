@@ -721,46 +721,333 @@ void draw_mix(Engine& engine, const Frame& frame, float width, float height) {
     ImGui::EndChild();
 }
 
-void draw_surface(Engine& engine, float width, float height) {
-    ImGui::BeginChild("surface", ImVec2(width, height), ImGuiChildFlags_Borders);
-    eyebrow("SURFACE \xE2\x80\x94 Reloop Elite \xC2\xB7 RP-8000 MK2");
+// --- the mixer: the one place the mouse is a controller ----------------------
+//
+// Until MIDI arrives, the mouse IS the control surface, and it writes through
+// the same door MIDI will: into the Surface, via the hand-ownership channel.
+// The script animates a control only until a hand claims it -- exactly what
+// happens on stage when a real fader arrives under a real finger.
+
+// One control looked up by name; kNoControl tolerated everywhere below.
+const Control* surface_control(const Surface& surface, const char* id,
+                               ControlIndex* index_out) {
+    const ControlIndex index = surface.find(id);
+    *index_out = index;
+    return index == kNoControl ? nullptr : &surface.at(index);
+}
+
+void claim(const Frame& frame, ControlIndex index, float value) {
+    if (frame.hand != nullptr && index != kNoControl) {
+        frame.hand->take(index, std::clamp(value, 0.0f, 1.0f));
+    }
+}
+
+// A dashed arc, for a rotary whose real position is unknown.
+void dashed_arc(ImDrawList* draw, ImVec2 centre, float radius, float a0, float a1,
+                ImU32 colour, float thickness) {
+    const int segments = 14;
+    for (int i = 0; i < segments; ++i) {
+        const float t0 = a0 + (a1 - a0) * (i + 0.15f) / segments;
+        const float t1 = a0 + (a1 - a0) * (i + 0.60f) / segments;
+        draw->PathArcTo(centre, radius, t0, t1, 4);
+        draw->PathStroke(colour, 0, thickness);
+    }
+}
+
+// A rotary knob: 270-degree arc, needle, label and value. Returns true when the
+// hand moved it this frame; drag is vertical, half a pixel per unit percent, so
+// fine moves stay fine.
+bool rotary(const char* id, const char* label, const Control* control,
+            const Frame& frame, ControlIndex index, ImU32 accent) {
+    const float diameter = 46.0f;
+    const float column = 64.0f;
+
+    ImGui::BeginGroup();
+    const ImVec2 origin = ImGui::GetCursorScreenPos();
+    const ImVec2 centre(origin.x + column * 0.5f, origin.y + diameter * 0.5f + 2.0f);
+    ImGui::InvisibleButton(id, ImVec2(column, diameter + 6.0f));
+
+    bool changed = false;
+    float value = control != nullptr ? control->value : 0.0f;
+    const bool known = control != nullptr && control->known;
+    const bool active = ImGui::IsItemActive();
+    const bool hovered = ImGui::IsItemHovered();
+
+    if (active && control != nullptr) {
+        value = std::clamp(value - ImGui::GetIO().MouseDelta.y * 0.005f, 0.0f, 1.0f);
+        claim(frame, index, value);
+        changed = true;
+        ImGui::SetTooltip("%.2f", static_cast<double>(value));
+    }
+    if (hovered && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+        claim(frame, index, 0.5f);
+        changed = true;
+    }
+
+    ImDrawList* draw = ImGui::GetWindowDrawList();
+    const float radius = diameter * 0.5f - 3.0f;
+    // 270 degrees of throw, opening downwards like a hardware pot.
+    const float a0 = 0.75f * 3.14159265f;
+    const float a1 = 2.25f * 3.14159265f;
+
+    if (known || active) {
+        draw->PathArcTo(centre, radius, a0, a1, 32);
+        draw->PathStroke(kHair, 0, 3.0f);
+        const float av = a0 + (a1 - a0) * value;
+        draw->PathArcTo(centre, radius, a0, av, 24);
+        draw->PathStroke(accent, 0, 3.0f);
+        const float needle = radius - 5.0f;
+        draw->AddLine(centre,
+                      ImVec2(centre.x + std::cos(av) * needle,
+                             centre.y + std::sin(av) * needle),
+                      hovered || active ? kInk : kMuted, 2.0f);
+    } else {
+        // Ghost: the pot exists, its position does not. Dashes, no needle, no
+        // number -- same rule as everywhere else in this interface.
+        dashed_arc(draw, centre, radius, a0, a1, kFaint, 2.0f);
+    }
+
     push_small();
-    ImGui::PushStyleColor(ImGuiCol_Text, rgba(kFaint));
-    ImGui::TextUnformatted(
-        "En pointill\xC3\xA9 : contr\xC3\xB4les non touch\xC3\xA9s depuis le lancement, "
-        "position r\xC3\xA9""elle inconnue.");
+    const std::string caption = std::string(label);
+    const float caption_w = ImGui::CalcTextSize(caption.c_str()).x;
+    ImGui::SetCursorScreenPos(
+        ImVec2(centre.x - caption_w * 0.5f, origin.y + diameter + 8.0f));
+    ImGui::PushStyleColor(ImGuiCol_Text, rgba(known ? kMuted : kFaint));
+    ImGui::TextUnformatted(caption.c_str());
     ImGui::PopStyleColor();
     pop_font();
+
+    push_mono();
+    push_small();
+    char value_text[16];
+    if (known) {
+        std::snprintf(value_text, sizeof(value_text), "%.2f", static_cast<double>(value));
+    } else {
+        std::snprintf(value_text, sizeof(value_text), "?");
+    }
+    const float value_w = ImGui::CalcTextSize(value_text).x;
+    ImGui::SetCursorScreenPos(
+        ImVec2(centre.x - value_w * 0.5f, ImGui::GetCursorScreenPos().y));
+    text_c(known ? kInk : kFaint, "%s", value_text);
+    pop_font();
+    pop_font();
+    ImGui::EndGroup();
+    return changed;
+}
+
+// A vertical channel fader: track, cap, absolute drag.
+bool vertical_fader(const char* id, const char* label, const Control* control,
+                    const Frame& frame, ControlIndex index, ImU32 accent) {
+    const float height = 96.0f;
+    const float column = 46.0f;
+
+    ImGui::BeginGroup();
+    const ImVec2 origin = ImGui::GetCursorScreenPos();
+    ImGui::InvisibleButton(id, ImVec2(column, height));
+
+    float value = control != nullptr ? control->value : 0.0f;
+    const bool known = control != nullptr && control->known;
+    const bool active = ImGui::IsItemActive();
+    const bool hovered = ImGui::IsItemHovered();
+    bool changed = false;
+
+    if (active && control != nullptr) {
+        value = std::clamp(1.0f - (ImGui::GetIO().MousePos.y - origin.y) / height, 0.0f,
+                           1.0f);
+        claim(frame, index, value);
+        changed = true;
+        ImGui::SetTooltip("%.2f", static_cast<double>(value));
+    }
+    if (hovered && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+        claim(frame, index, 1.0f);  // a channel fader rests open
+        changed = true;
+    }
+
+    ImDrawList* draw = ImGui::GetWindowDrawList();
+    const float cx = origin.x + column * 0.5f;
+    if (known || active) {
+        draw->AddRectFilled(ImVec2(cx - 3.0f, origin.y), ImVec2(cx + 3.0f, origin.y + height),
+                            kWell);
+        draw->AddRectFilled(ImVec2(cx - 3.0f, origin.y + (1.0f - value) * height),
+                            ImVec2(cx + 3.0f, origin.y + height), accent);
+        // Side ticks every quarter, the glanceable scale.
+        for (int i = 0; i <= 4; ++i) {
+            const float y = origin.y + height * i / 4.0f;
+            draw->AddLine(ImVec2(cx + 8.0f, y), ImVec2(cx + 13.0f, y), kHair);
+        }
+        const float cap_y = origin.y + (1.0f - value) * height;
+        draw->AddRectFilled(ImVec2(cx - 12.0f, cap_y - 5.0f), ImVec2(cx + 12.0f, cap_y + 5.0f),
+                            hovered || active ? kInk : kMuted);
+        draw->AddLine(ImVec2(cx - 12.0f, cap_y), ImVec2(cx + 12.0f, cap_y), kGround, 1.0f);
+    } else {
+        for (float y = origin.y; y < origin.y + height; y += 8.0f) {
+            draw->AddRectFilled(ImVec2(cx - 2.0f, y), ImVec2(cx + 2.0f, y + 4.0f), kFaint);
+        }
+    }
+
+    push_small();
+    const float label_w = ImGui::CalcTextSize(label).x;
+    ImGui::SetCursorScreenPos(ImVec2(cx - label_w * 0.5f, origin.y + height + 8.0f));
+    ImGui::PushStyleColor(ImGuiCol_Text, rgba(known ? kMuted : kFaint));
+    ImGui::TextUnformatted(label);
+    ImGui::PopStyleColor();
+    pop_font();
+    ImGui::EndGroup();
+    return changed;
+}
+
+// THE crossfader. Wide, horizontal, with the battle curve stated next to it:
+// on SHARP a flick is a cut, and that is the whole reason this control exists.
+bool crossfader(const Control* control, const Frame& frame, ControlIndex index,
+                const Engine& engine, float width) {
+    const float height = 34.0f;
+
+    ImGui::BeginGroup();
+    const ImVec2 origin = ImGui::GetCursorScreenPos();
+    ImGui::InvisibleButton("xfader", ImVec2(width, height));
+
+    float value = control != nullptr ? control->value : 0.5f;
+    const bool known = control != nullptr && control->known;
+    const bool active = ImGui::IsItemActive();
+    const bool hovered = ImGui::IsItemHovered();
+    bool changed = false;
+
+    if (active && control != nullptr) {
+        value = std::clamp((ImGui::GetIO().MousePos.x - origin.x) / width, 0.0f, 1.0f);
+        claim(frame, index, value);
+        changed = true;
+    }
+    if (hovered && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+        claim(frame, index, 0.5f);
+        changed = true;
+    }
+
+    ImDrawList* draw = ImGui::GetWindowDrawList();
+    const float cy = origin.y + height * 0.5f;
+    draw->AddRectFilled(ImVec2(origin.x, cy - 4.0f), ImVec2(origin.x + width, cy + 4.0f),
+                        kWell);
+    draw->AddRect(ImVec2(origin.x, cy - 4.0f), ImVec2(origin.x + width, cy + 4.0f), kHair);
+    // Centre detent mark.
+    draw->AddLine(ImVec2(origin.x + width * 0.5f, cy - 8.0f),
+                  ImVec2(origin.x + width * 0.5f, cy + 8.0f), kHair, 1.0f);
+
+    if (known || active) {
+        const float cap_x = origin.x + value * width;
+        draw->AddRectFilled(ImVec2(cap_x - 7.0f, origin.y), ImVec2(cap_x + 7.0f, origin.y + height),
+                            hovered || active ? kInk : kMuted);
+        draw->AddLine(ImVec2(cap_x, origin.y), ImVec2(cap_x, origin.y + height), kGround,
+                      1.0f);
+    }
+
+    // A and B in the decks' own colours, at the ends where the hand aims.
+    push_mono();
+    ImGui::SetCursorScreenPos(ImVec2(origin.x - 18.0f, cy - ImGui::GetTextLineHeight() * 0.5f));
+    text_c(kAmber, "A");
+    ImGui::SetCursorScreenPos(ImVec2(origin.x + width + 8.0f, cy - ImGui::GetTextLineHeight() * 0.5f));
+    text_c(kSlate, "B");
+    pop_font();
+
+    // The caption row: curve, value, and the transform detector where the
+    // action is instead of buried in another panel.
+    push_small();
+    ImGui::SetCursorScreenPos(ImVec2(origin.x, origin.y + height + 6.0f));
+    ImGui::PushStyleColor(ImGuiCol_Text, rgba(kFaint));
+    ImGui::TextUnformatted("courbe sharp");
+    ImGui::PopStyleColor();
+    ImGui::SameLine(0.0f, 16.0f);
+    push_mono();
+    if (known) {
+        text_c(kInk, "%.2f", static_cast<double>(value));
+    } else {
+        text_c(kFaint, "?");
+    }
+    pop_font();
+    ImGui::SameLine(0.0f, 16.0f);
+    ImGui::PushStyleColor(ImGuiCol_Text,
+                          rgba(engine.cuts().transforming() ? kAmber : kFaint));
+    ImGui::Text("coupes %.1f/s%s", static_cast<double>(engine.cuts().cuts_per_second()),
+                engine.cuts().transforming() ? "  TRANSFORM" : "");
+    ImGui::PopStyleColor();
+    pop_font();
+
+    ImGui::EndGroup();
+    return changed;
+}
+
+void draw_surface(Engine& engine, const Frame& frame, float width, float height) {
+    ImGui::BeginChild("surface", ImVec2(width, height), ImGuiChildFlags_Borders);
+    eyebrow("SURFACE \xE2\x80\x94 Reloop Elite \xC2\xB7 RP-8000 MK2 \xE2\x80\x94 la souris joue en attendant le MIDI");
     ImGui::Dummy(ImVec2(0.0f, 8.0f));
 
     const Surface& surface = engine.surface();
-    const float column = 76.0f;
-    for (std::size_t i = 0; i < surface.size(); ++i) {
-        const Control& control = surface.at(static_cast<ControlIndex>(i));
-        if (i > 0) ImGui::SameLine(0.0f, 0.0f);
+    ControlIndex idx_hi, idx_mid, idx_f1, idx_fader1, idx_hi2, idx_f2, idx_fader2, idx_xf;
+    const Control* hi = surface_control(surface, "ch1.eq.hi", &idx_hi);
+    const Control* mid = surface_control(surface, "ch1.eq.mid", &idx_mid);
+    const Control* filter1 = surface_control(surface, "ch1.filter", &idx_f1);
+    const Control* fader1 = surface_control(surface, "ch1.fader", &idx_fader1);
+    const Control* hi2 = surface_control(surface, "ch2.eq.hi", &idx_hi2);
+    const Control* filter2 = surface_control(surface, "ch2.filter", &idx_f2);
+    const Control* fader2 = surface_control(surface, "ch2.fader", &idx_fader2);
+    const Control* xf = surface_control(surface, "xfader", &idx_xf);
 
-        ImGui::BeginGroup();
-        ImGui::Dummy(ImVec2(column, 0.0f));
-        ImGui::SameLine(0.0f, -column);
-        knob_strip(control, 56.0f);
+    // VOIE 1 -- deck A's colour on its accents, so the strip and the deck read
+    // as one instrument.
+    ImGui::BeginGroup();
+    push_small();
+    text_c(kAmber, "VOIE 1");
+    pop_font();
+    ImGui::Dummy(ImVec2(0.0f, 2.0f));
+    rotary("##v1hi", "eq.hi", hi, frame, idx_hi, kAmber);
+    ImGui::SameLine(0.0f, 2.0f);
+    rotary("##v1mid", "eq.mid", mid, frame, idx_mid, kAmber);
+    ImGui::SameLine(0.0f, 2.0f);
+    rotary("##v1filter", "filtre", filter1, frame, idx_f1, kAmber);
+    ImGui::SameLine(0.0f, 10.0f);
+    vertical_fader("##v1fader", "fader", fader1, frame, idx_fader1, kAmber);
+    ImGui::EndGroup();
 
-        push_small();
-        ImGui::PushStyleColor(ImGuiCol_Text, rgba(control.known ? kMuted : kFaint));
-        ImGui::TextUnformatted(control.id.c_str());
-        ImGui::PopStyleColor();
-        // A ghost shows no number at all: the Elite's pots are absolute, so their
-        // real position is unknown until touched, and printing 0.00 would be a
-        // fabrication a performer would read as a measurement.
-        ImGui::PushStyleColor(ImGuiCol_Text, rgba(control.known ? kInk : kFaint));
-        if (control.known) {
-            ImGui::Text("%.2f", static_cast<double>(control.value));
-        } else {
-            ImGui::TextUnformatted("?");
-        }
-        ImGui::PopStyleColor();
-        pop_font();
-        ImGui::EndGroup();
-    }
+    ImGui::SameLine(0.0f, 48.0f);
+
+    // The crossfader between the two voices, where it lives on the hardware.
+    ImGui::BeginGroup();
+    push_small();
+    ImGui::PushStyleColor(ImGuiCol_Text, rgba(kFaint));
+    ImGui::TextUnformatted("CROSSFADER \xC2\xB7 Innofader");
+    ImGui::PopStyleColor();
+    pop_font();
+    ImGui::Dummy(ImVec2(0.0f, 26.0f));
+    const float xf_width = std::max(240.0f, ImGui::GetContentRegionAvail().x - 460.0f);
+    crossfader(xf, frame, idx_xf, engine, xf_width);
+    ImGui::EndGroup();
+
+    ImGui::SameLine(0.0f, 48.0f);
+
+    ImGui::BeginGroup();
+    push_small();
+    text_c(kSlate, "VOIE 2");
+    pop_font();
+    ImGui::Dummy(ImVec2(0.0f, 2.0f));
+    rotary("##v2hi", "eq.hi", hi2, frame, idx_hi2, kSlate);
+    ImGui::SameLine(0.0f, 2.0f);
+    rotary("##v2filter", "filtre", filter2, frame, idx_f2, kSlate);
+    ImGui::SameLine(0.0f, 10.0f);
+    vertical_fader("##v2fader", "fader", fader2, frame, idx_fader2, kSlate);
+    ImGui::EndGroup();
+
+    ImGui::SameLine(0.0f, 30.0f);
+    ImGui::BeginGroup();
+    push_small();
+    ImGui::PushStyleColor(ImGuiCol_Text, rgba(kFaint));
+    ImGui::PushTextWrapPos(ImGui::GetCursorPosX() +
+                           std::max(150.0f, ImGui::GetContentRegionAvail().x - 12.0f));
+    ImGui::TextUnformatted(
+        "Glisser pour jouer, double-clic pour recentrer. Un contr\xC3\xB4le pris "
+        "\xC3\xA0 la main quitte la d\xC3\xA9mo. En pointill\xC3\xA9 : jamais "
+        "touch\xC3\xA9.");
+    ImGui::PopTextWrapPos();
+    ImGui::PopStyleColor();
+    pop_font();
+    ImGui::EndGroup();
 
     ImGui::EndChild();
 }
@@ -1061,7 +1348,7 @@ void draw(Engine& engine, const Frame& frame) {
             const float gap = ImGui::GetStyle().ItemSpacing.x;
             // Tall enough for a knob, its label and its value; a clipped value
             // row reads as a bug even when everything above it is right.
-            const float surface_h = 190.0f;
+            const float surface_h = 208.0f;
             const float body_h =
                 std::max(320.0f, ImGui::GetContentRegionAvail().y - surface_h - gap);
             const float decks_w =
@@ -1069,7 +1356,9 @@ void draw(Engine& engine, const Frame& frame) {
             const float deck_w = (decks_w - gap) * 0.5f;
             // The program panel has a fixed claim -- its three effect rows must never
             // be the thing that gets clipped -- and the decks take what is left.
-            const float mix_h = 218.0f;
+            // The program panel's fixed claim: three effect rows plus the
+            // program preview, and never the thing that gets clipped.
+            const float mix_h = 222.0f;
             const float deck_h = body_h - mix_h - ImGui::GetStyle().ItemSpacing.y;
 
             draw_library(engine, rail, body_h);
@@ -1084,7 +1373,7 @@ void draw(Engine& engine, const Frame& frame) {
             draw_mix(engine, frame, decks_w, mix_h);
             ImGui::EndGroup();
 
-            draw_surface(engine, 0.0f, surface_h);
+            draw_surface(engine, frame, 0.0f, surface_h);
             ImGui::EndTabItem();
         }
         if (ImGui::BeginTabItem("EFFETS")) {

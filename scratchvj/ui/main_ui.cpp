@@ -253,6 +253,10 @@ int main(int, char**) {
         }
     }
 
+    // Controls the hand has claimed from the demo script; applied after every
+    // simulation step so the hand always wins, exactly as MIDI will.
+    svj::ui::HandState hand;
+
     const auto started = std::chrono::steady_clock::now();
     double previous_s = 0.0;
     bool running = true;
@@ -291,6 +295,9 @@ int main(int, char**) {
 
         const auto now_us = static_cast<std::uint64_t>(wall_s * 1e6);
         simulation.step(t, engine.surface(), now_us);
+        for (const auto& owned : hand.owned) {
+            engine.surface().set(owned.first, owned.second, now_us);
+        }
 
         EngineFrame frame;
         frame.time_s = wall_s;
@@ -315,6 +322,7 @@ int main(int, char**) {
         svj::ui::Frame view;
         view.elapsed_s = t;
         view.phase = simulation.phase();
+        view.hand = &hand;
         view.tex_a = media_a.frame_at(engine.deck_a().played.position_s);
         if (view360a.ready()) {
             view360a.render(media_a.texture_index(), engine.view_a());
