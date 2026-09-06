@@ -64,6 +64,8 @@ est fait et vérifié — voir le tableau ci-dessus.
 | L'Elite n'expose à WASAPI qu'**une seule paire stéréo** — sa nature 10x10 vit du côté ASIO | énumération des points de terminaison |
 | Les 11 entrées de capture s'ouvrent toutes en partagé, aucune n'est prise en exclusif | `audio_probe all` |
 | La MOTU expose **24 canaux sur un seul point de terminaison** — d'où le balayage de toutes les paires adjacentes | `audio_probe all` |
+| **Serato en marche ne bloque rien** : l'entrée WASAPI de l'Elite s'ouvre toujours (Ploytec multi-client ASIO/WDM), et les 7 ports MIDI restent libres — Serato parle à l'Elite en HID, pas en MIDI | sondes lancées pendant une vraie session Serato, 2026-09-07 |
+| En session HID réelle, **aucun timecode analogique n'existe** : la musique est vue (webcam, câble virtuel), le geste des remotes non | `audio_probe all` pendant la session |
 
 **Comment l'Elite achemine réellement le timecode** (documentation constructeur +
 inspection du pilote, 2026-09-07). Corrige une erreur de raisonnement : le
