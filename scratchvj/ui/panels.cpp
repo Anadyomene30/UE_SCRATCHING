@@ -2,6 +2,7 @@
 
 #include "config/warp_io.h"
 #include "core/videofx.h"
+#include "core/videotaps.h"
 
 #include <algorithm>
 #include <cmath>
@@ -767,12 +768,23 @@ void draw_mix(Engine& engine, Frame& frame, float width, float height) {
         // own meters. It reads the clip at several positions and that machinery
         // is not built; a knob that silently does nothing teaches a performer to
         // distrust every other knob on the panel.
-        const bool drawn = is_single_frame_effect(unit.type);
+        const bool tapped = is_multi_tap_effect(unit.type);
+        const bool drawn = is_single_frame_effect(unit.type) || tapped;
         ImGui::PushStyleColor(ImGuiCol_Text, rgba(drawn ? kFaint : kAmber));
         ImGui::Text("%s", drawn ? (info->video != nullptr ? info->video : "")
-                                : "pas encore \xC3\xA0 l'image \xE2\x80\x94 lit le clip "
-                                  "\xC3\xA0 plusieurs positions");
+                                : "pas encore \xC3\xA0 l'image");
         ImGui::PopStyleColor();
+        if (tapped) {
+            // How many moments of the clip this slot is reading right now. One
+            // is not a fault: these trails are a function of position, so a
+            // record standing still has nothing to trail, and a performer
+            // should be able to SEE that rather than wonder why the knob died.
+            ImGui::SameLine(0.0f, 10.0f);
+            const int moments = frame.tap_moments[i < 3 ? i : 2];
+            ImGui::PushStyleColor(ImGuiCol_Text, rgba(moments > 1 ? kSage : kFaint));
+            ImGui::Text("%d moments", moments);
+            ImGui::PopStyleColor();
+        }
         pop_font();
     }
 

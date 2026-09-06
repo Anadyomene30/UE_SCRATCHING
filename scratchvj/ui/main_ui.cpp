@@ -32,6 +32,7 @@
 #include "imgui_impl_bgfx.h"
 #include "gpu_compose.h"
 #include "gpu_effects.h"
+#include "gpu_taps.h"
 #include "gpu_view360.h"
 #include "media.h"
 #include "netout.h"
@@ -93,7 +94,7 @@ int main(int, char**) {
     }
     // The mockup's ground colour, painted by the clear rather than by a quad.
     // View 1 is the backbuffer; view 0 belongs to the program compositor.
-    bgfx::setViewClear(6, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x141412ff, 1.0f, 0);
+    bgfx::setViewClear(8, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x141412ff, 1.0f, 0);
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -138,12 +139,14 @@ int main(int, char**) {
         io.FontDefault = svj::ui::g_fonts.sans;
     }
     ImGui_ImplSDL3_InitForOther(window);
-    // View order IS pipeline order, and bgfx runs views by id: 0 reprojects
-    // deck A's 360 view, 1 composites the program, 2..5 are the effect rack's
-    // passes, 6 draws the interface (which samples the rack's output), and 7
-    // blits that same output for readback. Getting this order wrong is not a
-    // crash -- it is Spout quietly carrying last frame's picture.
-    if (!svj::ui::ImGuiBgfx_Init(6)) {
+    // View order IS pipeline order, and bgfx runs views by id: 0 and 1 are the
+    // decks' multi-tap passes (trails and slit scan, which read the CLIP and so
+    // must come before anything that leaves it behind), 2 reprojects deck A's
+    // 360 view, 3 composites the program, 4..7 are the single-frame effect
+    // rack's passes, 8 draws the interface, and 9 blits the result for
+    // readback. Getting this order wrong is not a crash -- it is Spout quietly
+    // carrying last frame's picture.
+    if (!svj::ui::ImGuiBgfx_Init(8)) {
         std::fprintf(stderr, "backend ImGui bgfx: echec\n");
         return 1;
     }
@@ -166,6 +169,7 @@ int main(int, char**) {
     svj::ui::ProgramGpu gpu;
     svj::ui::View360Gpu view360a;
     svj::ui::EffectsGpu effects;
+    svj::ui::TapsGpu taps_a, taps_b;
 
     // The Spout sender is opened unconditionally: receivers that are not
     // listening cost nothing, and an output that must be switched on before it
@@ -242,18 +246,26 @@ int main(int, char**) {
     if (media_a.ready() || media_b.ready()) {
         const std::uint32_t pw = media_a.ready() ? media_a.width() : media_b.width();
         const std::uint32_t ph = media_a.ready() ? media_a.height() : media_b.height();
-        if (!gpu.init(pw, ph, 1, 7)) {
+        if (!gpu.init(pw, ph, 3, 9)) {
             std::fprintf(stderr, "compositeur GPU: init a echoue\n");
         }
     }
-    if (gpu.ready() && !effects.init(gpu.width(), gpu.height(), 2)) {
+    if (gpu.ready() && !effects.init(gpu.width(), gpu.height(), 4)) {
         std::fprintf(stderr, "effets GPU: init a echoue\n");
+    }
+    // The taps passes run at each deck's own clip resolution: they read the
+    // clip, so they belong to the clip's grid rather than to the program's.
+    if (media_a.ready() && !taps_a.init(media_a.width(), media_a.height(), 0)) {
+        std::fprintf(stderr, "passe taps A: init a echoue\n");
+    }
+    if (media_b.ready() && !taps_b.init(media_b.width(), media_b.height(), 1)) {
+        std::fprintf(stderr, "passe taps B: init a echoue\n");
     }
     if (media_a.ready() && media_a.header().is_equirect()) {
         // Deck A gets the 360 view pass: downstream of it -- compositor and
         // interface alike -- a 360 deck behaves as an ordinary flat deck
         // showing the projected view.
-        if (view360a.init(1024, 576, 0)) {
+        if (view360a.init(1024, 576, 2)) {
             engine.view_a().aspect = 1024.0 / 576.0;
         } else {
             std::fprintf(stderr, "passe 360: init a echoue\n");
@@ -334,8 +346,33 @@ int main(int, char**) {
         view.hand = &hand;
         view.tex_a = media_a.frame_at(engine.deck_a().played.position_s);
         view.tex_equirect = media_a.imgui_texture();
+
+        // Trails and slit scan first, because they read the CLIP -- once the
+        // 360 pass has turned it into a view, the other moments are gone. The
+        // rack's first multi-tap slot drives each deck; a deck whose slot is
+        // idle, or whose record is not moving, keeps its plain frame.
+        const auto tapped = [&](svj::ui::TapsGpu& pass, svj::ui::DeckMedia& media,
+                                const Deck& deck) {
+            std::uint16_t source = media.texture_index();
+            if (!pass.ready()) return source;
+            for (std::size_t i = 0; i < engine.rack().size(); ++i) {
+                const EffectUnit& unit = engine.rack().at(i);
+                if (!unit.video_active() || !is_multi_tap_effect(unit.type)) continue;
+                const TapPlan plan =
+                    plan_taps(unit, deck.played.position_s, deck.played.velocity,
+                              60.0 / engine.bpm(), deck.clip.duration_s(),
+                              deck.clock.mode());
+                source = pass.render(media.taps_texture(plan), source, unit, plan);
+                if (i < 3) view.tap_moments[i] = plan.collapsed ? 1 : plan.count;
+                break;  // one multi-tap effect per deck: they all want the layers
+            }
+            return source;
+        };
+        const std::uint16_t deck_a_source = tapped(taps_a, media_a, engine.deck_a());
+        const std::uint16_t deck_b_source = tapped(taps_b, media_b, engine.deck_b());
+
         if (view360a.ready()) {
-            view360a.render(media_a.texture_index(), engine.view_a());
+            view360a.render(deck_a_source, engine.view_a());
             view.tex_a = view360a.imgui_texture();
         }
         view.tex_b = media_b.frame_at(engine.deck_b().played.position_s);
@@ -346,9 +383,8 @@ int main(int, char**) {
         // the render target itself; Spout receives the readback a couple of
         // frames later, which a video feed cannot see.
         if (gpu.ready()) {
-            gpu.render(view360a.ready() ? view360a.texture_index()
-                                        : media_a.texture_index(),
-                       media_b.texture_index(),
+            gpu.render(view360a.ready() ? view360a.texture_index() : deck_a_source,
+                       deck_b_source,
                        media_overlay.texture_index(), engine.stack().a,
                        engine.stack().b, engine.stack().overlay,
                        static_cast<int>(engine.overlay_layer().blend));
@@ -374,9 +410,9 @@ int main(int, char**) {
         }
 
         ImGui::Render();
-        bgfx::setViewRect(6, 0, 0, static_cast<std::uint16_t>(pixel_w),
+        bgfx::setViewRect(8, 0, 0, static_cast<std::uint16_t>(pixel_w),
                           static_cast<std::uint16_t>(pixel_h));
-        bgfx::touch(6);  // the clear runs even on a frame with nothing else
+        bgfx::touch(8);  // the clear runs even on a frame with nothing else
         svj::ui::ImGuiBgfx_Render(ImGui::GetDrawData());
         const std::uint32_t frame_number = bgfx::frame();
 
@@ -389,6 +425,8 @@ int main(int, char**) {
     media_a.close();
     media_b.close();
     media_overlay.close();
+    taps_a.destroy();
+    taps_b.destroy();
     effects.destroy();
     view360a.destroy();
     gpu.destroy();

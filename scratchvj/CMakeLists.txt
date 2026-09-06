@@ -40,6 +40,7 @@ add_library(scratchvj_core STATIC
   src/core/transport.cpp
   src/core/videocache.cpp
   src/core/videofx.cpp
+  src/core/videotaps.cpp
   src/core/warp.cpp
 )
 target_include_directories(scratchvj_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
@@ -136,6 +137,7 @@ if(SCRATCHVJ_BUILD_TESTS)
     tests/test_transport.cpp
     tests/test_videocache.cpp
     tests/test_videofx.cpp
+    tests/test_videotaps.cpp
     tests/test_warp.cpp
     tests/test_warp_io.cpp
   )

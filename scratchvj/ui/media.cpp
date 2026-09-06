@@ -9,6 +9,12 @@ namespace svj::ui {
 DeckMedia::~DeckMedia() { close(); }
 
 void DeckMedia::close() {
+    if (taps_ != 0xFFFF) {
+        bgfx::TextureHandle handle;
+        handle.idx = taps_;
+        bgfx::destroy(handle);
+        taps_ = 0xFFFF;
+    }
     if (texture_ != 0xFFFF) {
         bgfx::TextureHandle handle;
         handle.idx = texture_;
@@ -18,6 +24,7 @@ void DeckMedia::close() {
     reader_.close();
     open_ = false;
     last_frame_ = 0xFFFFFFFFu;
+    for (std::uint32_t& frame : tap_frames_) frame = 0xFFFFFFFFu;
 }
 
 bool DeckMedia::open(const std::string& path, std::string& error) {
@@ -71,6 +78,38 @@ void* DeckMedia::frame_at(double position_s) {
 
     last_frame_ = frame;
     return reinterpret_cast<void*>(ImGuiBgfx_TextureId(texture_));
+}
+
+std::uint16_t DeckMedia::taps_texture(const TapPlan& plan) {
+    if (!open_ || plan.count <= 0) return 0xFFFF;
+    const CacheHeader& header = reader_.header();
+
+    if (taps_ == 0xFFFF) {
+        const bgfx::TextureHandle handle = bgfx::createTexture2D(
+            static_cast<std::uint16_t>(header.width),
+            static_cast<std::uint16_t>(header.height), false,
+            static_cast<std::uint16_t>(kTapCount), bgfx::TextureFormat::BC1,
+            BGFX_SAMPLER_UVW_CLAMP);
+        if (!bgfx::isValid(handle)) return 0xFFFF;
+        taps_ = handle.idx;
+        for (std::uint32_t& frame : tap_frames_) frame = 0xFFFFFFFFu;
+    }
+
+    bgfx::TextureHandle handle;
+    handle.idx = taps_;
+    std::string error;
+    for (int k = 0; k < plan.count && k < kTapCount; ++k) {
+        const std::uint32_t frame = header.frame_at(plan.position_s[k]);
+        if (frame == tap_frames_[k]) continue;  // this moment has not moved
+        if (!reader_.read_frame(frame, packed_, error)) continue;
+        bgfx::updateTexture2D(handle, static_cast<std::uint16_t>(k), 0, 0, 0,
+                              static_cast<std::uint16_t>(header.width),
+                              static_cast<std::uint16_t>(header.height),
+                              bgfx::copy(packed_.data(),
+                                         static_cast<std::uint32_t>(packed_.size())));
+        tap_frames_[k] = frame;
+    }
+    return taps_;
 }
 
 }  // namespace svj::ui

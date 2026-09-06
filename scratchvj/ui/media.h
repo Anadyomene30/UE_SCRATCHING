@@ -20,6 +20,7 @@
 #include <vector>
 
 #include "core/videocache.h"
+#include "core/videotaps.h"
 
 namespace svj::ui {
 
@@ -44,6 +45,16 @@ public:
     // 0xFFFF until a first frame has been shown.
     std::uint16_t texture_index() const { return texture_; }
 
+    // Uploads the clip at every position `plan` names into a texture ARRAY --
+    // one layer per moment -- and returns its handle index. This is what makes
+    // trails and slit scan possible: the clip at eight moments at once, each
+    // fetched by position rather than remembered from a previous frame.
+    //
+    // A layer whose frame has not changed is not re-uploaded, so a collapsed
+    // plan (a stopped record) costs one read rather than eight, and a slow
+    // scratch costs only the layers that actually crossed a frame boundary.
+    std::uint16_t taps_texture(const TapPlan& plan);
+
     // The same texture as an ImTextureID, for panels that show the SOURCE
     // rather than the projected view -- the 360 layout's sight frame.
     void* imgui_texture() const {
@@ -55,6 +66,8 @@ public:
 private:
     CacheReader reader_;
     std::uint16_t texture_ = 0xFFFF;  // bgfx handle index; 0xFFFF = none
+    std::uint16_t taps_ = 0xFFFF;     // the layered texture, created on demand
+    std::uint32_t tap_frames_[kTapCount] = {};
     std::vector<std::uint8_t> packed_;
     std::uint32_t last_frame_ = 0xFFFFFFFFu;
     bool open_ = false;

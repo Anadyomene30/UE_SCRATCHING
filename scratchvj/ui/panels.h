@@ -89,6 +89,9 @@ struct Frame {
     unsigned int program_height = 0;
     // How many effect passes ran over the program this frame.
     int effect_passes = 0;
+    // How many distinct moments of the clip each multi-tap slot read. One means
+    // the record is standing still, which is a state worth showing.
+    int tap_moments[3] = {};
 };
 
 // The three faces the mockup uses. Archivo carries the interface, DM Mono every
