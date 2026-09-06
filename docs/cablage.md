@@ -53,6 +53,14 @@ studio par exemple, sans toucher à l'Elite. Trois câblages selon l'usage :
 MWM à Serato et rekordbox seulement. Le lire relèverait de la rétro-ingénierie :
 projet à part, résultat non garanti, et le RCA marche aujourd'hui.)
 
+> **Le setup habituel de l'utilisateur est 100 % HID** (constaté le 2026-09-07) :
+> récepteur en USB au laptop, voies de l'Elite sur entrée Serato, l'audio de
+> Serato revient dans la table, **aucun RCA branché**. C'est pourquoi toutes les
+> sondes n'ont mesuré que du silence : dans cette configuration il n'existe
+> aucun signal analogique nulle part. La question ci-dessous décide donc si la
+> vidéo s'ajoute à ses habitudes sans rien changer, ou impose de basculer en DVS
+> pour les sessions vidéo.
+>
 > **Question ouverte, mesurable en une commande : le récepteur émet-il encore
 > sur ses RCA pendant qu'il est en HID ?** La doc MWM présente HID et DVS comme
 > des alternatives, sans dire que le HID coupe les RCA. Si les deux coexistent,
