@@ -107,6 +107,21 @@ struct Frame {
     // hands the same recycled index back, so it fails only sometimes.
     ClipId load_clip = kNoClip;
     DeckTarget load_target = DeckTarget::None;
+
+    // The overlay layer's source. Written back by the panel and read by the
+    // front end, which owns the Spout receiver -- opening a receiver is I/O and
+    // does not belong in a view, the same rule the clip load follows.
+    bool overlay_live = false;
+    // Filled by the front end for display: whether a sender is actually there,
+    // what it is called, and how much history is held.
+    bool live_connected = false;
+    std::string live_sender;
+    float live_span_s = 0.0f;
+    // The receiver landed on this application's OWN Spout output. With no other
+    // sender running that is what happens, and the result is a feedback loop --
+    // a real technique, but one nobody should discover by accident while
+    // wondering why the picture went white.
+    bool live_is_self = false;
 };
 
 // The three faces the mockup uses. Archivo carries the interface, DM Mono every

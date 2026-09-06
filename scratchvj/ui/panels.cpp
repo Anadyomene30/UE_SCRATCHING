@@ -839,6 +839,44 @@ void draw_mix(Engine& engine, Frame& frame, float width, float height) {
     ImGui::PopStyleColor();
     pop_font();
 
+    // Where the overlay's picture comes from. The overlay is the layer that can
+    // take a live source today: it has no platter, so the question that decides
+    // a live DECK -- hold the frame you grabbed, or hold your distance behind
+    // the present -- does not arise here. A scratchable live deck needs
+    // DeckSource::Live, which is not written.
+    ImGui::SameLine(0.0f, 14.0f);
+    if (ImGui::SmallButton(frame.overlay_live ? "LIVE" : "clip")) {
+        frame.overlay_live = !frame.overlay_live;
+    }
+    {
+        ImDrawList* draw = ImGui::GetWindowDrawList();
+        const ImVec2 lo = ImGui::GetItemRectMin();
+        const ImVec2 hi = ImGui::GetItemRectMax();
+        draw->AddLine(ImVec2(lo.x, hi.y), ImVec2(hi.x, hi.y),
+                      frame.overlay_live ? kSage : kHair, 2.0f);
+    }
+    if (frame.overlay_live) {
+        ImGui::SameLine(0.0f, 10.0f);
+        push_small();
+        // Said plainly rather than left to be discovered: a receiver waiting for
+        // a sender looks exactly like a receiver that is broken.
+        ImGui::PushStyleColor(ImGuiCol_Text,
+                              rgba(frame.live_connected ? kFaint : kAmber));
+        if (frame.live_connected && frame.live_is_self) {
+            ImGui::PopStyleColor();
+            ImGui::PushStyleColor(ImGuiCol_Text, rgba(kAmber));
+            ImGui::Text("retour \xE2\x80\x94 sa propre sortie \xC2\xB7 %.1f s",
+                        static_cast<double>(frame.live_span_s));
+        } else if (frame.live_connected) {
+            ImGui::Text("%s \xC2\xB7 %.1f s d'historique", frame.live_sender.c_str(),
+                        static_cast<double>(frame.live_span_s));
+        } else {
+            ImGui::TextUnformatted("aucun sender Spout");
+        }
+        ImGui::PopStyleColor();
+        pop_font();
+    }
+
     ImGui::Dummy(ImVec2(0.0f, 10.0f));
     eyebrow("EFFETS \xE2\x80\x94 audio et vid\xC3\xA9o sur le m\xC3\xAAme bouton");
     ImGui::Dummy(ImVec2(0.0f, 4.0f));

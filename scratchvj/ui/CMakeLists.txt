@@ -157,7 +157,7 @@ target_include_directories(scratchvj_gpu PUBLIC
   ${CMAKE_CURRENT_BINARY_DIR}/generated_shaders)
 target_link_libraries(scratchvj_gpu PUBLIC bgfx bx bimg scratchvj_core)
 
-add_executable(scratchvj_ui WIN32 imgui_impl_bgfx.cpp main_ui.cpp media.cpp netout.cpp
+add_executable(scratchvj_ui WIN32 imgui_impl_bgfx.cpp live_in.cpp main_ui.cpp media.cpp netout.cpp
                                   panels.cpp share.cpp
                                   ${SVJ_IMGUI_VS_HEADERS} ${SVJ_IMGUI_FS_HEADERS})
 target_link_libraries(scratchvj_ui PRIVATE scratchvj_app scratchvj_config scratchvj_imgui SDL3::SDL3 bgfx
@@ -212,6 +212,14 @@ if(WIN32)
   # core/protocol the packets were encoded with.
   add_executable(net_check tools/net_check.cpp)
   target_link_libraries(net_check PRIVATE scratchvj_core ws2_32)
+
+  # And the live input: frames come back IN, and what is kept is a history of
+  # different pictures rather than one repeated. Needs a sender running --
+  # scratchvj_ui is one, so the loop closes on a single machine.
+  add_executable(live_check tools/live_check.cpp live_in.cpp)
+  target_link_libraries(live_check PRIVATE scratchvj_core SDL3::SDL3 bgfx bx bimg
+                                           SpoutDX_static d3d11 dxgi)
+  target_include_directories(live_check PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
   # What OpenXR this machine offers: which runtime, which graphics binding,
   # which renderer bgfx picked, and whether a headset is awake. Every VR

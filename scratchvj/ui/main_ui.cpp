@@ -34,6 +34,7 @@
 #include "gpu_effects.h"
 #include "gpu_taps.h"
 #include "gpu_view360.h"
+#include "live_in.h"
 #include "media.h"
 #include "netout.h"
 #include "panels.h"
@@ -45,6 +46,9 @@ using namespace svj;
 
 constexpr double kBpm = 124.0;
 constexpr double kScriptSeconds = 24.0;
+// The name this application publishes its program under, and the one a live
+// receiver has to recognise as its own to warn about a feedback loop.
+constexpr const char* kShareName = "scratchvj";
 
 DeckCommands to_commands(const SimEvent& events) {
     DeckCommands commands;
@@ -166,6 +170,10 @@ int main(int, char**) {
     // With no caches at all, the fabricated demo decks stay and the wells say
     // honestly why they are empty.
     svj::ui::DeckMedia media_a, media_b, media_overlay;
+    // Opened only when the performer asks for it: a Spout receiver held open
+    // permanently would keep a DirectX device alive for a feature nobody is
+    // using, and would connect to whatever sender happened to appear.
+    svj::ui::LiveInput live_overlay;
     svj::ui::ProgramGpu gpu;
     svj::ui::View360Gpu view360a;
     svj::ui::EffectsGpu effects;
@@ -175,7 +183,7 @@ int main(int, char**) {
     // listening cost nothing, and an output that must be switched on before it
     // can be discovered never gets discovered.
     svj::ui::ProgramShare share;
-    share.open("scratchvj");
+    share.open(kShareName);
 
     // The control stream, on localhost by default: Unreal, TouchDesigner or the
     // net_check tool listen on the same machine first. Opened unconditionally
@@ -438,7 +446,40 @@ int main(int, char**) {
             view.tex_a = view360a.imgui_texture();
         }
         view.tex_b = media_b.frame_at(engine.deck_b().played.position_s);
-        media_overlay.frame_at(engine.overlay().played.position_s);
+
+        // The overlay's source: a clip, or a live Spout sender. Opened and shut
+        // here rather than in the panel, because that is I/O.
+        //
+        // The live overlay reads the PRESENT -- newest_s() -- and nothing else.
+        // The ring's history is there and full, but reaching into it means
+        // deciding whether a held position keeps the frame or keeps its distance
+        // behind the present, and that decision belongs to a scratchable live
+        // DECK (DeckSource::Live), which is not written. Reading only the
+        // present is the part that has no such question, so it is the part that
+        // ships.
+        if (view.overlay_live && !live_overlay.ready()) {
+            if (!live_overlay.open("")) {
+                std::fprintf(stderr, "entree live: DX11 indisponible\n");
+                view.overlay_live = false;
+            }
+        } else if (!view.overlay_live && live_overlay.ready()) {
+            live_overlay.close();
+        }
+
+        std::uint16_t overlay_source = media_overlay.texture_index();
+        if (live_overlay.ready()) {
+            live_overlay.poll(wall_s);
+            live_overlay.frame_at(live_overlay.ring().newest_s());
+            if (live_overlay.texture_index() != 0xFFFF) {
+                overlay_source = live_overlay.texture_index();
+            }
+        } else {
+            media_overlay.frame_at(engine.overlay().played.position_s);
+        }
+        view.live_connected = live_overlay.connected();
+        view.live_sender = live_overlay.sender_name();
+        view.live_span_s = static_cast<float>(live_overlay.ring().span_s());
+        view.live_is_self = view.live_sender == kShareName;
 
         // The program: what actually leaves the machine, composited on the GPU
         // by the shader gpu_check holds to core/compose. The interface previews
@@ -447,7 +488,7 @@ int main(int, char**) {
         if (gpu.ready()) {
             gpu.render(view360a.ready() ? view360a.texture_index() : deck_a_source,
                        deck_b_source,
-                       media_overlay.texture_index(), engine.stack().a,
+                       overlay_source, engine.stack().a,
                        engine.stack().b, engine.stack().overlay,
                        static_cast<int>(engine.overlay_layer().blend));
             // The rack, over the composited program. What leaves the machine
