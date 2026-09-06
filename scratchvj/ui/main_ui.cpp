@@ -28,10 +28,9 @@
 #include "imgui.h"
 #include "imgui_impl_sdl3.h"
 #include <bgfx/bgfx.h>
-#include <bgfx/platform.h>
 
 #include "imgui_impl_bgfx.h"
-#include "core/compose.h"
+#include "gpu_compose.h"
 #include "media.h"
 #include "netout.h"
 #include "panels.h"
@@ -78,12 +77,12 @@ int main(int, char**) {
     // IS the app loop, and a second thread would buy jitter before speed.
     bgfx::renderFrame();
     bgfx::Init init;
-    init.platformData.nwh = SDL_GetPointerProperty(SDL_GetWindowProperties(window),
-                                                   SDL_PROP_WINDOW_WIN32_HWND_POINTER,
-                                                   nullptr);
-    init.resolution.width = static_cast<std::uint32_t>(pixel_w);
-    init.resolution.height = static_cast<std::uint32_t>(pixel_h);
-    init.resolution.reset = BGFX_RESET_VSYNC;
+    init.swapChain.nwh = SDL_GetPointerProperty(SDL_GetWindowProperties(window),
+                                                SDL_PROP_WINDOW_WIN32_HWND_POINTER,
+                                                nullptr);
+    init.swapChain.width = static_cast<std::uint32_t>(pixel_w);
+    init.swapChain.height = static_cast<std::uint32_t>(pixel_h);
+    init.reset = BGFX_RESET_VSYNC;
     if (!bgfx::init(init)) {
         std::fprintf(stderr, "bgfx::init a echoue\n");
         SDL_DestroyWindow(window);
@@ -91,7 +90,8 @@ int main(int, char**) {
         return 1;
     }
     // The mockup's ground colour, painted by the clear rather than by a quad.
-    bgfx::setViewClear(0, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x141412ff, 1.0f, 0);
+    // View 1 is the backbuffer; view 0 belongs to the program compositor.
+    bgfx::setViewClear(1, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x141412ff, 1.0f, 0);
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -136,7 +136,10 @@ int main(int, char**) {
         io.FontDefault = svj::ui::g_fonts.sans;
     }
     ImGui_ImplSDL3_InitForOther(window);
-    if (!svj::ui::ImGuiBgfx_Init(0)) {
+    // View order is the pipeline order: 0 composites the program offscreen,
+    // 1 draws the interface (which samples the program), 2 blits the program
+    // out for readback.
+    if (!svj::ui::ImGuiBgfx_Init(1)) {
         std::fprintf(stderr, "backend ImGui bgfx: echec\n");
         return 1;
     }
@@ -156,8 +159,7 @@ int main(int, char**) {
     // With no caches at all, the fabricated demo decks stay and the wells say
     // honestly why they are empty.
     svj::ui::DeckMedia media_a, media_b, media_overlay;
-    std::vector<std::uint8_t> program;
-    std::uint16_t program_tex = 0xFFFF;
+    svj::ui::ProgramGpu gpu;
 
     // The Spout sender is opened unconditionally: receivers that are not
     // listening cost nothing, and an output that must be switched on before it
@@ -231,6 +233,14 @@ int main(int, char**) {
         (void)remaining;
     }
 
+    if (media_a.ready() || media_b.ready()) {
+        const std::uint32_t pw = media_a.ready() ? media_a.width() : media_b.width();
+        const std::uint32_t ph = media_a.ready() ? media_a.height() : media_b.height();
+        if (!gpu.init(pw, ph, 0, 2)) {
+            std::fprintf(stderr, "compositeur GPU: init a echoue\n");
+        }
+    }
+
     const auto started = std::chrono::steady_clock::now();
     double previous_s = 0.0;
     bool running = true;
@@ -250,8 +260,10 @@ int main(int, char**) {
             if (event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED &&
                 event.window.windowID == SDL_GetWindowID(window)) {
                 SDL_GetWindowSizeInPixels(window, &pixel_w, &pixel_h);
-                bgfx::reset(static_cast<std::uint32_t>(pixel_w),
-                            static_cast<std::uint32_t>(pixel_h), BGFX_RESET_VSYNC);
+                bgfx::SwapChain resized;
+                resized.width = static_cast<std::uint32_t>(pixel_w);
+                resized.height = static_cast<std::uint32_t>(pixel_h);
+                bgfx::reset(BGFX_RESET_VSYNC, &resized);
             }
         }
 
@@ -295,63 +307,38 @@ int main(int, char**) {
         view.tex_b = media_b.frame_at(engine.deck_b().played.position_s);
         media_overlay.frame_at(engine.overlay().played.position_s);
 
-        // The program: what actually leaves the machine. Composited on the CPU
-        // (core/compose, tested) at deck A's resolution, shown in the interface
-        // and published over Spout -- the same bytes for both, so the preview
-        // can never flatter what a receiver gets.
-        if (media_a.ready() || media_b.ready()) {
-            const std::uint32_t pw = media_a.ready() ? media_a.width() : media_b.width();
-            const std::uint32_t ph = media_a.ready() ? media_a.height() : media_b.height();
-            const StackWeights stack = engine.stack();
-
-            clear_program(program, pw, ph);
-            accumulate_layer(program, pw, ph,
-                             ComposeLayer{media_a.pixels(), media_a.width(),
-                                          media_a.height(), stack.a, BlendMode::Normal});
-            // B rides on top additively: with the constant-power crossfader that
-            // is a fade, and it keeps a transform cut from going through black.
-            accumulate_layer(program, pw, ph,
-                             ComposeLayer{media_b.pixels(), media_b.width(),
-                                          media_b.height(), stack.b, BlendMode::Add});
-            accumulate_layer(program, pw, ph,
-                             ComposeLayer{media_overlay.pixels(), media_overlay.width(),
-                                          media_overlay.height(), stack.overlay,
-                                          engine.overlay_layer().blend});
-
-            if (program_tex == 0xFFFF) {
-                const bgfx::TextureHandle handle = bgfx::createTexture2D(
-                    static_cast<std::uint16_t>(pw), static_cast<std::uint16_t>(ph),
-                    false, 1, bgfx::TextureFormat::RGBA8, BGFX_SAMPLER_NONE);
-                if (bgfx::isValid(handle)) program_tex = handle.idx;
-            }
-            if (program_tex != 0xFFFF) {
-                bgfx::TextureHandle handle;
-                handle.idx = program_tex;
-                bgfx::updateTexture2D(
-                    handle, 0, 0, 0, 0, static_cast<std::uint16_t>(pw),
-                    static_cast<std::uint16_t>(ph),
-                    bgfx::copy(program.data(),
-                               static_cast<std::uint32_t>(program.size())));
-                view.tex_program = reinterpret_cast<void*>(
-                    svj::ui::ImGuiBgfx_TextureId(program_tex));
-                view.program_width = pw;
-                view.program_height = ph;
-            }
-            share.send(program.data(), pw, ph);
+        // The program: what actually leaves the machine, composited on the GPU
+        // by the shader gpu_check holds to core/compose. The interface previews
+        // the render target itself; Spout receives the readback a couple of
+        // frames later, which a video feed cannot see.
+        if (gpu.ready()) {
+            gpu.render(media_a.texture_index(), media_b.texture_index(),
+                       media_overlay.texture_index(), engine.stack().a,
+                       engine.stack().b, engine.stack().overlay,
+                       static_cast<int>(engine.overlay_layer().blend));
+            view.tex_program = gpu.imgui_texture();
+            view.program_width = gpu.width();
+            view.program_height = gpu.height();
         }
         svj::ui::draw(engine, view);
 
         ImGui::Render();
-        bgfx::setViewRect(0, 0, 0, static_cast<std::uint16_t>(pixel_w),
+        bgfx::setViewRect(1, 0, 0, static_cast<std::uint16_t>(pixel_w),
                           static_cast<std::uint16_t>(pixel_h));
-        bgfx::touch(0);  // the clear runs even on a frame with nothing else
+        bgfx::touch(1);  // the clear runs even on a frame with nothing else
         svj::ui::ImGuiBgfx_Render(ImGui::GetDrawData());
-        bgfx::frame();
+        const std::uint32_t frame_number = bgfx::frame();
+
+        // A completed readback of the program, when the GPU has one for us.
+        if (const std::uint8_t* pixels = gpu.completed_frame(frame_number)) {
+            share.send(pixels, gpu.width(), gpu.height());
+        }
     }
 
     media_a.close();
     media_b.close();
     media_overlay.close();
+    gpu.destroy();
     svj::ui::ImGuiBgfx_Shutdown();
     ImGui_ImplSDL3_Shutdown();
     ImGui::DestroyContext();

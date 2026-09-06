@@ -1,15 +1,31 @@
 #include "imgui_impl_bgfx.h"
 
+#include <cstddef>
+#include <cstring>
+
 #include <bgfx/bgfx.h>
+
+// See gpu_compose.cpp: our shaders carry no WebGPU build.
+#define BGFX_PLATFORM_SUPPORTS_WGSL 0
 #include <bgfx/embedded_shader.h>
 
 #include "imgui.h"
 
-// The example shaders bgfx ships prebuilt for every backend.
-#include "fs_imgui_image.bin.h"
-#include "fs_ocornut_imgui.bin.h"
-#include "vs_imgui_image.bin.h"
-#include "vs_ocornut_imgui.bin.h"
+// ImGui's shaders, compiled by our own shaderc pass from bgfx's example
+// sources -- see the CMake note about why the example directory itself is
+// never on the include path.
+#include "essl/fs_ocornut_imgui.sc.bin.h"
+#include "essl/vs_ocornut_imgui.sc.bin.h"
+#include "glsl/fs_ocornut_imgui.sc.bin.h"
+#include "glsl/vs_ocornut_imgui.sc.bin.h"
+#include "spirv/fs_ocornut_imgui.sc.bin.h"
+#include "spirv/vs_ocornut_imgui.sc.bin.h"
+#if defined(_WIN32)
+#include "dxbc/fs_ocornut_imgui.sc.bin.h"
+#include "dxbc/vs_ocornut_imgui.sc.bin.h"
+#include "dxil/fs_ocornut_imgui.sc.bin.h"
+#include "dxil/vs_ocornut_imgui.sc.bin.h"
+#endif
 
 namespace svj::ui {
 namespace {
@@ -17,8 +33,6 @@ namespace {
 const bgfx::EmbeddedShader kShaders[] = {
     BGFX_EMBEDDED_SHADER(vs_ocornut_imgui),
     BGFX_EMBEDDED_SHADER(fs_ocornut_imgui),
-    BGFX_EMBEDDED_SHADER(vs_imgui_image),
-    BGFX_EMBEDDED_SHADER(fs_imgui_image),
     BGFX_EMBEDDED_SHADER_END(),
 };
 
@@ -166,8 +180,11 @@ void ImGuiBgfx_Render(ImDrawData* draw_data) {
     const ImVec2 clip_off = draw_data->DisplayPos;
     const ImVec2 clip_scale = draw_data->FramebufferScale;
 
-    for (int list_index = 0; list_index < draw_data->CmdListsCount; ++list_index) {
-        const ImDrawList* commands = draw_data->CmdLists[list_index];
+    // CmdLists is the truth; the legacy CmdListsCount int is no longer kept in
+    // step by every ImGui version, and iterating it renders nothing at all --
+    // the bug that once left this window empty while metrics counted 5508
+    // vertices that were really there.
+    for (const ImDrawList* commands : draw_data->CmdLists) {
 
         const std::uint32_t vertex_count =
             static_cast<std::uint32_t>(commands->VtxBuffer.Size);

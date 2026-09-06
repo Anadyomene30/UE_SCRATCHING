@@ -2,7 +2,6 @@
 
 #include <bgfx/bgfx.h>
 
-#include "core/bc1.h"
 #include "imgui_impl_bgfx.h"
 
 namespace svj::ui {
@@ -25,9 +24,9 @@ bool DeckMedia::open(const std::string& path, std::string& error) {
     close();
     if (!reader_.open(path, error)) return false;
     if (reader_.header().format != BlockFormat::BC1) {
-        // The CPU reference decoder only speaks BC1, and the compositor needs
-        // it. Refusing beats showing garbage that looks like a corrupt clip.
-        error = "seul BC1 est décodable pour le compositeur pour l'instant";
+        // The texture below is created as BC1; feeding it BC3/BC7 blocks would
+        // display convincing garbage. Refusing names the real problem instead.
+        error = "seul BC1 est géré par l'affichage pour l'instant";
         reader_.close();
         return false;
     }
@@ -70,7 +69,6 @@ void* DeckMedia::frame_at(double position_s) {
                           bgfx::copy(packed_.data(),
                                      static_cast<std::uint32_t>(packed_.size())));
 
-    decode_bc1(packed_.data(), header.width, header.height, rgba_);
     last_frame_ = frame;
     return reinterpret_cast<void*>(ImGuiBgfx_TextureId(texture_));
 }

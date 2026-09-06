@@ -12,7 +12,7 @@ tout ce qui reste à faire survive à la session qui l'a produit.
 | 2. Suivre le timecode | Logique faite (dont le profil `wireless`), décodeur xwax non intégré | `core/timecode`, `core/anchor`, `core/gestures` |
 | 3. Voir la vidéo | Fait de bout en bout : `scratchvj analyze` décode via l'exécutable ffmpeg, compresse en BC1 (`core/bc1`, testé) et écrit le `.svcache` ; l'interface affiche les frames | `core/videocache`, `core/framewindow`, `core/bc1`, `app/analyze` |
 | 4. Le Mac tourne | CI verte sur macOS depuis le premier commit ; portage audio/GPU réel non fait | `.github/workflows/ci.yml` |
-| 5. Mixer | Courbes, blend modes, détection de transform faits ; le program est composité en CPU (`core/compose`, la référence des futurs shaders) ; compositing GPU restant | `core/mixer`, `core/compose` |
+| 5. Mixer | Courbes, blend modes, détection de transform faits ; le program est composité sur le GPU (`fs_program.sc`), tenu conforme à sa référence `core/compose` par l'outil `gpu_check` (écart max 1/255) | `core/mixer`, `core/compose` |
 | 6. Transport | Fait en entier : boucles, hot cues, beat jump, slip, ABS/REL/INT, plus la source de position et les modes de lecture par deck | `core/transport`, `core/playback` |
 | 7. 360 | Géométrie faite (perspective, little planet, fisheye) ; échantillonnage GPU non fait | `core/sphere` |
 | 8. Mode autonome | Non commencé (a besoin d'un vrai backend audio) | — |
@@ -26,11 +26,11 @@ lecture par deck), `core/library` (bibliothèque et queue), `core/take`
 (enregistrement/relecture d'une prise), `app/` (démo et tableau de bord qui font
 tourner tout ça sans matériel).
 
-**Ce qui reste, dans les grandes lignes** : tout ce qui touche du matériel ou une
-dépendance lourde — le décodeur `timecoder.c` de xwax, un vrai périphérique MIDI et
-audio, la passe d'analyse FFmpeg, le rendu GPU (bgfx), l'interface Dear ImGui, les
-sorties Spout/NDI, et le plugin Unreal. Rien de tout ça n'est vérifiable sans être
-devant le matériel, donc rien n'a été écrit à l'aveugle.
+**Ce qui reste, dans les grandes lignes** : le décodeur `timecoder.c` de xwax,
+un vrai périphérique MIDI (RtMidi) et audio (miniaudio/ASIO), les effets vidéo et
+l'échantillonnage 360 en shaders, Syphon/NDI, la FFT audio-réactive, les entrées
+live, et le test en scène du plugin Unreal. Le reste du plan initial est fait et
+vérifié — voir le tableau ci-dessus.
 
 **Deux tests qui reviennent à l'utilisateur, devant le matériel :**
 1. Est-ce que l'Elite émet son état MIDI à la connexion ? Ça décide du sort du

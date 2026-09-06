@@ -6,10 +6,8 @@
 // of analysing clips into a block-compressed format. The hardware has decoded
 // BC1 in its samplers since the nineties.
 //
-// One CPU decode does remain: pixels() feeds the CPU program compositor (the
-// tested reference the future GPU compositor will be validated against) and
-// the Spout output. It disappears from the hot path the day compositing moves
-// onto the GPU; the display path is already free of it.
+// No CPU decode remains in the hot path at all: the program compositor runs on
+// the GPU as well (ui/gpu_compose), and Spout is fed by readback of its output.
 //
 // The cache read is also, knowingly, a DISK read per frame rather than a read
 // from the VRAM window. The FrameWindow tracks what OUGHT to be resident and
@@ -39,17 +37,17 @@ public:
     // value; null when nothing is loaded or a read fails.
     void* frame_at(double position_s);
 
-    // The last frame decoded, as CPU pixels -- what the program compositor
-    // consumes. Null until a first frame has been shown.
-    const std::uint8_t* pixels() const { return rgba_.empty() ? nullptr : rgba_.data(); }
     std::uint32_t width() const { return reader_.header().width; }
     std::uint32_t height() const { return reader_.header().height; }
+
+    // The bgfx handle index of the deck's texture, for the GPU compositor.
+    // 0xFFFF until a first frame has been shown.
+    std::uint16_t texture_index() const { return texture_; }
 
 private:
     CacheReader reader_;
     std::uint16_t texture_ = 0xFFFF;  // bgfx handle index; 0xFFFF = none
     std::vector<std::uint8_t> packed_;
-    std::vector<std::uint8_t> rgba_;
     std::uint32_t last_frame_ = 0xFFFFFFFFu;
     bool open_ = false;
 };

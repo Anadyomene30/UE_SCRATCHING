@@ -84,9 +84,10 @@ l'aveugle :
 
 - Le décodeur de timecode `timecoder.c` (xwax, GPL-3)
 - Un vrai backend MIDI (RtMidi) et audio (miniaudio/ASIO)
-- La suite du rendu GPU : bgfx rend désormais l'interface et affiche les frames
-  BC1 sans décodage CPU (`ui/imgui_impl_bgfx`), mais le compositeur, les effets
-  vidéo et l'échantillonnage 360 restent à porter en shaders (shaderc à outiller)
+- La suite du rendu GPU : bgfx rend l'interface, les frames BC1 montent sans
+  décodage CPU, et le compositeur du program tourne en shader (`fs_program.sc`),
+  validé contre `core/compose` par `gpu_check` ; restent les effets vidéo et
+  l'échantillonnage 360 en shaders
 - Les sorties Syphon (macOS) et NDI — Spout est fait et vérifié (ui/share, spout_check)
 - Le test en scène du plugin Unreal `ScratchLink` — il compile contre UE 5.7 et le flux UDP est vérifié, mais personne n'a encore scratché une scène avec
 
