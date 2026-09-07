@@ -23,3 +23,6 @@ Thumbs.db
 design/maquette-scratchvj.html
 # Presets de mapping crees a l execution (specifiques a une salle)
 mappings/
+
+# Captures brutes des sondes DVS : gros, machine-specifiques, regenerables.
+dvs_capture.wav

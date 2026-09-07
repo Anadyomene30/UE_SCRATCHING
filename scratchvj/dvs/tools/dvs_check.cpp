@@ -192,9 +192,51 @@ int main(int argc, char** argv) {
     }
     const std::size_t frames = lanes[0].size();
 
+    // Saved before anything is analysed, so a capture that fails to lock can be
+    // worked on again and again without asking anyone to spin a record each
+    // time. This is the difference between debugging and guessing.
+    {
+        std::vector<std::int16_t> interleaved(frames * channels);
+        for (std::size_t i = 0; i < frames; ++i) {
+            for (unsigned c = 0; c < channels; ++c) {
+                const float v = std::clamp(lanes[c][i], -1.0f, 1.0f);
+                interleaved[i * channels + c] = static_cast<std::int16_t>(v * 32767.0f);
+            }
+        }
+        FILE* file = std::fopen("dvs_capture.wav", "wb");
+        if (file != nullptr) {
+            const std::uint32_t data_bytes =
+                static_cast<std::uint32_t>(interleaved.size() * 2);
+            const std::uint32_t byte_rate = rate * channels * 2;
+            const std::uint16_t block_align = static_cast<std::uint16_t>(channels * 2);
+            const std::uint32_t riff = 36 + data_bytes;
+            const std::uint32_t fmt_size = 16;
+            const std::uint16_t pcm = 1, bits = 16;
+            const auto ch16 = static_cast<std::uint16_t>(channels);
+            std::fwrite("RIFF", 1, 4, file);
+            std::fwrite(&riff, 4, 1, file);
+            std::fwrite("WAVEfmt ", 1, 8, file);
+            std::fwrite(&fmt_size, 4, 1, file);
+            std::fwrite(&pcm, 2, 1, file);
+            std::fwrite(&ch16, 2, 1, file);
+            std::fwrite(&rate, 4, 1, file);
+            std::fwrite(&byte_rate, 4, 1, file);
+            std::fwrite(&block_align, 2, 1, file);
+            std::fwrite(&bits, 2, 1, file);
+            std::fwrite("data", 1, 4, file);
+            std::fwrite(&data_bytes, 4, 1, file);
+            std::fwrite(interleaved.data(), 2, interleaved.size(), file);
+            std::fclose(file);
+            std::printf("capture enregistree : dvs_capture.wav (%u canaux, %.1f s)\n\n",
+                        channels, static_cast<double>(frames) / rate);
+        }
+    }
+
     // --- the matrix ----------------------------------------------------------
     struct Hit {
         unsigned pair = 0;
+        bool swapped = false;
+        bool phono = false;
         std::string definition;
         double position_s = 0.0;
         float pitch = 0.0f;
@@ -211,29 +253,42 @@ int main(int argc, char** argv) {
             peak = std::max(peak, std::max(std::fabs(lanes[c][i]), std::fabs(lanes[c + 1][i])));
         }
         if (peak < 0.001f) continue;
+        std::printf("  voies %u/%u : crete %.3f\n", c + 1, c + 2, peak);
 
-        stereo.resize(frames * 2);
-        for (std::size_t i = 0; i < frames; ++i) {
-            stereo[i * 2] = lanes[c][i];
-            stereo[i * 2 + 1] = lanes[c + 1][i];
-        }
-
-        for (const std::string& name : svj::dvs::known_definitions()) {
-            svj::dvs::TimecodeDecoder decoder;
-            if (!decoder.open(name, rate)) continue;
-
-            DecoderSample last;
-            const std::size_t block = 512;
-            for (std::size_t i = 0; i < frames; i += block) {
-                const std::size_t n = std::min(block, frames - i);
-                last = decoder.submit(stereo.data() + i * 2, n,
-                                      static_cast<double>(i) / rate);
+        // Both channel orders and both threshold settings. Order decides which
+        // channel xwax treats as primary -- which is the one it reads bits off,
+        // so the wrong way round does not merely invert direction, it can stop
+        // the bitstream resolving at all. And `phono` is a threshold: too high
+        // for a quiet signal and nothing crosses.
+        for (int swapped = 0; swapped < 2; ++swapped) {
+            stereo.resize(frames * 2);
+            for (std::size_t i = 0; i < frames; ++i) {
+                stereo[i * 2] = swapped ? lanes[c + 1][i] : lanes[c][i];
+                stereo[i * 2 + 1] = swapped ? lanes[c][i] : lanes[c + 1][i];
             }
-            if (last.position_s >= 0.0) {
-                hits.push_back({c, name, last.position_s, last.pitch, last.signal_level});
+
+            for (int phono = 0; phono < 2; ++phono) {
+                for (const std::string& name : svj::dvs::known_definitions()) {
+                    svj::dvs::TimecodeDecoder decoder;
+                    if (!decoder.open(name, rate, phono != 0)) continue;
+
+                    DecoderSample last;
+                    const std::size_t block = 512;
+                    for (std::size_t i = 0; i < frames; i += block) {
+                        const std::size_t n = std::min(block, frames - i);
+                        last = decoder.submit(stereo.data() + i * 2, n,
+                                              static_cast<double>(i) / rate);
+                    }
+                    if (last.position_s >= 0.0) {
+                        hits.push_back({c, swapped != 0, phono != 0, name,
+                                        last.position_s, last.pitch,
+                                        last.signal_level});
+                    }
+                }
             }
         }
     }
+    std::printf("\n");
 
     if (hits.empty()) {
         std::printf("=> AUCUN VERROUILLAGE.\n");
@@ -243,18 +298,21 @@ int main(int argc, char** argv) {
         return 3;
     }
 
-    std::printf("%-8s %-16s %12s %8s %8s\n", "voies", "definition", "position",
-                "pitch", "niveau");
+    std::printf("%-8s %-8s %-7s %-16s %12s %8s %8s\n", "voies", "ordre", "seuil",
+                "definition", "position", "pitch", "niveau");
     for (const Hit& hit : hits) {
         char pair[16];
         std::snprintf(pair, sizeof(pair), "%u/%u", hit.pair + 1, hit.pair + 2);
-        std::printf("%-8s %-16s %10.2f s %8.3f %8.3f\n", pair, hit.definition.c_str(),
-                    hit.position_s, hit.pitch, hit.level);
+        std::printf("%-8s %-8s %-7s %-16s %10.2f s %8.3f %8.3f\n", pair,
+                    hit.swapped ? "inverse" : "direct", hit.phono ? "phono" : "ligne",
+                    hit.definition.c_str(), hit.position_s, hit.pitch, hit.level);
     }
 
     const Hit& best = hits.front();
-    std::printf("\n=> VERROUILLE : %s sur les voies %u/%u.\n", best.definition.c_str(),
-                best.pair + 1, best.pair + 2);
+    std::printf("\n=> VERROUILLE : %s sur les voies %u/%u (%s, seuil %s).\n",
+                best.definition.c_str(), best.pair + 1, best.pair + 2,
+                best.swapped ? "canaux inverses" : "canaux directs",
+                best.phono ? "phono" : "ligne");
     if (best.pitch < 0.0f) {
         std::printf("   Le pitch est NEGATIF alors que le plateau tournait en avant :\n");
         std::printf("   les deux voies sont inversees. Il faut soit echanger les RCA,\n");

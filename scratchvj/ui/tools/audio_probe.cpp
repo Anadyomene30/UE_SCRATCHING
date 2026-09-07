@@ -323,8 +323,48 @@ struct Verdict {
     double carrier_hz = 0.0;
     double phase_deg = 0.0;
     double tonality = 0.0;
+    // How much the carrier's amplitude varies from cycle to cycle. THIS is the
+    // data: a DVS control signal encodes its position by dipping the carrier on
+    // every zero bit, so a real one swings by tens of percent. A bare carrier
+    // sits flat, and carries direction and speed but no position at all.
+    //
+    // Added because the probe called a bare 1000 Hz quadrature tone "TIMECODE":
+    // an MWM Phase in HID mode emits exactly that on its RCA outputs, and
+    // quadrature alone cannot tell it from the real thing. The decoder could
+    // then never lock, and nothing said why.
+    double modulation = 0.0;
     bool is_timecode = false;
 };
+
+// Peak amplitude per carrier cycle, as a relative spread. ~0 for a bare tone,
+// tens of percent for a modulated one.
+double modulation_depth(const std::vector<float>& samples, double hz, double rate) {
+    if (hz <= 0.0 || samples.empty()) return 0.0;
+    const double period = rate / hz;
+    if (period < 4.0) return 0.0;
+
+    std::vector<double> peaks;
+    for (double at = 0.0; at + period < static_cast<double>(samples.size());
+         at += period) {
+        double peak = 0.0;
+        const auto first = static_cast<std::size_t>(at);
+        const auto last = static_cast<std::size_t>(at + period);
+        for (std::size_t i = first; i < last; ++i) {
+            peak = std::max(peak, std::fabs(static_cast<double>(samples[i])));
+        }
+        peaks.push_back(peak);
+    }
+    if (peaks.size() < 8) return 0.0;
+
+    double mean = 0.0;
+    for (double p : peaks) mean += p;
+    mean /= static_cast<double>(peaks.size());
+    if (mean < 1e-9) return 0.0;
+
+    double variance = 0.0;
+    for (double p : peaks) variance += (p - mean) * (p - mean);
+    return std::sqrt(variance / static_cast<double>(peaks.size())) / mean;
+}
 
 Verdict judge(const std::vector<float>& left, const std::vector<float>& right,
               double rate) {
@@ -349,7 +389,16 @@ Verdict judge(const std::vector<float>& left, const std::vector<float>& right,
     const bool quadrature = std::fabs(std::fabs(verdict.phase_deg) - 90.0) < 35.0;
     const bool plausible = verdict.carrier_hz > 500.0 && verdict.carrier_hz < 3000.0;
     const bool tonal = verdict.tonality > 0.30 && peak > 0.005;
-    verdict.is_timecode = quadrature && plausible && tonal;
+
+    verdict.modulation =
+        std::max(modulation_depth(left, verdict.carrier_hz, rate),
+                 modulation_depth(right, verdict.carrier_hz, rate));
+    // 5% is well above the ~0.2% a bare carrier shows and well below the tens of
+    // percent a real bitstream produces, so it separates them without being
+    // fussy about a noisy cartridge.
+    const bool carries_data = verdict.modulation > 0.05;
+
+    verdict.is_timecode = quadrature && plausible && tonal && carries_data;
     return verdict;
 }
 
@@ -363,30 +412,36 @@ int self_test() {
     int failures = 0;
 
     const auto report = [&](const char* name, const Verdict& verdict, bool expected) {
-        std::printf("%-34s %7.0f Hz  %+6.0f deg  tonalite %.3f  -> %s\n", name,
+        std::printf("%-34s %7.0f Hz  %+6.0f deg  ton %.2f  mod %.3f  -> %s\n", name,
                     verdict.carrier_hz, verdict.phase_deg, verdict.tonality,
-                    verdict.is_timecode ? "TIMECODE" : "rejete");
+                    verdict.modulation, verdict.is_timecode ? "TIMECODE" : "rejete");
         if (verdict.is_timecode != expected) {
             std::fprintf(stderr, "   ATTENDU : %s\n", expected ? "TIMECODE" : "rejete");
             ++failures;
         }
     };
 
-    // A control signal: two sines a quarter cycle apart.
+    // A control signal: two sines a quarter cycle apart, with the amplitude
+    // dipping on alternate cycles the way a bitstream modulates it.
+    const auto fill = [&](std::vector<float>& left, std::vector<float>& right,
+                          double hz, double amplitude, double phase, bool modulated) {
+        for (std::size_t i = 0; i < n; ++i) {
+            const double t = 2.0 * kPi * hz * static_cast<double>(i) / kRate;
+            // Every other carrier cycle carries a "zero bit" and is quieter.
+            const auto cycle = static_cast<long long>(hz * static_cast<double>(i) / kRate);
+            const double depth = (modulated && (cycle & 1) == 0) ? 0.55 : 1.0;
+            left[i] = static_cast<float>(amplitude * depth * std::sin(t));
+            right[i] = static_cast<float>(amplitude * depth * std::sin(t + phase));
+        }
+    };
+
     {
         std::vector<float> left(n), right(n);
-        for (std::size_t i = 0; i < n; ++i) {
-            const double t = 2.0 * kPi * 1000.0 * static_cast<double>(i) / kRate;
-            left[i] = static_cast<float>(0.4 * std::sin(t));
-            right[i] = static_cast<float>(0.4 * std::sin(t + kPi * 0.5));
-        }
+        fill(left, right, 1000.0, 0.4, kPi * 0.5, true);
         const Verdict one_way = judge(left, right, kRate);
         report("timecode 1 kHz, R en avance", one_way, true);
 
-        for (std::size_t i = 0; i < n; ++i) {
-            const double t = 2.0 * kPi * 1000.0 * static_cast<double>(i) / kRate;
-            right[i] = static_cast<float>(0.4 * std::sin(t - kPi * 0.5));
-        }
+        fill(left, right, 1000.0, 0.4, -kPi * 0.5, true);
         const Verdict other_way = judge(left, right, kRate);
         report("timecode 1 kHz, R en retard", other_way, true);
 
@@ -406,12 +461,20 @@ int self_test() {
     // A weak carrier: level must not be what disqualifies it.
     {
         std::vector<float> left(n), right(n);
-        for (std::size_t i = 0; i < n; ++i) {
-            const double t = 2.0 * kPi * 1200.0 * static_cast<double>(i) / kRate;
-            left[i] = static_cast<float>(0.02 * std::sin(t));
-            right[i] = static_cast<float>(0.02 * std::sin(t + kPi * 0.5));
-        }
+        fill(left, right, 1200.0, 0.02, kPi * 0.5, true);
         report("timecode faible (0.02)", judge(left, right, kRate), true);
+    }
+
+    // THE CASE THAT WAS MISSING, and it cost a real debugging session. An MWM
+    // Phase in HID mode puts a bare 1 kHz quadrature tone on its RCA outputs:
+    // textbook quadrature, perfectly tonal, and carrying no position at all,
+    // because the bitstream that encodes position is exactly the amplitude
+    // modulation this signal does not have. Calling it timecode sent the
+    // decoder hunting for a lock that could never come.
+    {
+        std::vector<float> left(n), right(n);
+        fill(left, right, 1000.0, 0.2, kPi * 0.5, false);
+        report("porteuse nue (Phase en HID)", judge(left, right, kRate), false);
     }
 
     // The room that fooled it. Deterministic pseudo-noise, so this test says the

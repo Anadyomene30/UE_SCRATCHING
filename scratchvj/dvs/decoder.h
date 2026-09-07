@@ -42,7 +42,13 @@ public:
 
     // `definition` is one of known_definitions(). Returns false on an unknown
     // name or an implausible sample rate.
-    bool open(const std::string& definition, unsigned sample_rate);
+    //
+    // `phono` drops xwax's zero-crossing threshold by about 36 dB, for a signal
+    // coming off a cartridge rather than a line output. It is a THRESHOLD, not
+    // an equaliser: getting it wrong does not distort anything, it just makes
+    // the decoder deaf to a quiet signal or jumpy on a loud one. Which one a
+    // given desk needs is measured by tools/dvs_check, not assumed.
+    bool open(const std::string& definition, unsigned sample_rate, bool phono = false);
     void close();
     bool ready() const { return impl_ != nullptr; }
     const std::string& definition() const { return definition_; }

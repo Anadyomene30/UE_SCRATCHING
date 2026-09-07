@@ -61,19 +61,30 @@ projet à part, résultat non garanti, et le RCA marche aujourd'hui.)
 > vidéo s'ajoute à ses habitudes sans rien changer, ou impose de basculer en DVS
 > pour les sessions vidéo.
 >
-> **RÉPONDU le 2026-09-07 : OUI.** Serato en HID pendant toute la mesure, et le
-> récepteur émet quand même sur ses RCA. Signal trouvé sur **MOTU « In 1-24 »,
-> voies 5/6** : porteuse **1086 Hz**, déphasage **+90°**, tonalité **0,70**, lu
-> en **WASAPI partagé** sans rien retirer à Serato.
+> **RÉPONDU le 2026-09-07, en deux temps — et la première réponse était fausse.**
 >
-> **La configuration recommandée est donc celle qui ne change rien aux habitudes :**
-> Serato en HID comme d'habitude, RCA du récepteur dans la MOTU, scratchvj lit
-> les voies 5/6 en parallèle. Pas de deuxième machine, pas de second câble USB,
-> pas de bascule entre sessions audio et vidéo, et la table hors du chemin
-> timecode. Les trois lignes du tableau ci-dessus restent valables comme replis.
+> Il y a bien un signal sur les RCA pendant que le Phase est en HID : porteuse
+> **1000 Hz exacte**, quadrature nette, sur **MOTU « In 1-24 » voies 5/6**, lue
+> en WASAPI partagé sans rien retirer à Serato. J'en ai conclu trop vite que HID
+> et DVS coexistaient.
 >
-> Reste à calibrer : quel signe du déphasage veut dire « avant ». Un tour de
-> plateau dans un sens connu suffit.
+> **Mais cette porteuse ne porte aucune donnée.** L'analyse de la capture
+> (`dvs_capture.wav`) donne une enveloppe plate à **0,17 % d'écart-type** ; un
+> vrai timecode Serato descend à ~50 % sur chaque bit à zéro. Les neuf
+> définitions de xwax, sur toutes les paires de canaux, dans les deux ordres et
+> aux deux seuils, n'ont **jamais verrouillé** — il n'y a rien à verrouiller.
+>
+> **Ce que le Phase en HID met donc sur ses RCA : direction et vitesse, pas de
+> position.** La position est justement ce que la modulation d'amplitude encode.
+>
+> Conséquence : pour que scratchvj lise une position, **le récepteur doit être en
+> mode DVS**, c'est-à-dire alimenté par un chargeur 5 V et *non* relié en USB à
+> l'ordinateur (c'est exactement ce que dit la procédure MWM : « Power your Phase
+> Receiver via USB to any power supply (5V) »). Serato repasse alors en REL.
+>
+> `audio_probe` mesure désormais la **modulation** en plus de la quadrature, et
+> son selftest contient le cas « porteuse nue (Phase en HID) » — c'est le test
+> qui aurait évité cette conclusion hâtive.
 >
 > (Question d'origine, conservée pour le raisonnement :)
 > **Le récepteur émet-il encore sur ses RCA pendant qu'il est en HID ?** La doc MWM présente HID et DVS comme

@@ -24,7 +24,8 @@ TimecodeDecoder::TimecodeDecoder() = default;
 
 TimecodeDecoder::~TimecodeDecoder() { close(); }
 
-bool TimecodeDecoder::open(const std::string& definition, unsigned sample_rate) {
+bool TimecodeDecoder::open(const std::string& definition, unsigned sample_rate,
+                           bool phono) {
     close();
     if (sample_rate < 8000 || sample_rate > 192000) return false;
 
@@ -35,7 +36,7 @@ bool TimecodeDecoder::open(const std::string& definition, unsigned sample_rate) 
     // Speed 1.0: the record turns at its nominal rate. The Phase's remotes are
     // configured for 33 RPM in Phase Manager, which IS the nominal rate for the
     // Serato definitions, so no correction belongs here.
-    timecoder_init(&impl_->tc, def, 1.0, sample_rate, false);
+    timecoder_init(&impl_->tc, def, 1.0, sample_rate, phono);
     definition_ = definition;
     sample_rate_ = sample_rate;
     return true;
