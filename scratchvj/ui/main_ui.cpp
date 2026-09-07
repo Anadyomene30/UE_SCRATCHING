@@ -474,6 +474,21 @@ int main(int argc, char** argv) {
             view.learn_skip = false;
         }
 
+        // Retried while absent, because a DJ does not power the rig in the order
+        // an application would prefer: the mixer switched on after the window
+        // opened would otherwise never be seen. Once a second, so a missing port
+        // costs nothing.
+        static double last_midi_try_s = 0.0;
+        if (!midi.ready() && wall_s - last_midi_try_s >= 1.0) {
+            last_midi_try_s = wall_s;
+            if (midi.open(desk.midi_port)) {
+                // The values on screen were the script's, and the mixer's knobs
+                // are wherever they physically are. Nothing is known until each
+                // one moves.
+                engine.surface().forget_positions();
+            }
+        }
+
         midi.drain(midi_events);
         for (const MidiEvent& midi_event : midi_events) {
             if (learn.active()) {
