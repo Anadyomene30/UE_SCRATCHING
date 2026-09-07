@@ -61,8 +61,22 @@ projet à part, résultat non garanti, et le RCA marche aujourd'hui.)
 > vidéo s'ajoute à ses habitudes sans rien changer, ou impose de basculer en DVS
 > pour les sessions vidéo.
 >
-> **Question ouverte, mesurable en une commande : le récepteur émet-il encore
-> sur ses RCA pendant qu'il est en HID ?** La doc MWM présente HID et DVS comme
+> **RÉPONDU le 2026-09-07 : OUI.** Serato en HID pendant toute la mesure, et le
+> récepteur émet quand même sur ses RCA. Signal trouvé sur **MOTU « In 1-24 »,
+> voies 5/6** : porteuse **1086 Hz**, déphasage **+90°**, tonalité **0,70**, lu
+> en **WASAPI partagé** sans rien retirer à Serato.
+>
+> **La configuration recommandée est donc celle qui ne change rien aux habitudes :**
+> Serato en HID comme d'habitude, RCA du récepteur dans la MOTU, scratchvj lit
+> les voies 5/6 en parallèle. Pas de deuxième machine, pas de second câble USB,
+> pas de bascule entre sessions audio et vidéo, et la table hors du chemin
+> timecode. Les trois lignes du tableau ci-dessus restent valables comme replis.
+>
+> Reste à calibrer : quel signe du déphasage veut dire « avant ». Un tour de
+> plateau dans un sens connu suffit.
+>
+> (Question d'origine, conservée pour le raisonnement :)
+> **Le récepteur émet-il encore sur ses RCA pendant qu'il est en HID ?** La doc MWM présente HID et DVS comme
 > des alternatives, sans dire que le HID coupe les RCA. Si les deux coexistent,
 > la meilleure configuration suiveur devient : **Serato en HID** (son intégration
 > native, sans REL) **+ scratchvj sur les RCA** (vers la MOTU, sans toucher à la
