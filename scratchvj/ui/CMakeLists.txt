@@ -235,6 +235,12 @@ if(WIN32)
   add_executable(audio_probe tools/audio_probe.cpp)
   target_link_libraries(audio_probe PRIVATE ole32)
 
+  # The quadrature tracker against the real carrier: which channel pair, which
+  # sign is forwards, and what the carrier actually is. core/quadrature's tests
+  # prove the maths; this proves the wiring.
+  add_executable(quad_check tools/quad_check.cpp)
+  target_link_libraries(quad_check PRIVATE scratchvj_core ole32)
+
   # What OpenXR this machine offers: which runtime, which graphics binding,
   # which renderer bgfx picked, and whether a headset is awake. Every VR
   # decision rests on those four facts and none of them can be guessed.

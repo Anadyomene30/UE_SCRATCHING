@@ -97,6 +97,14 @@ projet à part, résultat non garanti, et le RCA marche aujourd'hui.)
 > complètement**. Donc il vient bien du Phase et suit bien la rotation. Ce
 > récepteur met la *rotation* sur ses RCA, pas la *position*.
 >
+> **Et le décodeur de quadrature le lit, sur le vrai signal (2026-09-07).**
+> `quad_check MOTU 6`, remote à 33 tours sans pitch : porteuse 1000 Hz sur les
+> voies **5/6**, **5,98 s de disque parcourus en 5,98 s de capture** (vitesse
+> 0,999), zéro dépassement de vitesse. **Sens correct tel que câblé** — aucune
+> inversion de canaux à compenser. C'est la calibration que le code ne devait pas
+> deviner, et elle est faite : `carrier_hz = 1000`, canaux dans l'ordre, paire
+> 5/6 de la MOTU.
+>
 > **Conséquence pour l'architecture, et elle est structurante.** Le signal porte
 > exactement ce qu'il faut pour scratcher — direction et vitesse — et rien de
 > plus. La position absolue est absente, mais elle l'était déjà : le Phase est un
