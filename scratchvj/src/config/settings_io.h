@@ -30,6 +30,10 @@ struct DeskSettings {
     // by a factor and every velocity is wrong by that factor -- so it is
     // measured with quad_check, never guessed.
     double carrier_hz = 1000.0;
+
+    // A fragment of the MIDI input port's name. "ELITE" on this desk; the
+    // mixer's control map is never hard-coded, only which port to listen to.
+    std::string midi_port = "ELITE";
 };
 
 std::string settings_to_json(const DeskSettings& settings);

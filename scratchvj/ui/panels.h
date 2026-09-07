@@ -134,6 +134,24 @@ struct Frame {
     float platter_level = 0.0f;
     bool platter_locked = false;
     std::uint32_t platter_slews = 0;
+
+    // --- the mixer, over MIDI -------------------------------------------------
+    // Filled by the front end, which owns the port.
+    bool midi_connected = false;
+    std::string midi_port;
+    std::uint64_t midi_messages = 0;
+    std::size_t midi_bound = 0;   // controls with a binding
+    std::size_t midi_total = 0;   // controls declared
+
+    // MIDI learn, driven from the panel and served by the front end. `learning`
+    // reflects whether a run is in progress; the two requests below are edges
+    // the front end consumes and clears, the same shape as the clip load.
+    bool learning = false;
+    std::string learn_prompt;     // what to sweep now
+    std::size_t learn_remaining = 0;
+    bool learn_start = false;     // begin a run over the default rig
+    bool learn_skip = false;      // leave the current control unbound
+    bool learn_cancel = false;    // stop, keeping what was learned so far
 };
 
 // The three faces the mockup uses. Archivo carries the interface, DM Mono every

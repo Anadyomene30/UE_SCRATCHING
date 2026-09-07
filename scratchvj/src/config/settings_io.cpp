@@ -21,6 +21,7 @@ std::string settings_to_json(const DeskSettings& settings) {
     root["platter"] = json{{"endpoint", settings.platter_endpoint},
                            {"first_channel", settings.platter_first_channel},
                            {"carrier_hz", settings.carrier_hz}};
+    root["midi"] = json{{"port", settings.midi_port}};
     return root.dump(2);
 }
 
@@ -69,6 +70,21 @@ bool settings_from_json(std::string_view text, DeskSettings& out, std::string& e
                 return false;
             }
             parsed.carrier_hz = platter.at("carrier_hz").get<double>();
+        }
+    }
+
+    if (root.contains("midi")) {
+        const json& midi = root.at("midi");
+        if (!midi.is_object()) {
+            error = "'midi' doit etre un objet";
+            return false;
+        }
+        if (midi.contains("port")) {
+            if (!midi.at("port").is_string()) {
+                error = "'midi.port' doit etre une chaine";
+                return false;
+            }
+            parsed.midi_port = midi.at("port").get<std::string>();
         }
     }
 

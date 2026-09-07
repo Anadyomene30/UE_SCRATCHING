@@ -28,7 +28,10 @@
 
 #include "app/engine.h"
 #include "app/simulation.h"
+#include "config/mapping_io.h"
 #include "config/settings_io.h"
+#include "core/layout.h"
+#include "core/learn.h"
 #include "core/quadrature.h"
 #include "imgui.h"
 #include "imgui_impl_sdl3.h"
@@ -42,6 +45,7 @@
 #include "audio_in.h"
 #include "live_in.h"
 #include "media.h"
+#include "midi_in.h"
 #include "netout.h"
 #include "panels.h"
 #include "share.h"
@@ -201,12 +205,37 @@ int main(int argc, char** argv) {
     svj::ui::AudioInput platter_in;
     QuadratureTracker platter;
     std::vector<float> platter_pcm;
+
+    // The mixer. Opened once at startup rather than on request: a MIDI port
+    // costs nothing while idle, and an input that has to be switched on before
+    // it can be discovered never gets discovered -- the same reasoning the
+    // Spout sender is opened under.
+    svj::ui::MidiInput midi;
+    std::vector<MidiEvent> midi_events;
+    MidiLearn learn;
     DeskSettings desk;
     {
         std::string error;
         if (!settings_load("settings.json", desk, error)) {
             std::fprintf(stderr, "%s\n", error.c_str());
         }
+    }
+
+    // The whole rig declared as ghosts before anything is learned or touched,
+    // so the table is drawn as it really is: present, and not yet known.
+    declare_layout(default_rig_layout(), engine.surface());
+    // Bindings from a previous session, if any. A missing file is the normal
+    // first run.
+    SurfaceConfig surface_config;
+    {
+        std::string error;
+        if (config_load("mapping.json", surface_config, error)) {
+            config_apply(surface_config, engine.surface());
+        }
+    }
+    if (!midi.open(desk.midi_port)) {
+        std::fprintf(stderr, "aucun port MIDI ne correspond a \"%s\"\n",
+                     desk.midi_port.c_str());
     }
     svj::ui::ProgramGpu gpu;
     svj::ui::View360Gpu view360a;
@@ -425,6 +454,64 @@ int main(int argc, char** argv) {
         for (const auto& owned : hand.owned) {
             engine.surface().set(owned.first, owned.second, now_us);
         }
+
+        // --- the mixer -------------------------------------------------------
+        // After the script and the mouse, so a real control always wins: that is
+        // the same rule the hand already follows, and what makes plugging the
+        // mixer in mid-demo feel like taking over rather than fighting.
+        if (view.learn_start && !learn.active()) {
+            learn.begin(default_rig_layout());
+            view.learn_start = false;
+        }
+        if (view.learn_cancel) {
+            // Keep what was learned; a run abandoned half way is still worth its
+            // first half.
+            while (learn.active()) learn.skip();
+            view.learn_cancel = false;
+        }
+        if (view.learn_skip && learn.active()) {
+            learn.skip();
+            view.learn_skip = false;
+        }
+
+        midi.drain(midi_events);
+        for (const MidiEvent& midi_event : midi_events) {
+            if (learn.active()) {
+                // While learning, events bind rather than move: a sweep that
+                // also drove the control it is teaching would be confusing to
+                // watch and would fight the script.
+                learn.observe(midi_event);
+            } else {
+                engine.surface().apply(midi_event, now_us);
+            }
+        }
+
+        const bool was_learning = view.learning;
+        view.learning = learn.active();
+        if (was_learning && !view.learning) {
+            // The run finished or was abandoned. Apply and persist in one place,
+            // so a learned surface survives the application closing -- which is
+            // the whole point of learning it.
+            learn.apply_to(engine.surface());
+            surface_config.bindings = learn.results();
+            std::string error;
+            if (!config_save(surface_config, "mapping.json", error)) {
+                std::fprintf(stderr, "%s\n", error.c_str());
+            }
+            engine.bind();
+        }
+        if (view.learning) {
+            view.learn_prompt = learn.current().id;
+            view.learn_remaining = learn.remaining();
+        }
+        view.midi_connected = midi.ready();
+        view.midi_port = midi.port_name();
+        view.midi_messages = midi.message_count();
+        view.midi_total = engine.surface().size();
+        // BOUND, not "known". A control the demo script moves is known and still
+        // has no MIDI address, so counting known ones would claim a mixer had
+        // been learned when nothing had been.
+        view.midi_bound = surface_config.bindings.size();
 
         // The platter's source, served at the frame boundary. Opening an audio
         // device is I/O, so the panel only asks and this is where it happens.

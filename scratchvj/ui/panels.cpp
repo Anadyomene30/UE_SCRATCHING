@@ -1229,7 +1229,43 @@ bool crossfader(const Control* control, Frame& frame, ControlIndex index,
 
 void draw_surface(Engine& engine, Frame& frame, float width, float height) {
     ImGui::BeginChild("surface", ImVec2(width, height), ImGuiChildFlags_Borders);
-    eyebrow("SURFACE \xE2\x80\x94 Reloop Elite \xC2\xB7 RP-8000 MK2 \xE2\x80\x94 la souris joue en attendant le MIDI");
+    // The heading tells the truth about where the values come from, which
+    // changes the moment a mixer is plugged in.
+    if (frame.midi_connected) {
+        eyebrow("SURFACE \xE2\x80\x94 Reloop Elite \xC2\xB7 RP-8000 MK2");
+        ImGui::SameLine(0.0f, 14.0f);
+        push_small();
+        text_c(frame.midi_bound > 0 ? kSage : kAmber,
+               "%s \xC2\xB7 %llu messages \xC2\xB7 %zu/%zu li\xC3\xA9s",
+               frame.midi_port.c_str(),
+               static_cast<unsigned long long>(frame.midi_messages), frame.midi_bound,
+               frame.midi_total);
+        pop_font();
+    } else {
+        eyebrow("SURFACE \xE2\x80\x94 Reloop Elite \xC2\xB7 RP-8000 MK2 \xE2\x80\x94 la souris joue en attendant le MIDI");
+    }
+
+    // MIDI learn. The Elite's map is not published and nothing here is
+    // hard-coded, so this is how the surface ever gets bound -- and the mixer
+    // was measured NOT to announce its state on connect, which is why a
+    // deliberate sweep is the only way.
+    ImGui::SameLine(0.0f, 16.0f);
+    if (frame.learning) {
+        push_small();
+        text_c(kAmber, "BOUGE : %s", frame.learn_prompt.c_str());
+        pop_font();
+        ImGui::SameLine(0.0f, 10.0f);
+        if (ImGui::SmallButton("passer")) frame.learn_skip = true;
+        ImGui::SameLine(0.0f, 6.0f);
+        if (ImGui::SmallButton("arr\xC3\xAAter")) frame.learn_cancel = true;
+        ImGui::SameLine(0.0f, 10.0f);
+        push_small();
+        text_c(kFaint, "%zu restants", frame.learn_remaining);
+        pop_font();
+    } else if (frame.midi_connected) {
+        if (ImGui::SmallButton("apprendre")) frame.learn_start = true;
+    }
+
     ImGui::Dummy(ImVec2(0.0f, 8.0f));
 
     const Surface& surface = engine.surface();

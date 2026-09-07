@@ -157,8 +157,8 @@ target_include_directories(scratchvj_gpu PUBLIC
   ${CMAKE_CURRENT_BINARY_DIR}/generated_shaders)
 target_link_libraries(scratchvj_gpu PUBLIC bgfx bx bimg scratchvj_core)
 
-add_executable(scratchvj_ui WIN32 audio_in.cpp imgui_impl_bgfx.cpp live_in.cpp main_ui.cpp media.cpp netout.cpp
-                                  panels.cpp share.cpp
+add_executable(scratchvj_ui WIN32 audio_in.cpp imgui_impl_bgfx.cpp live_in.cpp main_ui.cpp media.cpp
+                                  midi_in.cpp netout.cpp panels.cpp share.cpp
                                   ${SVJ_IMGUI_VS_HEADERS} ${SVJ_IMGUI_FS_HEADERS})
 target_link_libraries(scratchvj_ui PRIVATE scratchvj_app scratchvj_config scratchvj_imgui SDL3::SDL3 bgfx
                                            scratchvj_gpu ole32)
