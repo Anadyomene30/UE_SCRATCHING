@@ -167,16 +167,39 @@ Reading listen(IMMDevice* device, double seconds) {
         return reading;
     }
 
+    // GetMixFormat can fail on a pro driver whose WDM side is half-present, and
+    // its output must not then be handed to Initialize -- a null format is what
+    // turns into the misleading 0x80070006 (ERROR_INVALID_HANDLE) below.
     WAVEFORMATEX* format = nullptr;
-    client->GetMixFormat(&format);
+    const HRESULT got_format = client->GetMixFormat(&format);
+    if (FAILED(got_format) || format == nullptr) {
+        char message[96];
+        std::snprintf(message, sizeof(message), "pas de format mixe (0x%08lX)",
+                      static_cast<unsigned long>(got_format));
+        reading.failure = message;
+        client->Release();
+        return reading;
+    }
 
     const REFERENCE_TIME buffer = 1000000;  // 100 ms, in 100 ns units
     const HRESULT opened =
         client->Initialize(AUDCLNT_SHAREMODE_SHARED, 0, buffer, 0, format, nullptr);
     if (FAILED(opened)) {
-        char message[96];
-        std::snprintf(message, sizeof(message), "refuse (0x%08lX) -- pris en exclusif ?",
-                      static_cast<unsigned long>(opened));
+        // Named, not guessed. The three that matter here are distinct causes,
+        // and calling ERROR_INVALID_HANDLE "exclusive" sent me chasing the wrong
+        // thing for a while.
+        const char* why = "cause inconnue";
+        switch (static_cast<unsigned long>(opened)) {
+            case 0x88890008: why = "format non supporte en partage"; break;   // UNSUPPORTED_FORMAT
+            case 0x8889000A: why = "peripherique deja pris"; break;           // DEVICE_IN_USE
+            case 0x8889000B: why = "exclusif refuse"; break;                  // EXCLUSIVE_MODE_NOT_ALLOWED
+            case 0x88890004: why = "peripherique invalide/debranche"; break;  // DEVICE_INVALIDATED
+            case 0x80070006: why = "handle invalide (pilote WDM incomplet ?)"; break;
+            default: break;
+        }
+        char message[128];
+        std::snprintf(message, sizeof(message), "refuse (0x%08lX) -- %s",
+                      static_cast<unsigned long>(opened), why);
         reading.failure = message;
         CoTaskMemFree(format);
         client->Release();
@@ -563,16 +586,36 @@ int main(int argc, char** argv) {
         return 0;
     }
 
+    // "Opened but silent" and "could not open at all" are completely different
+    // situations, and conflating them sent me chasing the Phase when the real
+    // problem was the whole audio graph. If NOTHING opened -- hardware AND the
+    // virtual cables that have no cable to unplug -- it is Windows' audio
+    // service, not the signal.
+    std::size_t opened = 0;
+    for (const std::pair<std::string, Reading>& entry : results) {
+        if (entry.second.opened) ++opened;
+    }
+    if (opened == 0) {
+        std::printf("=> AUCUNE ENTREE NE S'OUVRE (%zu/%zu en echec).\n", results.size(),
+                    results.size());
+        std::printf("   Ce n'est pas le Phase : meme les cables virtuels refusent. Le\n");
+        std::printf("   graphe audio de Windows est bloque -- typique apres qu'une\n");
+        std::printf("   interface pro (MOTU, RME...) a rechange d'horloge. Redemarrer le\n");
+        std::printf("   service audio le debloque :\n");
+        std::printf("     net stop Audiosrv && net start Audiosrv   (coupe le son en cours)\n");
+        return 4;
+    }
+
     bool any_signal = false;
     for (const std::pair<std::string, Reading>& entry : results) {
         if (entry.second.opened && entry.second.peak >= 0.001) any_signal = true;
     }
     if (!any_signal) {
-        std::printf("=> TOUTES LES ENTREES SONT SILENCIEUSES.\n");
+        std::printf("=> TOUTES LES ENTREES OUVERTES SONT SILENCIEUSES.\n");
         std::printf("   Le Phase ne genere du timecode que quand la remote TOURNE, et\n");
         std::printf("   seulement si le dock est appaire et sous tension. Verifie aussi\n");
         std::printf("   que la sortie RCA du dock arrive bien sur une entree de cette\n");
-        std::printf("   machine, et que la voie du mixeur est en PHONO.\n");
+        std::printf("   machine.\n");
         return 3;
     }
     std::printf("=> Du signal, mais aucune porteuse en quadrature.\n");
