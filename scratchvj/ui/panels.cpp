@@ -386,6 +386,22 @@ void draw_status(Engine& engine, Frame& frame) {
     text_c(kInk, "%.1f", engine.bpm());
     pop_font();
 
+    // The scripted performance, and a way out of it. It animates whatever nobody
+    // has taken over -- which is what lets the instrument be plugged in mid-set
+    // without the screen going dark -- but while testing by hand it hides your
+    // own changes under its own, and there was no way to stop it.
+    ImGui::SameLine(0.0f, 26.0f);
+    if (ImGui::SmallButton(frame.script_running ? "D\xC3\x89MO" : "FIG\xC3\x89")) {
+        frame.script_running = !frame.script_running;
+    }
+    {
+        ImDrawList* draw = ImGui::GetWindowDrawList();
+        const ImVec2 lo = ImGui::GetItemRectMin();
+        const ImVec2 hi = ImGui::GetItemRectMax();
+        draw->AddLine(ImVec2(lo.x, hi.y), ImVec2(hi.x, hi.y),
+                      frame.script_running ? kAccent : kHair, 2.0f);
+    }
+
     ImGui::SameLine(0.0f, 26.0f);
     push_small();
     // Off, and honestly so: neither output exists yet.

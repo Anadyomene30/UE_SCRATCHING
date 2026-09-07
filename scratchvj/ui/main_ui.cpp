@@ -443,14 +443,16 @@ int main(int argc, char** argv) {
         // mapping and everything downstream are the real ones, so what is on
         // screen is the actual behaviour rather than a mock of it. Skipped on
         // the frame the script wraps, where the span would run backwards.
-        if (t > span_from) {
+        if (view.script_running && t > span_from) {
             static std::vector<float> audio(4096);
             const std::size_t written =
                 simulation.audio(span_from, t, kBpm, 48000.0, audio.data(), audio.size());
             engine.analyse_audio(audio.data(), written);
         }
 
-        simulation.step(t, engine.surface(), now_us);
+        // The script writes the surface and moves the platters. Frozen, it does
+        // neither -- so what is on screen is what the hand did, and nothing else.
+        if (view.script_running) simulation.step(t, engine.surface(), now_us);
         for (const auto& owned : hand.owned) {
             engine.surface().set(owned.first, owned.second, now_us);
         }
@@ -566,6 +568,24 @@ int main(int argc, char** argv) {
         frame.deck_a = simulation.deck_a();
         frame.deck_b = simulation.deck_b();
 
+        if (!view.script_running) {
+            // A platter standing still, NOT a lost link. Reporting a dropout
+            // would put the decks in Degraded and coast the picture on the last
+            // pitch; on real hardware a stopped record still carries its
+            // carrier. Hold each deck exactly where it is.
+            const auto hold = [wall_s](const Deck& deck) {
+                DecoderSample sample;
+                sample.time_s = wall_s;
+                sample.position_s = deck.timecode.state().position_s;
+                sample.pitch = 0.0f;
+                sample.signal_level = 1.0f;
+                sample.locked = true;
+                return sample;
+            };
+            frame.deck_a = hold(engine.deck_a());
+            frame.deck_b = hold(engine.deck_b());
+        }
+
         if (platter_in.ready()) {
             // Everything captured since last frame, through the tracker, and
             // the result replaces the script's deck A. The tracker's output IS
@@ -636,7 +656,8 @@ int main(int argc, char** argv) {
                 std::fflush(platter_log);
             }
         }
-        frame.commands_a = to_commands(simulation.events());
+        // Loop, cue and slip edges belong to the script; frozen, it issues none.
+        if (view.script_running) frame.commands_a = to_commands(simulation.events());
         engine.step(frame);
 
         // The control stream: state every frame, schema once a second so a

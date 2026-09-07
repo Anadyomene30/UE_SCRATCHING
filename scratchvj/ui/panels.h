@@ -152,6 +152,13 @@ struct Frame {
     bool learn_start = false;     // begin a run over the default rig
     bool learn_skip = false;      // leave the current control unbound
     bool learn_cancel = false;    // stop, keeping what was learned so far
+
+    // Whether the scripted performance is running. It animates whatever nobody
+    // has taken over, which is what lets the instrument be plugged in mid-set
+    // without the screen going dark -- but while testing by hand it hides your
+    // own changes under its own. Off freezes the decks where they are and
+    // leaves every control alone.
+    bool script_running = true;
 };
 
 // The three faces the mockup uses. Archivo carries the interface, DM Mono every
