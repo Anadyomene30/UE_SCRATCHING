@@ -62,6 +62,21 @@ struct TimecodeConfig {
     // Absolute mode glides across a discontinuity over this long instead of
     // snapping, so a replaced remote does not make the picture crack.
     double relock_ramp_s = 0.08;
+
+    // Whether the source reads a position off the record, or only counts
+    // movement from a reset point. A control record gives the former; the bare
+    // carrier an MWM Phase actually emits gives only the latter
+    // (core/quadrature).
+    //
+    // It decides what a re-lock MEANS. With an absolute position, coming back
+    // from a dropout is not a discontinuity -- the record is where it is, and
+    // the reading proves it. With a relative one, the tracker re-baselines and
+    // cannot prove anything: the remote may have been lifted and put down
+    // somewhere else, which on a Phase is exactly how a performer repositions.
+    // So a relative re-lock is counted as a jump, and core/anchor's freshness
+    // ages -- otherwise the re-anchor prompt degrades to a plain timer on the
+    // one hardware where lifting the remote is the normal move.
+    bool absolute_position = true;
 };
 
 // One reading from the decoder, per audio block.
@@ -115,6 +130,16 @@ public:
 
     void set_mode(TransportMode mode);
     void set_profile(SignalProfile profile) { config_.profile = profile; }
+
+    // What the SOURCE can promise, set when it is opened rather than when the
+    // deck is built: whether its position is absolute, and how fast a platter it
+    // can still track. core/quadrature reports the latter as sample_rate over
+    // twice the carrier -- 22.05x at 44.1 kHz, 24x at 48 -- and keeping a second,
+    // independently-chosen constant here would let the two disagree.
+    void set_source(bool absolute_position, double max_speed_ratio) {
+        config_.absolute_position = absolute_position;
+        if (max_speed_ratio > 0.0) config_.max_speed_ratio = max_speed_ratio;
+    }
 
     // Number of discontinuities seen since the last reset. Follower mode uses it
     // to judge how stale an anchor has become.

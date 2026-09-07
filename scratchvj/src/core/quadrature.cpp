@@ -56,6 +56,7 @@ void QuadratureTracker::reset() {
     velocity_ = 0.0f;
     level_ = 0.0f;
     radius_ = 0.0;
+    locked_level_ = 0.0;
     locked_ = false;
     coherent_run_ = 0;
     slew_events_ = 0;
@@ -136,7 +137,17 @@ DecoderSample QuadratureTracker::submit(const float* interleaved, std::size_t fr
         peak_radius = std::max(peak_radius, radius);
 
         const double raw_peak = std::max(std::fabs(raw_l), std::fabs(raw_r));
-        const bool loud_enough = raw_peak >= config_.silence_level;
+        // Two floors. The absolute one catches a dead input. The RELATIVE one
+        // is hysteresis against the residue a stopped remote leaves behind: on
+        // the desk, a carrier at 0.197 faded to 0.023-0.039 of hum once the
+        // platter stopped, and that residue briefly passed the coherence run
+        // and re-locked at zero velocity. Harmless there, but a re-lock is the
+        // event core/timecode may count as a jump, so it must mean the carrier
+        // is genuinely back -- a quarter of what it was, not a tenth.
+        const double relative_floor =
+            locked_level_ > 0.0 ? locked_level_ * 0.25 : 0.0;
+        const bool loud_enough =
+            raw_peak >= config_.silence_level && raw_peak >= relative_floor;
 
         // Seeded on the first usable sample rather than crept up to from zero.
         // Starting at zero makes `radius < radius_ * 3` false forever, so the
@@ -204,6 +215,9 @@ DecoderSample QuadratureTracker::submit(const float* interleaved, std::size_t fr
         phase_ = wrap_pi(unwrapped);
         turned_since_calibration_ += step;  // signed: jitter cancels, rotation does not
         locked_ = true;
+        // What a real carrier looks like on this input, for the relative floor
+        // above. Followed slowly so one loud transient does not raise the bar.
+        locked_level_ += (raw_peak - locked_level_) * (locked_level_ > 0.0 ? 0.001 : 1.0);
 
         position_s_ = config_.origin_s +
                       (static_cast<double>(turns_) + phase_ / kTwoPi) / config_.carrier_hz;

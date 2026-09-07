@@ -107,6 +107,17 @@ const TimecodeState& TimecodeTracker::submit(const DecoderSample& sample) {
     // leave the picture where it is.
     if (relocking_) {
         relocking_ = false;
+        // The reasoning above holds only when the source reads a position off
+        // the record and can therefore prove continuity. A relative source --
+        // the bare carrier a Phase emits -- re-baselines and proves nothing:
+        // the remote may have been lifted and put down anywhere. That IS a
+        // discontinuity as far as the follower-mode anchor is concerned, so it
+        // is counted as one; otherwise the re-anchor prompt would degrade to a
+        // plain timer on exactly the hardware where lifting is the normal move.
+        if (!config_.absolute_position) {
+            ++jump_count_;
+            state_.jumped = true;
+        }
         previous_raw_position_ = sample.position_s;
         if (config_.mode == TransportMode::Absolute && config_.relock_ramp_s > 0.0) {
             ramp_offset_ = state_.position_s - sample.position_s;

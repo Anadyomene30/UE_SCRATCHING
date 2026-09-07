@@ -298,3 +298,46 @@ SVJ_TEST("timecode: a relative position that goes negative is still a lock") {
     CHECK(state.link == LinkState::Ok);
     CHECK(state.confidence > 0.9f);
 }
+
+SVJ_TEST("timecode: a relative source counts a re-lock as a jump") {
+    // On the bare carrier a Phase emits there is no position to read, so a
+    // re-lock re-baselines and proves nothing about continuity: the remote may
+    // have been lifted and put down anywhere -- which, on a Phase, is how a
+    // performer repositions. The follower-mode anchor has to see that as a
+    // discontinuity, or its freshness never ages on exactly this hardware.
+    TimecodeConfig config;
+    config.mode = TransportMode::Relative;
+    config.profile = SignalProfile::Wireless;
+    config.absolute_position = false;
+    TimecodeTracker tracker(config);
+
+    double t = 0.0, pos = 5.0;
+    tracker.submit(relative(t, pos));
+    for (int i = 0; i < 10; ++i) {
+        t += 0.01;
+        pos += 0.01;
+        tracker.submit(relative(t, pos));
+    }
+    CHECK_EQ(tracker.jump_count(), 0);
+
+    for (int i = 0; i < 20; ++i) tracker.submit(silent(t += 0.01));
+    const auto& state = tracker.submit(relative(t += 0.01, 0.0));  // reset point
+    CHECK(state.jumped);
+    CHECK_EQ(tracker.jump_count(), 1);
+}
+
+SVJ_TEST("timecode: an absolute source still treats a re-lock as recovery") {
+    // The existing rule, kept: with a position read off the record, coming
+    // back from a dropout is not a discontinuity, and counting it would age
+    // the anchor on every wireless hiccup for no reason.
+    TimecodeConfig config;
+    config.mode = TransportMode::Relative;
+    config.profile = SignalProfile::Wireless;
+    TimecodeTracker tracker(config);  // absolute_position defaults to true
+
+    double t = 0.0, pos = 5.0;
+    tracker.submit(locked(t, pos, 1.0f));
+    for (int i = 0; i < 20; ++i) tracker.submit(silent(t += 0.01));
+    tracker.submit(locked(t += 0.01, 5.3, 1.0f));
+    CHECK_EQ(tracker.jump_count(), 0);
+}

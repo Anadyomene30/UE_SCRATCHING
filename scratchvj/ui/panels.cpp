@@ -632,15 +632,18 @@ void draw_deck(Deck& deck, Engine& engine, Frame& frame, void* texture,
             // Three states said plainly, because they look alike from the outside:
             // no device, a device with no carrier (platter still or remote off),
             // and a carrier being tracked.
+            // Short on purpose: this row is the tightest in the panel, and the
+            // input's name already sits in the status bar. What matters here is
+            // the state, in a word that fits.
             if (!frame.platter_connected) {
-                text_c(kAmber, "aucune entr\xC3\xA9""e audio");
+                text_c(kAmber, "aucune entr\xC3\xA9""e");
             } else if (!frame.platter_locked) {
-                text_c(kFaint, "%s \xC2\xB7 pas de porteuse", frame.platter_endpoint.c_str());
+                text_c(kFaint, "%s \xC2\xB7 silence", frame.platter_endpoint.c_str());
             } else {
-                text_c(frame.platter_slews > 0 ? kAmber : kFaint,
-                       "%s \xC2\xB7 porteuse %.2f%s", frame.platter_endpoint.c_str(),
+                text_c(frame.platter_slews > 0 ? kAmber : kSage, "%s \xC2\xB7 %.2f%s",
+                       frame.platter_endpoint.c_str(),
                        static_cast<double>(frame.platter_level),
-                       frame.platter_slews > 0 ? " \xC2\xB7 trop vite" : "");
+                       frame.platter_slews > 0 ? " !" : "");
             }
             pop_font();
         }

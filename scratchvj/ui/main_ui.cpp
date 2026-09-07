@@ -431,6 +431,13 @@ int main(int argc, char** argv) {
                     std::fprintf(stderr, "plateau live: configuration refusee\n");
                     platter_in.close();
                     view.deck_a_live = false;
+                } else {
+                    // Tell the deck what this source can promise: no absolute
+                    // position (a re-lock is a jump, so the anchor ages), and a
+                    // speed limit that is the tracker's own Nyquist figure --
+                    // 22.05x on this 44.1 kHz interface, not the 24x the deck
+                    // assumed for a control record at 48 kHz.
+                    engine.deck_a().timecode.set_source(false, platter.max_speed_ratio());
                 }
             } else {
                 std::fprintf(stderr, "plateau live: entree \"%s\" introuvable\n",
@@ -439,6 +446,9 @@ int main(int argc, char** argv) {
             }
         } else if (!view.deck_a_live && platter_in.ready()) {
             platter_in.close();
+            // Back to the script, which reads an absolute position off its
+            // virtual record.
+            engine.deck_a().timecode.set_source(true, TimecodeConfig{}.max_speed_ratio);
         }
 
         EngineFrame frame;

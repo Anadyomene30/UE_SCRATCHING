@@ -122,6 +122,18 @@ projet à part, résultat non garanti, et le RCA marche aujourd'hui.)
 > position inchangée) est apparu une fois pendant l'arrêt : sans conséquence,
 > mais c'est l'endroit où resserrer la porte de cohérence si ça se reproduit.
 >
+> **Deux conséquences câblées dans le deck quand la source est live.** Un
+> re-verrou compte comme un **saut** (`TimecodeConfig::absolute_position =
+> false`) : un tracker relatif se re-base et ne peut rien prouver — la remote a
+> pu être levée et reposée ailleurs, ce qui sur un Phase est *la* façon de se
+> repositionner — donc la fraîcheur de l'ancrage vieillit, au lieu que le
+> rappel de re-ancrage dégénère en simple minuterie. Et la vitesse maximale
+> tolérée est celle que le tracker peut réellement suivre — **22,05×** à
+> 44,1 kHz (Nyquist de la porteuse), pas le 24× supposé pour un disque de
+> contrôle à 48 kHz ; une constante choisie deux fois finit par diverger.
+> Enfin, un re-verrou exige un quart du niveau de porteuse précédent : le
+> résidu de 0,02-0,04 qu'une remote arrêtée laisse ne re-verrouille plus.
+>
 > **Conséquence pour l'architecture, et elle est structurante.** Le signal porte
 > exactement ce qu'il faut pour scratcher — direction et vitesse — et rien de
 > plus. La position absolue est absente, mais elle l'était déjà : le Phase est un

@@ -91,7 +91,7 @@ looking plausible on a moving picture.
 
 ## Current state
 
-The engine's logic is written and covered by **434 tests**; the parts that touch
+The engine's logic is written and covered by **437 tests**; the parts that touch
 hardware are not.
 
 | Module | What it does |

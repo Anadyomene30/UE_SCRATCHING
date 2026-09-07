@@ -383,3 +383,41 @@ SVJ_TEST("quadrature: an unusable configuration is refused rather than limped th
     config.slew_limit_pi = 1.5;  // past pi the unwrap is meaningless
     CHECK(!tracker.configure(config));
 }
+
+SVJ_TEST("quadrature: the residue a stopped remote leaves does not re-lock") {
+    // Seen on the desk: a carrier at 0.197 faded to 0.023-0.039 of hum once the
+    // platter stopped, and that residue briefly passed the coherence run and
+    // re-locked at zero velocity. Harmless there, but a re-lock is the event
+    // core/timecode may count as a jump, so it has to mean the carrier is
+    // genuinely back. The floor is RELATIVE to the carrier that was locked:
+    // an absolute floor low enough for a weak cartridge lets hum through.
+    QuadratureSignal carrier = plain();
+    carrier.amplitude = 0.2;
+
+    QuadratureTracker tracker;
+    CHECK(tracker.configure(standard()));
+    run(tracker, carrier, at_speed(1.0), 1.0);
+    CHECK(tracker.locked());
+    const double before = tracker.position_s();
+
+    // A fifth of the carrier, coherent enough to look like one: exactly the
+    // hum that fooled the first version.
+    QuadratureSignal residue = plain();
+    residue.amplitude = 0.035;
+    residue.noise = 0.01;
+    bool relocked = false;
+    const auto frames = static_cast<std::size_t>(kRate * 1.0);
+    std::vector<float> pcm;
+    CHECK(generate_quadrature(residue, [](double) { return 0.0; }, frames, pcm));
+    for (std::size_t i = 0; i < frames; i += 512) {
+        const std::size_t n = std::min<std::size_t>(512, frames - i);
+        const DecoderSample sample = tracker.submit(pcm.data() + i * 2, n, 1.0 + i / kRate);
+        relocked = relocked || sample.locked;
+    }
+    CHECK(!relocked);
+    CHECK_NEAR(tracker.position_s(), before, 1e-9);
+
+    // And the real carrier coming back at its old level IS a re-lock.
+    run(tracker, carrier, at_speed(1.0), 0.5);
+    CHECK(tracker.locked());
+}

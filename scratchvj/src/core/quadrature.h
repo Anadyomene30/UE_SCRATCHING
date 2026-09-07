@@ -149,6 +149,8 @@ private:
     float velocity_ = 0.0f;
     float level_ = 0.0f;
     double radius_ = 0.0;
+    // Raw peak of the carrier while locked, for the relative re-lock floor.
+    double locked_level_ = 0.0;
     bool locked_ = false;
     std::uint32_t coherent_run_ = 0;
     std::uint32_t slew_events_ = 0;
