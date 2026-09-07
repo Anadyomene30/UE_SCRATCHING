@@ -67,9 +67,24 @@ struct TimecodeConfig {
 // One reading from the decoder, per audio block.
 struct DecoderSample {
     double time_s = 0.0;       // monotonic clock
-    double position_s = -1.0;  // position on the control record; negative = no lock
+    double position_s = -1.0;  // position on the control record
     float pitch = 0.0f;        // signed speed ratio, 1.0 nominal
     float signal_level = 0.0f; // carrier amplitude, 0..1
+
+    // Whether `position_s` means anything. This used to be carried in the sign
+    // of the position itself, which was fine while every source read an
+    // absolute position off a control record: those are never negative.
+    //
+    // `core/quadrature` broke that. It reads a bare carrier -- what an MWM Phase
+    // actually emits -- so its position is RELATIVE to a reset point, and
+    // scratching back past that point is legitimately negative. Under the old
+    // rule that read as "carrier present, bits unreadable": degraded link,
+    // confidence dropped to 0.35, position coasting on pitch. It would have
+    // looked exactly like a failing cable.
+    //
+    // Sources still set position_s = -1.0 when unlocked, so anything that has
+    // not been updated behaves as before.
+    bool locked = false;
 };
 
 struct TimecodeState {

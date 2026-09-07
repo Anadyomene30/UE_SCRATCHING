@@ -98,11 +98,13 @@ void Simulation::step(double t_s, Surface& surface, std::uint64_t now_us) {
     deck_a_.position_s = level > 0.0 ? position : -1.0;
     deck_a_.pitch = static_cast<float>(pitch);
     deck_a_.signal_level = static_cast<float>(level);
+    deck_a_.locked = level > 0.0;
 
     deck_b_.time_s = t_s;
     deck_b_.position_s = std::fmod(t_s, 12.0);
     deck_b_.pitch = 1.0f;
     deck_b_.signal_level = 1.0f;
+    deck_b_.locked = true;
 
     // Edge-triggered script events: fire once as the script crosses each moment.
     const auto crossed = [this, t](double at) {

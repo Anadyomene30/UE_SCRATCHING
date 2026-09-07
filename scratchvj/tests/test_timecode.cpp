@@ -6,10 +6,15 @@ using namespace svj;
 namespace {
 
 DecoderSample locked(double t, double pos, float pitch, float level = 1.0f) {
-    return DecoderSample{t, pos, pitch, level};
+    return DecoderSample{t, pos, pitch, level, true};
 }
 
-DecoderSample silent(double t) { return DecoderSample{t, -1.0, 0.0f, 0.0f}; }
+DecoderSample silent(double t) { return DecoderSample{t, -1.0, 0.0f, 0.0f, false}; }
+
+// A source whose position is RELATIVE, so it may legitimately be negative.
+DecoderSample relative(double t, double pos) {
+    return DecoderSample{t, pos, 1.0f, 1.0f, true};
+}
 
 // Plays forward at nominal speed from `from` for `count` blocks of `dt`.
 void play(TimecodeTracker& tracker, double& t, double& pos, int count, double dt = 0.01) {
@@ -99,7 +104,7 @@ SVJ_TEST("timecode: a carrier without readable bits coasts on pitch") {
     tracker.submit(locked(0.0, 2.0, 1.0f));
 
     // Signal present, position unreadable.
-    const auto& state = tracker.submit(DecoderSample{0.10, -1.0, 1.0f, 0.9f});
+    const auto& state = tracker.submit(DecoderSample{0.10, -1.0, 1.0f, 0.9f, false});
     CHECK(state.link == LinkState::Degraded);
     CHECK_NEAR(state.position_s, 2.10, 1e-6);
     CHECK(state.confidence > 0.0f);
@@ -273,4 +278,23 @@ SVJ_TEST("timecode: a real discontinuity is still caught after a clean recovery"
 
     tracker.submit(locked(0.13, 90.0, 1.0f));   // this one really is a jump
     CHECK_EQ(tracker.jump_count(), 1);
+}
+
+SVJ_TEST("timecode: a relative position that goes negative is still a lock") {
+    // `locked` used to be carried in the sign of the position, which was safe
+    // only while every source read an absolute position off a control record --
+    // those never go below zero. core/quadrature reads a bare carrier and its
+    // position is relative to a reset point, so scratching back past that point
+    // is legitimately negative. Under the old rule that read as "carrier
+    // present, bits unreadable": degraded link, confidence 0.35, position
+    // coasting on pitch. It would have looked exactly like a failing cable.
+    TimecodeConfig config;
+    config.mode = TransportMode::Relative;
+    TimecodeTracker tracker(config);
+
+    tracker.submit(relative(0.00, 0.10));
+    const auto& state = tracker.submit(relative(0.01, -0.05));
+
+    CHECK(state.link == LinkState::Ok);
+    CHECK(state.confidence > 0.9f);
 }

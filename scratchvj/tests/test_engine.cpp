@@ -62,6 +62,7 @@ DecoderSample moving(double t_s, double position_s, float pitch) {
     sample.position_s = position_s;
     sample.pitch = pitch;
     sample.signal_level = 1.0f;
+    sample.locked = true;
     return sample;
 }
 

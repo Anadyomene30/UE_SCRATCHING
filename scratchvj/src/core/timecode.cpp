@@ -74,7 +74,7 @@ const TimecodeState& TimecodeTracker::submit(const DecoderSample& sample) {
     // ---- Carrier present but the bits are unreadable. ----
     // Coast on pitch: the decoder can still track the waveform's speed when it
     // cannot resolve the absolute position.
-    if (sample.position_s < 0.0) {
+    if (!sample.locked) {
         state_.link = LinkState::Degraded;
         state_.confidence = 0.35f;
         relocking_ = true;

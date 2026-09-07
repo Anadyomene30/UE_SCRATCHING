@@ -95,6 +95,7 @@ DecoderSample TimecodeDecoder::submit(const std::int16_t* interleaved,
     }
     sample.position_s =
         static_cast<double>(timecode) / resolution + sample.pitch * when;
+    sample.locked = true;
     return sample;
 }
 

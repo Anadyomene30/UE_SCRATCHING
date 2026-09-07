@@ -13,9 +13,13 @@ MK2** — though nothing about the Elite is hard-coded (see *MIDI learn* below).
 
 ## Why this works at all
 
-The MWM Phase does not emit proprietary data: its dock generates **standard DVS
-timecode** on RCA. So no vendor SDK is needed — a timecode decoder yields absolute
-position and signed velocity, which is exactly the raw material required.
+The MWM Phase does not emit proprietary data: its dock puts a standard DVS
+**quadrature carrier** on RCA. So no vendor SDK is needed — direction and signed
+velocity fall straight out of the two channels' phase, which is exactly the raw
+material required. (Measured, not assumed: this particular receiver emits the
+carrier without the bitstream a control record carries, so there is no absolute
+position in it — see [docs/cablage.md](docs/cablage.md). It is a relative device
+either way.)
 
 Two design principles run through everything:
 
@@ -87,7 +91,7 @@ looking plausible on a moving picture.
 
 ## Current state
 
-The engine's logic is written and covered by **402 tests**; the parts that touch
+The engine's logic is written and covered by **434 tests**; the parts that touch
 hardware are not.
 
 | Module | What it does |
@@ -107,6 +111,7 @@ hardware are not.
 | `core/mixer` | Crossfader curves, mix weights, transform detection, the overlay layer |
 | `core/effect` | The paired audio/video effect rack and its catalogue |
 | `core/sphere` | 360 reprojection: perspective, little planet, fisheye |
+| `core/quadrature` | A bare DVS carrier read as direction and speed — what an MWM Phase actually emits |
 | `core/headset` | The same sphere seen through a headset: head pose, per-eye asymmetric field of view |
 | `core/spectrum` | Windowed FFT and log-spaced bands, the source audio-reactive mappings read |
 | `core/videocache` | The `.svcache` clip format: fixed-size block-compressed frames |
