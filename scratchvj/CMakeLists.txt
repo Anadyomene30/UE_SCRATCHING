@@ -67,6 +67,53 @@ else()
   target_compile_options(scratchvj_config PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
+# --- scratchvj_dvs ------------------------------------------------------------
+#
+# The timecode decoder: xwax's timecoder.c, vendored, behind a thin C++ bridge.
+# Its own library and OFF by default, for two reasons that both matter.
+#
+#   1. `scratchvj_core` has no external dependency, which is what lets it be
+#      tested from a bare checkout on three operating systems. Vendored C in
+#      core would end that.
+#   2. xwax is GPL-3. A separate target keeps the licence boundary visible
+#      rather than implicit.
+#
+# The vendored sources are not ours to keep warning-clean, so the strict flags
+# apply to our bridge only.
+option(SCRATCHVJ_BUILD_DVS "Build the xwax timecode decoder" OFF)
+
+if(SCRATCHVJ_BUILD_DVS)
+  add_library(scratchvj_dvs STATIC
+    dvs/decoder.cpp
+    dvs/generate.cpp
+    vendor/xwax/timecoder.c
+    vendor/xwax/lut.c
+  )
+  target_include_directories(scratchvj_dvs
+    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
+           ${CMAKE_CURRENT_SOURCE_DIR}/src
+    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/vendor/xwax
+  )
+  target_link_libraries(scratchvj_dvs PUBLIC scratchvj_core)
+  set_source_files_properties(
+    vendor/xwax/timecoder.c vendor/xwax/lut.c PROPERTIES LANGUAGE C)
+  if(MSVC)
+    target_compile_options(scratchvj_dvs PRIVATE
+      $<$<COMPILE_LANGUAGE:CXX>:/W4> $<$<COMPILE_LANGUAGE:CXX>:/permissive->)
+  else()
+    target_compile_options(scratchvj_dvs PRIVATE
+      $<$<COMPILE_LANGUAGE:CXX>:-Wall> $<$<COMPILE_LANGUAGE:CXX>:-Wextra>)
+  endif()
+
+  # Which definition, on which channel pair, actually locks against the real
+  # signal -- and which sign of the pitch means forwards. WASAPI only, so no SDL
+  # or bgfx: this is an audio question.
+  if(WIN32)
+    add_executable(dvs_check dvs/tools/dvs_check.cpp)
+    target_link_libraries(dvs_check PRIVATE scratchvj_dvs ole32)
+  endif()
+endif()
+
 # --- scratchvj (application) --------------------------------------------------
 #
 # The demo runs the whole engine off a scripted performance, so the behaviour can
@@ -149,5 +196,13 @@ if(SCRATCHVJ_BUILD_TESTS)
   )
   target_include_directories(scratchvj_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/tests)
   target_link_libraries(scratchvj_tests PRIVATE scratchvj_app scratchvj_config)
+
+  # The DVS tests join the same binary when the decoder is built, so they run
+  # under the same `ctest` rather than needing to be remembered separately.
+  if(SCRATCHVJ_BUILD_DVS)
+    target_sources(scratchvj_tests PRIVATE tests/test_dvs.cpp)
+    target_link_libraries(scratchvj_tests PRIVATE scratchvj_dvs)
+  endif()
+
   add_test(NAME scratchvj_core_tests COMMAND scratchvj_tests)
 endif()
