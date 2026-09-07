@@ -105,6 +105,23 @@ projet à part, résultat non garanti, et le RCA marche aujourd'hui.)
 > deviner, et elle est faite : `carrier_hz = 1000`, canaux dans l'ordre, paire
 > 5/6 de la MOTU.
 >
+> **Et l'application le lit en direct.** `scratchvj_ui --live` ouvre la MOTU en
+> WASAPI partagé (voies 5/6, thread de capture dédié), passe le flux dans
+> `core/quadrature`, et le résultat remplace le deck A du script — le moteur ne
+> voit aucune différence, le `DecoderSample` étant la couture. Mesuré dans la
+> fenêtre : 44 100 frames/s capturées, verrou stable, position qui avance de
+> 1,000 s par seconde, zéro dépassement. L'état du plateau s'écrit chaque
+> seconde dans `platter.log` (à côté du binaire) — un **fichier**, parce qu'une
+> application WIN32 sans console n'a pas de stderr lisible, même redirigé.
+>
+> **Et il suit la main**, lu dans ce journal : rotation nominale à +1,000 ;
+> remote attrapée → vitesse +0,013 en une seconde et position qui cesse
+> d'avancer ; léger recul → **−0,016**, direction captée ; remote immobile →
+> porteuse disparue, verrou lâché, **position figée à 83,574** sans dérive ni
+> mouvement inventé. Un bref re-verrou parasite (niveau 0,039, vitesse nulle,
+> position inchangée) est apparu une fois pendant l'arrêt : sans conséquence,
+> mais c'est l'endroit où resserrer la porte de cohérence si ça se reproduit.
+>
 > **Conséquence pour l'architecture, et elle est structurante.** Le signal porte
 > exactement ce qu'il faut pour scratcher — direction et vitesse — et rien de
 > plus. La position absolue est absente, mais elle l'était déjà : le Phase est un

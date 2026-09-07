@@ -36,7 +36,14 @@ Avec l'interface (nécessite un GPU, donc jamais en CI) :
 ```sh
 cmake -S . -B build-ui -DSCRATCHVJ_BUILD_UI=ON && cmake --build build-ui --config Release
 ctest --test-dir build-ui -C Release --output-on-failure
+./build-ui/scratchvj/ui/Release/scratchvj_ui.exe --live   # deck A sur le vrai plateau (MOTU 5/6)
 ```
+
+`--live` démarre le deck A sur le Phase réel via `core/quadrature` ; l'état du
+plateau s'écrit chaque seconde dans `platter.log`. **Lire ce fichier, pas
+stderr** : `scratchvj_ui` est une application WIN32 sans console, son stderr ne
+va nulle part même redirigé — toutes les tentatives de le lire sont revenues
+vides avant que ce soit compris.
 
 Ce `ctest`-là ajoute les cinq outils qui tiennent les shaders à leur référence
 CPU : `gpu_check`, `sphere_check`, `eye_check`, `fx_check`, `taps_check`. **Les
