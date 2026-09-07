@@ -83,8 +83,28 @@ projet à part, résultat non garanti, et le RCA marche aujourd'hui.)
 > Receiver via USB to any power supply (5V) »). Serato repasse alors en REL.
 >
 > `audio_probe` mesure désormais la **modulation** en plus de la quadrature, et
-> son selftest contient le cas « porteuse nue (Phase en HID) » — c'est le test
-> qui aurait évité cette conclusion hâtive.
+> son selftest contient le cas « porteuse nue » — c'est le test qui aurait évité
+> cette conclusion hâtive.
+>
+> **Vérifié ensuite dans tous les états du récepteur**, le 2026-09-07 : USB
+> débranché et alimentation par chargeur 5 V, réglage DVS repoussé dans
+> l'appareil par ENREGISTRER, récepteur coupé et rallumé, remote recalibrée. À
+> chaque fois la même chose — porteuse nue. Le spectre est une **raie unique à
+> 1000 Hz avec des bandes latérales à 1 %** ; une modulation de bitstream en
+> produirait de bien plus fortes.
+>
+> Un contrôle croise le tout : **plateau arrêté, le signal disparaît
+> complètement**. Donc il vient bien du Phase et suit bien la rotation. Ce
+> récepteur met la *rotation* sur ses RCA, pas la *position*.
+>
+> **Conséquence pour l'architecture, et elle est structurante.** Le signal porte
+> exactement ce qu'il faut pour scratcher — direction et vitesse — et rien de
+> plus. La position absolue est absente, mais elle l'était déjà : le Phase est un
+> appareil relatif, MWM prescrivent REL, et ce document dit depuis le début qu'un
+> needle drop absolu n'existe pas dans cette chaîne. Le décodeur xwax reste utile
+> pour un vrai disque de contrôle ; pour le Phase, c'est un décodeur de
+> **quadrature** qu'il faut, et il tient entièrement dans `core/` sans
+> dépendance — donc testable sans matériel.
 >
 > (Question d'origine, conservée pour le raisonnement :)
 > **Le récepteur émet-il encore sur ses RCA pendant qu'il est en HID ?** La doc MWM présente HID et DVS comme
