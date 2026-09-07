@@ -606,6 +606,46 @@ void draw_deck(Deck& deck, Engine& engine, Frame& frame, void* texture,
         }
     }
 
+    // Where the platter's motion comes from: the demo script, or the real
+    // carrier off an audio input. Deck A only for now -- it is the one wired to
+    // the Phase on this desk. The chip is the request; the front end opens the
+    // device at the frame boundary, like every other I/O the panel asks for.
+    if (is_a) {
+        ImGui::SameLine(0.0f, 18.0f);
+        push_small();
+        dim("source");
+        pop_font();
+        ImGui::SameLine(0.0f, 6.0f);
+        if (ImGui::SmallButton(frame.deck_a_live ? "LIVE" : "script")) {
+            frame.deck_a_live = !frame.deck_a_live;
+        }
+        {
+            ImDrawList* draw = ImGui::GetWindowDrawList();
+            const ImVec2 lo = ImGui::GetItemRectMin();
+            const ImVec2 hi = ImGui::GetItemRectMax();
+            draw->AddLine(ImVec2(lo.x, hi.y), ImVec2(hi.x, hi.y),
+                          frame.deck_a_live ? kSage : kHair, 2.0f);
+        }
+        if (frame.deck_a_live) {
+            ImGui::SameLine(0.0f, 10.0f);
+            push_small();
+            // Three states said plainly, because they look alike from the outside:
+            // no device, a device with no carrier (platter still or remote off),
+            // and a carrier being tracked.
+            if (!frame.platter_connected) {
+                text_c(kAmber, "aucune entr\xC3\xA9""e audio");
+            } else if (!frame.platter_locked) {
+                text_c(kFaint, "%s \xC2\xB7 pas de porteuse", frame.platter_endpoint.c_str());
+            } else {
+                text_c(frame.platter_slews > 0 ? kAmber : kFaint,
+                       "%s \xC2\xB7 porteuse %.2f%s", frame.platter_endpoint.c_str(),
+                       static_cast<double>(frame.platter_level),
+                       frame.platter_slews > 0 ? " \xC2\xB7 trop vite" : "");
+            }
+            pop_font();
+        }
+    }
+
     if (is_a && deck.clip.width == deck.clip.height * 2) {
         ImGui::Dummy(ImVec2(0.0f, 4.0f));
         eyebrow("VUE 360");

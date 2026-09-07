@@ -122,6 +122,18 @@ struct Frame {
     // a real technique, but one nobody should discover by accident while
     // wondering why the picture went white.
     bool live_is_self = false;
+
+    // Deck A's platter source: the demo script, or the real carrier read off
+    // an audio input through core/quadrature. Written by the panel, served by
+    // the front end at the frame boundary, like the other two requests above --
+    // opening an audio device is I/O and does not belong in a view.
+    bool deck_a_live = false;
+    // Filled by the front end for display.
+    bool platter_connected = false;
+    std::string platter_endpoint;
+    float platter_level = 0.0f;
+    bool platter_locked = false;
+    std::uint32_t platter_slews = 0;
 };
 
 // The three faces the mockup uses. Archivo carries the interface, DM Mono every

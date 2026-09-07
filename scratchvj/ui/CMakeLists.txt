@@ -157,11 +157,11 @@ target_include_directories(scratchvj_gpu PUBLIC
   ${CMAKE_CURRENT_BINARY_DIR}/generated_shaders)
 target_link_libraries(scratchvj_gpu PUBLIC bgfx bx bimg scratchvj_core)
 
-add_executable(scratchvj_ui WIN32 imgui_impl_bgfx.cpp live_in.cpp main_ui.cpp media.cpp netout.cpp
+add_executable(scratchvj_ui WIN32 audio_in.cpp imgui_impl_bgfx.cpp live_in.cpp main_ui.cpp media.cpp netout.cpp
                                   panels.cpp share.cpp
                                   ${SVJ_IMGUI_VS_HEADERS} ${SVJ_IMGUI_FS_HEADERS})
 target_link_libraries(scratchvj_ui PRIVATE scratchvj_app scratchvj_config scratchvj_imgui SDL3::SDL3 bgfx
-                                           scratchvj_gpu)
+                                           scratchvj_gpu ole32)
 
 # The proof the shader matches its reference: same layers through core/compose
 # and through fs_program on a hidden window, compared channel for channel.

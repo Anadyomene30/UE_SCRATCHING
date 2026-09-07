@@ -26,3 +26,6 @@ mappings/
 
 # Captures brutes des sondes DVS : gros, machine-specifiques, regenerables.
 dvs_capture.wav
+
+# Journal du plateau live, ecrit par scratchvj_ui quand la source est LIVE.
+platter.log

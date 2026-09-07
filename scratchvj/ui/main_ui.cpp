@@ -19,12 +19,16 @@
 
 #include <algorithm>
 #include <chrono>
+#if defined(_MSC_VER)
+#include <share.h>
+#endif
 #include <cstdio>
 #include <filesystem>
 #include <vector>
 
 #include "app/engine.h"
 #include "app/simulation.h"
+#include "core/quadrature.h"
 #include "imgui.h"
 #include "imgui_impl_sdl3.h"
 #include <bgfx/bgfx.h>
@@ -34,6 +38,7 @@
 #include "gpu_effects.h"
 #include "gpu_taps.h"
 #include "gpu_view360.h"
+#include "audio_in.h"
 #include "live_in.h"
 #include "media.h"
 #include "netout.h"
@@ -63,7 +68,16 @@ DeckCommands to_commands(const SimEvent& events) {
 
 }  // namespace
 
-int main(int, char**) {
+int main(int argc, char** argv) {
+    // `--live`: start with deck A on the real platter rather than the script.
+    // A performer booting for a set wants this without a click, and a test
+    // driving the window from outside wants it without a synthetic mouse --
+    // which proved too fragile to trust for anything that matters.
+    bool start_live = false;
+    for (int i = 1; i < argc; ++i) {
+        if (std::string(argv[i]) == "--live") start_live = true;
+    }
+
     if (!SDL_Init(SDL_INIT_VIDEO)) {
         std::fprintf(stderr, "SDL_Init: %s\n", SDL_GetError());
         return 1;
@@ -174,6 +188,20 @@ int main(int, char**) {
     // permanently would keep a DirectX device alive for a feature nobody is
     // using, and would connect to whatever sender happened to appear.
     svj::ui::LiveInput live_overlay;
+
+    // The real platter: the Phase's carrier off an audio input, read by
+    // core/quadrature. Opened only when asked, like the Spout receiver, and
+    // ALWAYS in shared mode -- Serato may be on the same interface.
+    //
+    // The endpoint and channel pair are the ones measured on this desk
+    // (docs/cablage.md): the MOTU's 5/6, 1000 Hz. Configuration, not code, is
+    // where these belong eventually; until a settings file carries them they
+    // are stated here in one place rather than guessed in several.
+    svj::ui::AudioInput platter_in;
+    QuadratureTracker platter;
+    std::vector<float> platter_pcm;
+    constexpr const char* kPlatterEndpoint = "MOTU";
+    constexpr unsigned kPlatterFirstChannel = 4;  // 0-based: channels 5/6
     svj::ui::ProgramGpu gpu;
     svj::ui::View360Gpu view360a;
     svj::ui::EffectsGpu effects;
@@ -257,6 +285,7 @@ int main(int, char**) {
     // The view state that outlives a frame: which layout is up. Everything else
     // in Frame is refilled each pass.
     svj::ui::Frame view;
+    view.deck_a_live = start_live;
 
     // The GPU passes are sized from the clips, so loading a different clip has
     // to rebuild them. Doing it in one place means a load cannot leave half the
@@ -391,12 +420,104 @@ int main(int, char**) {
             engine.surface().set(owned.first, owned.second, now_us);
         }
 
+        // The platter's source, served at the frame boundary. Opening an audio
+        // device is I/O, so the panel only asks and this is where it happens.
+        if (view.deck_a_live && !platter_in.ready()) {
+            if (platter_in.open(kPlatterEndpoint, kPlatterFirstChannel)) {
+                QuadratureConfig config;
+                config.carrier_hz = 1000.0;  // measured: docs/cablage.md
+                config.sample_rate = platter_in.sample_rate();
+                if (!platter.configure(config)) {
+                    std::fprintf(stderr, "plateau live: configuration refusee\n");
+                    platter_in.close();
+                    view.deck_a_live = false;
+                }
+            } else {
+                std::fprintf(stderr, "plateau live: entree \"%s\" introuvable\n",
+                             kPlatterEndpoint);
+                view.deck_a_live = false;
+            }
+        } else if (!view.deck_a_live && platter_in.ready()) {
+            platter_in.close();
+        }
+
         EngineFrame frame;
         frame.time_s = wall_s;
         frame.dt_s = dt;
         frame.now_us = now_us;
         frame.deck_a = simulation.deck_a();
         frame.deck_b = simulation.deck_b();
+
+        if (platter_in.ready()) {
+            // Everything captured since last frame, through the tracker, and
+            // the result replaces the script's deck A. The tracker's output IS
+            // a DecoderSample, so nothing downstream knows the difference --
+            // that is the seam the whole engine was built on.
+            platter_in.drain(platter_pcm);
+            if (!platter_pcm.empty()) {
+                frame.deck_a = platter.submit(platter_pcm.data(), platter_pcm.size() / 2,
+                                              wall_s);
+            } else {
+                // Nothing arrived this frame: hold the last reading rather than
+                // feeding the engine a fresh "no signal". A 60 Hz loop can
+                // legitimately outrun a 2 ms capture thread for one frame.
+                frame.deck_a.time_s = wall_s;
+                frame.deck_a.position_s = platter.locked() ? platter.position_s() : -1.0;
+                frame.deck_a.pitch = platter.velocity();
+                frame.deck_a.signal_level = platter.level();
+                frame.deck_a.locked = platter.locked();
+            }
+        }
+        view.platter_connected = platter_in.ready();
+        // The short form: "In 1-24 (MOTU Pro Audio)" does not fit on the row,
+        // and the part before the bracket is what identifies the input anyway.
+        {
+            std::string name = platter_in.endpoint_name();
+            const std::size_t bracket = name.find(" (");
+            if (bracket != std::string::npos) name.resize(bracket);
+            if (platter_in.ready()) {
+                name += " " + std::to_string(platter_in.first_channel() + 1) + "/" +
+                        std::to_string(platter_in.first_channel() + 2);
+            }
+            view.platter_endpoint = name;
+        }
+        view.platter_level = platter.level();
+        view.platter_locked = platter.locked();
+        view.platter_slews = platter.slew_events();
+
+        // Once a second, the platter's truth in a file next to the working
+        // directory. A FILE, not stderr: this is a WIN32-subsystem application
+        // with no console, so its stderr goes nowhere even when a launcher
+        // redirects it -- which is why every earlier "read stderr" came back
+        // empty. And a screenshot of the panel is one instant that can coincide
+        // with nominal speed by chance; the log is what makes "is it really
+        // following the hand" answerable rather than lucky.
+        static double last_platter_log_s = -1.0;
+        static FILE* platter_log = nullptr;
+        if (platter_in.ready() && wall_s - last_platter_log_s >= 1.0) {
+            last_platter_log_s = wall_s;
+            if (platter_log == nullptr) {
+#if defined(_MSC_VER)
+                // _SH_DENYNO: fopen_s denies concurrent readers, which makes a
+                // log nobody can read while the application runs -- the one
+                // time it is wanted.
+                platter_log = _fsopen("platter.log", "w", _SH_DENYNO);
+#else
+                platter_log = std::fopen("platter.log", "w");
+#endif
+            }
+            if (platter_log != nullptr) {
+                std::fprintf(platter_log,
+                             "plateau %7.2fs  frames=%llu  lock=%d  vel=%+6.3f  "
+                             "pos=%9.3f  niveau=%.3f  slew=%u\n",
+                             wall_s,
+                             static_cast<unsigned long long>(platter_in.frames_captured()),
+                             platter.locked() ? 1 : 0,
+                             static_cast<double>(platter.velocity()), platter.position_s(),
+                             static_cast<double>(platter.level()), platter.slew_events());
+                std::fflush(platter_log);
+            }
+        }
         frame.commands_a = to_commands(simulation.events());
         engine.step(frame);
 
