@@ -29,3 +29,6 @@ dvs_capture.wav
 
 # Journal du plateau live, ecrit par scratchvj_ui quand la source est LIVE.
 platter.log
+
+# Reglages propres au bureau (entree, paire de canaux, porteuse) : jamais partages.
+settings.json

@@ -25,7 +25,7 @@ Toute nouvelle fonctionnalité doit respecter ces deux règles.
 
 ```sh
 cmake -S . -B build && cmake --build build
-ctest --test-dir build --output-on-failure    # 437 tests, doivent tous passer
+ctest --test-dir build --output-on-failure    # 441 tests, doivent tous passer
 ./build/scratchvj/scratchvj demo              # démo sans matériel
 ./build/scratchvj/scratchvj effects           # catalogue d'effets
 ./build/scratchvj/scratchvj layout            # checklist MIDI learn
@@ -104,8 +104,11 @@ Résumé — le détail et l'état module par module sont dans
 ou d'une dépendance lourde pour être vérifiable, donc rien n'a été écrit à
 l'aveugle :
 
-- Le décodeur de timecode `timecoder.c` (xwax, GPL-3)
-- Un vrai backend MIDI (RtMidi) et audio (miniaudio/ASIO)
+- Un vrai backend MIDI (RtMidi). L'audio d'entrée existe (`ui/audio_in`, WASAPI
+  partagé, un thread de capture) et le plateau est lu en direct par
+  `core/quadrature` — le Phase émet une porteuse nue, pas un timecode, donc le
+  décodeur xwax (`dvs/`, vendu et testé) sert un vrai disque de contrôle, pas ce
+  matériel. Reste la sortie audio (miniaudio/ASIO) pour le mode autonome.
 - Le rendu GPU est complet et vérifié : compositeur (`fs_program.sc` / `gpu_check`),
   360 (`fs_view360.sc` / `sphere_check`), effets une-frame (`fs_effects.sc` /
   `fx_check`) et multi-taps (`fs_taps.sc` / `taps_check`). La FFT audio-réactive
@@ -127,12 +130,12 @@ Le matériel est branché et deux sondes existent :
 ./build-ui/scratchvj/ui/Release/audio_probe.exe selftest    # le detecteur, sans materiel
 ```
 
-1. Est-ce que l'Elite émet son état MIDI à l'ouverture du port ? (`midi_probe`)
-2. Sur quelle entrée arrive le timecode, et est-elle lisible en partagé ?
-   **Il n'y a pas de disque de contrôle** : le Phase synthétise le signal à
-   partir du mouvement de la remote, donc il faut faire tourner un plateau
-   pendant tout le balayage. Si le signal arrive sur un point WASAPI ouvrable en
-   partagé, la voie « WASAPI partagé » est ouverte et la deuxième machine tombe.
+1. Est-ce que l'Elite émet son état MIDI à l'ouverture du port ? (`midi_probe`,
+   toujours pas balayé à la main — le seul test qui attend encore l'utilisateur)
+2. ~~Sur quelle entrée arrive le timecode ?~~ **Répondu** : MOTU voies 5/6,
+   1000 Hz, lu en WASAPI partagé pendant que Serato tourne. Et ce n'est pas un
+   timecode mais une **porteuse nue** (direction + vitesse, pas de position) —
+   d'où `core/quadrature`. Tout est dans `docs/cablage.md`.
 
 Ne pas commencer une nouvelle brique sans avoir lu la section correspondante du
 roadmap — plusieurs choix (le profil `wireless` du timecode, la fraîcheur plutôt

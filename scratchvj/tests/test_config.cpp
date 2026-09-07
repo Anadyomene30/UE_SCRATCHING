@@ -186,3 +186,54 @@ SVJ_TEST("config: loading a missing file reports the path") {
     CHECK(!config_load("definitely_not_here.json", out, error));
     CHECK(error.find("definitely_not_here.json") != std::string::npos);
 }
+
+// --- the desk's settings ------------------------------------------------------
+
+#include "config/settings_io.h"
+
+SVJ_TEST("settings: a round trip through JSON preserves the desk") {
+    DeskSettings desk;
+    desk.platter_endpoint = "Elite";
+    desk.platter_first_channel = 2;
+    desk.carrier_hz = 2000.0;
+
+    DeskSettings back;
+    std::string error;
+    CHECK(settings_from_json(settings_to_json(desk), back, error));
+    CHECK_EQ(back.platter_endpoint, std::string("Elite"));
+    CHECK_EQ(back.platter_first_channel, 2u);
+    CHECK_NEAR(back.carrier_hz, 2000.0, 1e-12);
+}
+
+SVJ_TEST("settings: a missing file is the measured desk, not an error") {
+    // The defaults ARE the desk the carrier was calibrated on (docs/cablage.md),
+    // so a fresh checkout there simply works with no file at all.
+    DeskSettings desk;
+    desk.platter_endpoint = "should be replaced";
+    std::string error;
+    CHECK(settings_load("this/file/does/not/exist.json", desk, error));
+    CHECK_EQ(desk.platter_endpoint, std::string("MOTU"));
+    CHECK_EQ(desk.platter_first_channel, 4u);
+    CHECK_NEAR(desk.carrier_hz, 1000.0, 1e-12);
+}
+
+SVJ_TEST("settings: a broken file names the field and leaves the desk untouched") {
+    // Half-applying would open the right input on the wrong channel pair with
+    // total confidence, which is worse than refusing.
+    DeskSettings desk;
+    desk.platter_endpoint = "keep";
+    std::string error;
+    CHECK(!settings_from_json(R"({"platter": {"endpoint": "X", "carrier_hz": -5}})",
+                              desk, error));
+    CHECK(error.find("carrier_hz") != std::string::npos);
+    CHECK_EQ(desk.platter_endpoint, std::string("keep"));
+}
+
+SVJ_TEST("settings: fields left out keep their defaults") {
+    DeskSettings desk;
+    std::string error;
+    CHECK(settings_from_json(R"({"platter": {"first_channel": 6}})", desk, error));
+    CHECK_EQ(desk.platter_first_channel, 6u);
+    CHECK_EQ(desk.platter_endpoint, std::string("MOTU"));
+    CHECK_NEAR(desk.carrier_hz, 1000.0, 1e-12);
+}

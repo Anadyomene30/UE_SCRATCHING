@@ -28,6 +28,7 @@
 
 #include "app/engine.h"
 #include "app/simulation.h"
+#include "config/settings_io.h"
 #include "core/quadrature.h"
 #include "imgui.h"
 #include "imgui_impl_sdl3.h"
@@ -193,15 +194,20 @@ int main(int argc, char** argv) {
     // core/quadrature. Opened only when asked, like the Spout receiver, and
     // ALWAYS in shared mode -- Serato may be on the same interface.
     //
-    // The endpoint and channel pair are the ones measured on this desk
-    // (docs/cablage.md): the MOTU's 5/6, 1000 Hz. Configuration, not code, is
-    // where these belong eventually; until a settings file carries them they
-    // are stated here in one place rather than guessed in several.
+    // Which input, which channel pair, which carrier: facts about THIS desk,
+    // read from settings.json next to the working directory. A missing file is
+    // the measured desk (docs/cablage.md: the MOTU's 5/6, 1000 Hz); a broken
+    // one is refused outright rather than half-applied.
     svj::ui::AudioInput platter_in;
     QuadratureTracker platter;
     std::vector<float> platter_pcm;
-    constexpr const char* kPlatterEndpoint = "MOTU";
-    constexpr unsigned kPlatterFirstChannel = 4;  // 0-based: channels 5/6
+    DeskSettings desk;
+    {
+        std::string error;
+        if (!settings_load("settings.json", desk, error)) {
+            std::fprintf(stderr, "%s\n", error.c_str());
+        }
+    }
     svj::ui::ProgramGpu gpu;
     svj::ui::View360Gpu view360a;
     svj::ui::EffectsGpu effects;
@@ -423,9 +429,9 @@ int main(int argc, char** argv) {
         // The platter's source, served at the frame boundary. Opening an audio
         // device is I/O, so the panel only asks and this is where it happens.
         if (view.deck_a_live && !platter_in.ready()) {
-            if (platter_in.open(kPlatterEndpoint, kPlatterFirstChannel)) {
+            if (platter_in.open(desk.platter_endpoint, desk.platter_first_channel)) {
                 QuadratureConfig config;
-                config.carrier_hz = 1000.0;  // measured: docs/cablage.md
+                config.carrier_hz = desk.carrier_hz;
                 config.sample_rate = platter_in.sample_rate();
                 if (!platter.configure(config)) {
                     std::fprintf(stderr, "plateau live: configuration refusee\n");
@@ -441,7 +447,7 @@ int main(int argc, char** argv) {
                 }
             } else {
                 std::fprintf(stderr, "plateau live: entree \"%s\" introuvable\n",
-                             kPlatterEndpoint);
+                             desk.platter_endpoint.c_str());
                 view.deck_a_live = false;
             }
         } else if (!view.deck_a_live && platter_in.ready()) {

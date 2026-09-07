@@ -9,7 +9,7 @@ tout ce qui reste à faire survive à la session qui l'a produit.
 | Jalon du plan initial | État | Modules |
 |---|---|---|
 | 1. Voir la table | Logique faite, matériel réel non branché | `core/surface`, `core/learn`, `core/layout`, `core/mapping`, `core/protocol` |
-| 2. Suivre le timecode | Logique faite (dont le profil `wireless`), décodeur xwax non intégré | `core/timecode`, `core/anchor`, `core/gestures` |
+| 2. Suivre le timecode | **Fait sur le vrai matériel** : le Phase émet une porteuse nue (direction + vitesse, pas de position), lue par `core/quadrature` depuis la MOTU en WASAPI partagé, verrou et suivi de la main vérifiés dans la fenêtre (`--live`). Le décodeur xwax est vendu et testé (`dvs/`) pour un vrai disque de contrôle | `core/timecode`, `core/quadrature`, `core/anchor`, `core/gestures`, `ui/audio_in`, `dvs/` |
 | 3. Voir la vidéo | Fait de bout en bout : `scratchvj analyze` décode via l'exécutable ffmpeg, compresse en BC1 (`core/bc1`, testé) et écrit le `.svcache` ; l'interface affiche les frames | `core/videocache`, `core/framewindow`, `core/bc1`, `app/analyze` |
 | 4. Le Mac tourne | CI verte sur macOS depuis le premier commit ; portage audio/GPU réel non fait | `.github/workflows/ci.yml` |
 | 5. Mixer | Courbes, blend modes, détection de transform faits ; le program est composité sur le GPU (`fs_program.sc`), tenu conforme à sa référence `core/compose` par l'outil `gpu_check` (écart max 1/255) | `core/mixer`, `core/compose` |
@@ -33,11 +33,13 @@ Et `core/headset` : la géométrie de la sphère vue à travers un casque, avec 
 passe GPU (`ui/gpu_eye`, `fs_view360_eye.sc`) tenue à sa référence par
 `eye_check`. Voir [Le casque](#le-casque--scratcher-une-sphère-quon-regarde-de-lintérieur).
 
-**Ce qui reste, dans les grandes lignes** : le décodeur `timecoder.c` de xwax,
-un vrai périphérique MIDI (RtMidi) et audio (miniaudio/ASIO), Syphon/NDI, la
-**session** OpenXR (la géométrie est faite, la boucle de frame attend le casque),
-les entrées live, et le test en scène du plugin Unreal. Le reste du plan initial
-est fait et vérifié — voir le tableau ci-dessus.
+**Ce qui reste, dans les grandes lignes** : un vrai périphérique MIDI (RtMidi)
+et la sortie audio du mode autonome (miniaudio/ASIO — l'entrée existe),
+Syphon/NDI, la **session** OpenXR (la géométrie est faite, la boucle de frame
+attend le casque), `DeckSource::Live` pour scratcher une entrée vidéo live, et
+le test en scène du plugin Unreal. Le reste du plan initial est fait et vérifié
+— voir le tableau ci-dessus. Les réglages propres au bureau (entrée, paire de
+canaux, porteuse) sont dans `settings.json` via `config/settings_io`.
 
 > **NDI : bloqué sur une licence, pas sur du code.** La machine a bien le
 > *runtime* NDI (v5 et les NDI 6 Tools, avec `NDI_RUNTIME_DIR_V6` posée), donc le

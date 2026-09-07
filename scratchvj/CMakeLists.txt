@@ -53,7 +53,11 @@ target_include_directories(scratchvj_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src
 #
 # Split out so the JSON library, which is a large header, is compiled exactly
 # once instead of by every translation unit that happens to touch a mapping.
-add_library(scratchvj_config STATIC src/config/mapping_io.cpp src/config/warp_io.cpp)
+add_library(scratchvj_config STATIC
+  src/config/mapping_io.cpp
+  src/config/settings_io.cpp
+  src/config/warp_io.cpp
+)
 target_include_directories(scratchvj_config
   PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/vendor
