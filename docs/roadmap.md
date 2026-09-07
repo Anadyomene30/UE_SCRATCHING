@@ -53,7 +53,7 @@ canaux, porteuse) sont dans `settings.json` via `config/settings_io`.
 > passage **Studio Monitor**, donc un récepteur indépendant pour la vérifier,
 > exactement comme `spout_check` vérifie Spout.
 
-**Deux tests qui reviennent à l'utilisateur, devant le matériel.** Le matériel a
+**Les deux tests qui revenaient à l'utilisateur sont répondus.** Le matériel a
 été branché le 2026-09-06 et deux outils existent maintenant pour y répondre —
 `midi_probe` et `audio_probe`, tous deux sous `ui/tools`. Ce qui est déjà établi :
 
@@ -110,11 +110,24 @@ sélecteur de voie choisit ce qu'on **écoute**, pas ce que l'ordinateur
   jamais reçu de signal pendant les mesures. Ce mode est propre à Serato et ne
   nous est pas accessible, donc le DVS reste la voie.
 
-Restent à mesurer, et il faut des mains sur le matériel :
+Mesuré avec des mains sur le matériel :
 
-1. **Est-ce que l'Elite émet son état MIDI à la connexion ?** Ça décide du sort du
-   mode fantôme des potards absolus. `midi_probe all 45`, puis balayer tout.
-   Rien n'est encore arrivé, mais rien n'a encore été touché pendant un test.
+1. ~~**Est-ce que l'Elite émet son état MIDI à la connexion ?**~~ **RÉPONDU le
+   2026-09-07 : NON.** `midi_probe all 45` avec balayage complet : 329 messages,
+   **41 contrôles distincts**, mais seulement **7 dans la première demi-seconde**
+   — et ce sont des CC d'encodeur au repos (ch2/ch3 n25 à 64), pas une
+   description de la surface.
+   **Donc le mode fantôme de `core/surface` reste nécessaire** : un potard
+   absolu n'a pas de valeur connue tant qu'on ne l'a pas bougé, et l'interface a
+   raison de le dessiner en pointillé plutôt que de mentir avec un zéro. C'est
+   la justification mesurée d'un choix fait à l'aveugle au premier commit.
+
+   Ce que l'Elite envoie, pour mémoire (le nommage reste à `--midi-learn` : rien
+   n'est câblé en dur, c'est la règle du projet) — CC sur ch2/ch3 (n22-n26, n28,
+   n52), ch7 (n52), ch10/ch11 (n0, n3), ch16 (n8, n10, n123, n127) ; notes sur
+   ch6, ch7, ch11, ch14, ch16. Aucun autre port ne parle : le Phase n'est plus
+   énuméré (récepteur débranché de l'USB, il est sur son chargeur) et les
+   RP-8000 étaient éteintes.
 2. **Sur quelle entrée arrive le timecode, et est-elle lisible en partagé ?**
    C'est la reformulation concrète de la question du second port : si le signal
    arrive sur un point de terminaison WASAPI ouvrable en partagé, la voie

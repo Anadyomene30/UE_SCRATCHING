@@ -121,7 +121,8 @@ l'aveugle :
   réveillé — voir la section « Le casque » du roadmap avant d'y toucher
 - Le test en scène du plugin Unreal `ScratchLink` — il compile contre UE 5.7 et le flux UDP est vérifié, mais personne n'a encore scratché une scène avec
 
-**Deux tests devant le matériel** (voir le roadmap pour ce qui est déjà établi).
+**Les deux tests matériels sont répondus** (détail et mesures dans le roadmap).
+Les sondes restent utiles pour re-vérifier après un changement de câblage :
 Le matériel est branché et deux sondes existent :
 
 ```sh
@@ -130,8 +131,9 @@ Le matériel est branché et deux sondes existent :
 ./build-ui/scratchvj/ui/Release/audio_probe.exe selftest    # le detecteur, sans materiel
 ```
 
-1. Est-ce que l'Elite émet son état MIDI à l'ouverture du port ? (`midi_probe`,
-   toujours pas balayé à la main — le seul test qui attend encore l'utilisateur)
+1. ~~Est-ce que l'Elite émet son état MIDI à l'ouverture du port ?~~ **Non**
+   (mesuré : 41 contrôles au balayage, 7 messages au démarrage et ce sont des
+   encodeurs au repos). **Le mode fantôme reste nécessaire.**
 2. ~~Sur quelle entrée arrive le timecode ?~~ **Répondu** : MOTU voies 5/6,
    1000 Hz, lu en WASAPI partagé pendant que Serato tourne. Et ce n'est pas un
    timecode mais une **porteuse nue** (direction + vitesse, pas de position) —
