@@ -1,4 +1,5 @@
 #include <cstdint>
+#include <string>
 #include <vector>
 
 #include "core/compose.h"
@@ -124,4 +125,143 @@ SVJ_TEST("compose: a null source or an empty canvas is refused quietly") {
     const auto red = solid(4, 4, 255, 0, 0);
     accumulate_layer(tiny, 4, 4, layer_of(red, 4, 4, 1.0f, BlendMode::Normal));
     CHECK_EQ(tiny.size(), std::size_t{3});  // untouched, not overrun
+}
+
+namespace {
+
+Crossfade at(Transition transition, float position, float gain_a = 1.0f, float gain_b = 1.0f) {
+    Crossfade xf;
+    xf.transition = transition;
+    xf.position = position;
+    xf.gain_a = gain_a;
+    xf.gain_b = gain_b;
+    return xf;
+}
+
+const Transition kAll[] = {Transition::Cut,      Transition::Fade,     Transition::Additive,
+                           Transition::Multiply, Transition::Screen,   Transition::LumaWipe,
+                           Transition::GeoWipe,  Transition::RgbSplit, Transition::ZoomBlur};
+
+}  // namespace
+
+SVJ_TEST("crossfade: EVERY TRANSITION SHOWS A ALONE AT 0 AND B ALONE AT 1") {
+    // Whatever happens in between, the ends are the two pictures, whole. A
+    // transition that did not honour that is a crossfader that never arrives.
+    const auto red = solid(8, 8, 200, 40, 20);
+    const auto blue = solid(8, 8, 10, 60, 220);
+    for (const Transition t : kAll) {
+        std::vector<std::uint8_t> canvas;
+        clear_program(canvas, 8, 8);
+        compose_decks(canvas, 8, 8, layer_of(red, 8, 8, 1.0f, BlendMode::Normal),
+                      layer_of(blue, 8, 8, 1.0f, BlendMode::Normal), at(t, 0.0f, 1.0f, 0.0f));
+        CHECK_EQ(canvas[0], 200);
+        CHECK_EQ(canvas[2], 20);
+        clear_program(canvas, 8, 8);
+        compose_decks(canvas, 8, 8, layer_of(red, 8, 8, 1.0f, BlendMode::Normal),
+                      layer_of(blue, 8, 8, 1.0f, BlendMode::Normal), at(t, 1.0f, 0.0f, 1.0f));
+        CHECK_EQ(canvas[0], 10);
+        CHECK_EQ(canvas[2], 220);
+    }
+}
+
+SVJ_TEST("crossfade: additive is what the compositor always did") {
+    const auto red = solid(4, 4, 200, 0, 0);
+    const auto blue = solid(4, 4, 0, 0, 200);
+    std::vector<std::uint8_t> canvas;
+    clear_program(canvas, 4, 4);
+    compose_decks(canvas, 4, 4, layer_of(red, 4, 4, 1.0f, BlendMode::Normal),
+                  layer_of(blue, 4, 4, 1.0f, BlendMode::Normal), at(Transition::Additive, 0.5f, 1.0f, 1.0f));
+    CHECK_EQ(canvas[0], 200);  // both fully present: a sharp curve's middle
+    CHECK_EQ(canvas[2], 200);
+}
+
+SVJ_TEST("crossfade: multiply and screen show the blend at the middle of the travel") {
+    const auto grey = solid(4, 4, 128, 128, 128);
+    std::vector<std::uint8_t> canvas;
+    clear_program(canvas, 4, 4);
+    compose_decks(canvas, 4, 4, layer_of(grey, 4, 4, 1.0f, BlendMode::Normal),
+                  layer_of(grey, 4, 4, 1.0f, BlendMode::Normal), at(Transition::Multiply, 0.5f));
+    CHECK_NEAR(canvas[0], 64, 1.5);  // 0.5 * 0.5
+    clear_program(canvas, 4, 4);
+    compose_decks(canvas, 4, 4, layer_of(grey, 4, 4, 1.0f, BlendMode::Normal),
+                  layer_of(grey, 4, 4, 1.0f, BlendMode::Normal), at(Transition::Screen, 0.5f));
+    CHECK_NEAR(canvas[0], 191, 1.5);  // 1 - 0.5 * 0.5
+}
+
+SVJ_TEST("crossfade: the geometric wipe has crossed the left half at mid travel") {
+    const auto red = solid(16, 4, 255, 0, 0);
+    const auto blue = solid(16, 4, 0, 0, 255);
+    std::vector<std::uint8_t> canvas;
+    clear_program(canvas, 16, 4);
+    compose_decks(canvas, 16, 4, layer_of(red, 16, 4, 1.0f, BlendMode::Normal),
+                  layer_of(blue, 16, 4, 1.0f, BlendMode::Normal), at(Transition::GeoWipe, 0.5f));
+    CHECK_EQ(canvas[0 * 4 + 2], 255);   // leftmost pixel: B
+    CHECK_EQ(canvas[15 * 4 + 0], 255);  // rightmost pixel: still A
+}
+
+SVJ_TEST("crossfade: the luma wipe takes A's dark pixels first") {
+    std::vector<std::uint8_t> a(16 * 4 * 4);
+    for (std::uint32_t x = 0; x < 16; ++x) {
+        for (std::uint32_t y = 0; y < 4; ++y) {
+            std::uint8_t* p = a.data() + (y * 16 + x) * 4;
+            p[0] = p[1] = p[2] = x < 8 ? 20 : 240;  // dark left, bright right
+            p[3] = 255;
+        }
+    }
+    const auto blue = solid(16, 4, 0, 0, 255);
+    std::vector<std::uint8_t> canvas;
+    clear_program(canvas, 16, 4);
+    compose_decks(canvas, 16, 4, layer_of(a, 16, 4, 1.0f, BlendMode::Normal),
+                  layer_of(blue, 16, 4, 1.0f, BlendMode::Normal), at(Transition::LumaWipe, 0.5f));
+    CHECK_EQ(canvas[0 * 4 + 2], 255);   // dark A pixel: replaced by B
+    CHECK_EQ(canvas[15 * 4 + 0], 240);  // bright A pixel: still A
+}
+
+SVJ_TEST("crossfade: the rgb split crosses red first and blue last") {
+    const auto white = solid(4, 4, 255, 255, 255);
+    const auto black = solid(4, 4, 0, 0, 0);
+    std::vector<std::uint8_t> canvas;
+    clear_program(canvas, 4, 4);
+    compose_decks(canvas, 4, 4, layer_of(white, 4, 4, 1.0f, BlendMode::Normal),
+                  layer_of(black, 4, 4, 1.0f, BlendMode::Normal), at(Transition::RgbSplit, 0.4f));
+    CHECK_EQ(canvas[0], 0);     // red has fully crossed to B
+    CHECK(canvas[1] > 0 && canvas[1] < 255);  // green mid-way
+    CHECK_EQ(canvas[2], 255);   // blue not yet
+}
+
+SVJ_TEST("crossfade: the zoom shows the centre of A larger as it leaves") {
+    // A: a dark picture with a bright centre pixel block. Zoomed in, the
+    // corner of the output reads a pixel nearer the centre of A.
+    std::vector<std::uint8_t> a(16 * 16 * 4, 0);
+    for (std::uint32_t y = 6; y < 10; ++y) {
+        for (std::uint32_t x = 6; x < 10; ++x) {
+            std::uint8_t* p = a.data() + (y * 16 + x) * 4;
+            p[0] = p[1] = p[2] = 255;
+            p[3] = 255;
+        }
+    }
+    const auto black = solid(16, 16, 0, 0, 0);
+    std::vector<std::uint8_t> canvas;
+    clear_program(canvas, 16, 16);
+    compose_decks(canvas, 16, 16, layer_of(a, 16, 16, 1.0f, BlendMode::Normal),
+                  layer_of(black, 16, 16, 1.0f, BlendMode::Normal), at(Transition::ZoomBlur, 0.6f));
+    // Zoom 1.9 at p = 0.6: output pixel 4 reads A at 0.5 + (4.5/16 - 0.5)/1.9 = 0.386 -> x 6: bright.
+    CHECK(canvas[(4 * 16 + 4) * 4] > 60);
+    CHECK_EQ(canvas[(0 * 16 + 0) * 4], 0);
+}
+
+SVJ_TEST("crossfade: a null deck is black, not a crash") {
+    const auto red = solid(4, 4, 200, 0, 0);
+    std::vector<std::uint8_t> canvas;
+    clear_program(canvas, 4, 4);
+    compose_decks(canvas, 4, 4, layer_of(red, 4, 4, 1.0f, BlendMode::Normal), ComposeLayer{},
+                  at(Transition::Fade, 1.0f, 0.0f, 1.0f));
+    CHECK_EQ(canvas[0], 0);
+}
+
+SVJ_TEST("crossfade: a control's travel lands on all nine transitions in order") {
+    CHECK(transition_from_unit(0.0f) == Transition::Cut);
+    CHECK(transition_from_unit(0.5f) == Transition::Screen);
+    CHECK(transition_from_unit(1.0f) == Transition::ZoomBlur);
+    CHECK_EQ(std::string(transition_name(Transition::LumaWipe)), std::string("luma_wipe"));
 }

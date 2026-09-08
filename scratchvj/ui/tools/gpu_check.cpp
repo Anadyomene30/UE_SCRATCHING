@@ -2,14 +2,16 @@
 //
 // core/compose is tested arithmetic; fs_program.sc claims to be the same
 // arithmetic. This tool makes the claim falsifiable: same three synthetic
-// layers through both paths, every blend mode, and the outputs must agree
-// channel for channel within rounding. A flipped image, a swapped channel, a
-// blend equation drifting from its reference -- each fails loudly here, on a
-// hidden window, with no eyeball in the loop.
+// layers through both paths, every blend mode and every crossfader
+// transition, and the outputs must agree channel for channel within
+// rounding. A flipped image, a swapped channel, a blend equation drifting
+// from its reference -- each fails loudly here, on a hidden window, with no
+// eyeball in the loop.
 //
 // Tolerance is 2/255 per channel: the CPU path rounds once at the end, the GPU
 // rounds through an 8-bit render target, and the two may land a hair apart.
 // Anything larger than rounding is a real divergence and must fail.
+
 #define SDL_MAIN_HANDLED
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
@@ -96,6 +98,47 @@ int main() {
         return 1;
     }
 
+    int failures = 0;
+    const auto run = [&](const char* name, BlendMode mode, const float gains[3],
+                         Transition transition, float position) {
+        // The CPU reference: the decks through the crossfader, the overlay
+        // by its mode, exactly as core/compose says.
+        std::vector<std::uint8_t> expected;
+        clear_program(expected, kSize, kSize);
+        Crossfade xf;
+        xf.transition = transition;
+        xf.gain_a = gains[0];
+        xf.gain_b = gains[1];
+        xf.position = position;
+        compose_decks(expected, kSize, kSize, ComposeLayer{layer_a.data(), kSize, kSize},
+                      ComposeLayer{layer_b.data(), kSize, kSize}, xf);
+        accumulate_layer(expected, kSize, kSize,
+                         ComposeLayer{layer_o.data(), kSize, kSize, gains[2], mode});
+
+        gpu.render(tex_a, tex_b, tex_o, gains[0], gains[1], gains[2], static_cast<int>(mode),
+                   static_cast<int>(transition), position);
+        // The readback is queued separately from render() so the app can read
+        // the picture the EFFECT RACK produced rather than the compositor's own
+        // target. There is no rack here, so the compositor's target IS the
+        // program -- but the call has to be made, and forgetting it is what let
+        // this tool keep passing from a stale binary while it could no longer
+        // read anything at all.
+        gpu.queue_readback(gpu.texture_index());
+        const std::uint8_t* pixels = nullptr;
+        for (int i = 0; i < 8 && pixels == nullptr; ++i) {
+            pixels = gpu.completed_frame(bgfx::frame());
+        }
+        if (pixels == nullptr) {
+            std::fprintf(stderr, "%-12s @ %.2f : aucun readback\n", name, static_cast<double>(position));
+            ++failures;
+            return;
+        }
+        const int worst = worst_difference(pixels, expected);
+        std::printf("%-12s @ %.2f : ecart max %d\n", name, static_cast<double>(position), worst);
+        if (worst > 2) ++failures;
+    };
+
+    // The overlay's modes, over the additive crossfade the program always had.
     const struct {
         const char* name;
         BlendMode mode;
@@ -108,45 +151,23 @@ int main() {
         {"alpha", BlendMode::Alpha, {1.0f, 1.0f, 0.9f}},
         {"gains nuls", BlendMode::Screen, {0.0f, 0.0f, 0.0f}},
     };
+    for (const auto& test : cases) run(test.name, test.mode, test.gains, Transition::Additive, 0.5f);
 
-    int failures = 0;
-    for (const auto& test : cases) {
-        // The CPU reference, exactly as the app composed before the GPU did.
-        std::vector<std::uint8_t> expected;
-        clear_program(expected, kSize, kSize);
-        accumulate_layer(expected, kSize, kSize,
-                         ComposeLayer{layer_a.data(), kSize, kSize, test.gains[0],
-                                      BlendMode::Normal});
-        accumulate_layer(expected, kSize, kSize,
-                         ComposeLayer{layer_b.data(), kSize, kSize, test.gains[1],
-                                      BlendMode::Add});
-        accumulate_layer(expected, kSize, kSize,
-                         ComposeLayer{layer_o.data(), kSize, kSize, test.gains[2],
-                                      test.mode});
-
-        gpu.render(tex_a, tex_b, tex_o, test.gains[0], test.gains[1], test.gains[2],
-                   static_cast<int>(test.mode));
-        // The readback is queued separately from render() so the app can read
-        // the picture the EFFECT RACK produced rather than the compositor's own
-        // target. There is no rack here, so the compositor's target IS the
-        // program -- but the call has to be made, and forgetting it is what let
-        // this tool keep passing from a stale binary while it could no longer
-        // read anything at all.
-        gpu.queue_readback(gpu.texture_index());
-
-        const std::uint8_t* pixels = nullptr;
-        for (int i = 0; i < 8 && pixels == nullptr; ++i) {
-            pixels = gpu.completed_frame(bgfx::frame());
-        }
-        if (pixels == nullptr) {
-            std::fprintf(stderr, "%-10s : aucun readback\n", test.name);
-            ++failures;
-            continue;
-        }
-
-        const int worst = worst_difference(pixels, expected);
-        std::printf("%-10s : ecart max %d\n", test.name, worst);
-        if (worst > 2) ++failures;
+    // Every transition, mid-travel and at both ends: a transition that does
+    // not show A alone at 0 and B alone at 1 is a broken crossfader.
+    const struct { const char* name; Transition transition; } transitions[] = {
+        {"cut", Transition::Cut},           {"fade", Transition::Fade},
+        {"additive", Transition::Additive}, {"multiply", Transition::Multiply},
+        {"screen", Transition::Screen},     {"luma wipe", Transition::LumaWipe},
+        {"geo wipe", Transition::GeoWipe},  {"rgb split", Transition::RgbSplit},
+        {"zoom", Transition::ZoomBlur},
+    };
+    for (const auto& t : transitions) {
+        const float mid[3] = {0.8f, 0.7f, 0.0f};
+        const float ends[3] = {1.0f, 1.0f, 0.0f};
+        run(t.name, BlendMode::Normal, mid, t.transition, 0.37f);
+        run(t.name, BlendMode::Normal, ends, t.transition, 0.0f);
+        run(t.name, BlendMode::Normal, ends, t.transition, 1.0f);
     }
 
     gpu.destroy();

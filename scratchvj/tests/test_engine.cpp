@@ -1043,3 +1043,43 @@ SVJ_TEST("engine: no default mapping names a destination nothing transmits") {
         CHECK(engine.mapping().at(i).destination.target != "mix.transition");
     }
 }
+
+SVJ_TEST("engine: the crossfader position the transitions read follows reverse") {
+    Engine engine;
+    engine.configure(124.0, Engine::DemoContent::No);
+    // Without demo content the front end declares the surface from the
+    // profiles; here the test does, like the fader tests above.
+    const ControlIndex xf = engine.surface().declare("xfader", ControlKind::Fader);
+    engine.bind();  // the default rows name undeclared knobs here; not this test's point
+    engine.surface().set(xf, 0.25f, 1);
+    EngineFrame frame;
+    frame.deck_a = dead_platter(0.0);
+    frame.deck_b = dead_platter(0.0);
+    engine.step(frame);
+    CHECK_NEAR(engine.crossfader_position(), 0.25, 1e-6);
+    engine.mix_settings().xfader_reverse = true;
+    engine.step(frame);
+    CHECK_NEAR(engine.crossfader_position(), 0.75, 1e-6);
+}
+
+SVJ_TEST("engine: mix.transition picks a transition from a control's travel") {
+    Engine engine;
+    engine.configure(124.0, Engine::DemoContent::No);
+    Mapping row;
+    row.name = "test";
+    row.source.kind = SourceKind::Control;
+    row.source.control_id = "ch1.eq.low";
+    row.destination.target = "mix.transition";
+    engine.mapping().add(row);
+    const ControlIndex knob = engine.surface().declare("ch1.eq.low", ControlKind::Knob);
+    engine.bind();
+    engine.surface().set(knob, 1.0f, 1);
+    EngineFrame frame;
+    frame.deck_a = dead_platter(0.0);
+    frame.deck_b = dead_platter(0.0);
+    engine.step(frame);
+    CHECK(engine.mix_settings().transition == Transition::ZoomBlur);
+    engine.surface().set(knob, 0.0f, 2);
+    engine.step(frame);
+    CHECK(engine.mix_settings().transition == Transition::Cut);
+}

@@ -4327,32 +4327,62 @@ void draw_mixer_column(Engine& engine, Frame& frame, float width, float height) 
         return index == 0 ? FaderCurve::Smooth : index == 1 ? FaderCurve::Linear
                           : index == 2 ? FaderCurve::Sharp : FaderCurve::Cut;
     };
-    for (int which = 0; which < 2; ++which) {
-        FaderCurve& target = which == 0 ? mix.xfader : mix.channel;
-        bool& reverse = which == 0 ? mix.xfader_reverse : mix.channel_reverse;
+    {
         ImGui::Dummy(ImVec2(0.0f, 10.0f));
-        eyebrow(which == 0 ? "COURBE XF" : "COURBE VOIES");
+        eyebrow("COURBE XF");
         ImGui::Dummy(ImVec2(0.0f, 2.0f));
-        int index = curve_index(target);
-        ImGui::PushID(which);
+        int index = curve_index(mix.xfader);
         if (segmented("curve", kCurves, 4, index, nullptr, kAccent, true, inner)) {
-            target = curve_of(index);
-            if (which == 1) mix.channel_b = target;  // both here; one each in TABLE
+            mix.xfader = curve_of(index);
             frame.settings_dirty = true;
         }
         if (ImGui::IsItemHovered()) {
-            ImGui::SetTooltip(which == 0
-                                  ? "comment A devient B le long du crossfader :\n"
-                                    "douce (fondu long), lin\xC3\xA9""aire, sharp (scratch), "
-                                    "cut (tout ou rien)"
-                                  : "la r\xC3\xA9ponse des deux faders de voie ; une par voie dans TABLE");
+            ImGui::SetTooltip("la loi du crossfader : douce (fondu long), lin\xC3\xA9""aire, "
+                              "sharp (scratch), cut (tout ou rien).\n"
+                              "Les courbes des faders de voie sont dans TABLE, une par voie.");
         }
-        if (toggle("Invers\xC3\xA9", reverse)) {
-            reverse = !reverse;
-            if (which == 1) mix.channel_b_reverse = reverse;
+        if (toggle("Invers\xC3\xA9", mix.xfader_reverse)) {
+            mix.xfader_reverse = !mix.xfader_reverse;
             frame.settings_dirty = true;
         }
-        ImGui::PopID();
+    }
+
+    // How A becomes B: the transition. A real VJ decision, so it sits with
+    // the crossfader rather than in a settings screen.
+    ImGui::Dummy(ImVec2(0.0f, 10.0f));
+    eyebrow("TRANSITION");
+    ImGui::Dummy(ImVec2(0.0f, 2.0f));
+    {
+        static const char* const kNames[] = {"Cut", "Fondu", "Additif", "Multipli\xC3\xA9", "Screen",
+                                             "Wipe luma", "Wipe", "RVB d\xC3\xA9""cal\xC3\xA9", "Zoom"};
+        static const char* const kAbout[] = {
+            "tout ou rien au milieu de la course",
+            "B par-dessus A, \xC3\xA0 son poids",
+            "B ajout\xC3\xA9 \xC3\xA0 A : jamais de noir au milieu, le scratch",
+            "A, puis les deux multipli\xC3\xA9s, puis B",
+            "A, puis les deux en screen, puis B",
+            "les pixels sombres de A c\xC3\xA8""dent d'abord",
+            "de gauche \xC3\xA0 droite, bord doux",
+            "rouge, vert puis bleu passent l'un apr\xC3\xA8s l'autre",
+            "A grossit en partant, B monte dessous",
+        };
+        const int current = static_cast<int>(mix.transition);
+        ImGui::SetNextItemWidth(inner);
+        if (ImGui::BeginCombo("##transition", kNames[current])) {
+            for (int t = 0; t < 9; ++t) {
+                if (ImGui::Selectable(kNames[t], t == current)) {
+                    mix.transition = static_cast<Transition>(t);
+                    frame.settings_dirty = true;
+                }
+                if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", kAbout[t]);
+            }
+            ImGui::EndCombo();
+        }
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("comment A devient B le long du crossfader\n%s\n"
+                              "Fondu et Additif suivent la courbe ; les autres suivent la position",
+                              kAbout[current]);
+        }
     }
 
     ImGui::Dummy(ImVec2(0.0f, 8.0f));
@@ -4435,10 +4465,7 @@ void draw_program_strip(Engine& engine, Frame& frame, float height) {
                               "Screen : \xC3\xA9""claircit sans jamais assombrir");
         }
     }
-    ImGui::SameLine(0.0f, 12.0f);
     {
-        const float dy = (kControlHeight - ImGui::GetTextLineHeight()) * 0.5f;
-        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + dy);
         push_small();
         if (frame.overlay_live) {
             // Said plainly: a receiver waiting for a sender looks exactly
@@ -4456,7 +4483,7 @@ void draw_program_strip(Engine& engine, Frame& frame, float height) {
             text_c(kFaint, "%s \xC2\xB7 %s", engine.overlay().name.c_str(),
                    clock_of(engine.overlay().played.position_s).c_str());
         } else {
-            text_c(kFaint, "aucun clip \xE2\x80\x94 bouton O dans la biblioth\xC3\xA8que");
+            text_c(kFaint, "incrustation : aucun clip \xE2\x80\x94 bouton Incr. dans la biblioth\xC3\xA8que");
         }
         pop_font();
     }

@@ -88,6 +88,7 @@ bool ProgramGpu::init(std::uint32_t width, std::uint32_t height, std::uint16_t v
     program_ = program.idx;
 
     uniform_ = bgfx::createUniform("u_gains", bgfx::UniformType::Vec4).idx;
+    xfade_uniform_ = bgfx::createUniform("u_xfade", bgfx::UniformType::Vec4).idx;
     samplers_[0] = bgfx::createUniform("s_deckA", bgfx::UniformType::Sampler).idx;
     samplers_[1] = bgfx::createUniform("s_deckB", bgfx::UniformType::Sampler).idx;
     samplers_[2] = bgfx::createUniform("s_overlay", bgfx::UniformType::Sampler).idx;
@@ -158,6 +159,7 @@ void ProgramGpu::destroy() {
         }
     };
     kill_uniform(uniform_);
+    kill_uniform(xfade_uniform_);
     for (std::uint16_t& sampler : samplers_) kill_uniform(sampler);
     if (vertices_ != 0xFFFF) {
         bgfx::VertexBufferHandle v;
@@ -170,7 +172,7 @@ void ProgramGpu::destroy() {
 
 void ProgramGpu::render(std::uint16_t deck_a, std::uint16_t deck_b, std::uint16_t overlay,
                         float gain_a, float gain_b, float gain_overlay,
-                        int overlay_mode) {
+                        int overlay_mode, int transition, float position) {
     if (!ready_) return;
 
     const float gains[4] = {gain_a, gain_b, gain_overlay,
@@ -178,6 +180,10 @@ void ProgramGpu::render(std::uint16_t deck_a, std::uint16_t deck_b, std::uint16_
     bgfx::UniformHandle u;
     u.idx = uniform_;
     bgfx::setUniform(u, gains);
+    const float xfade[4] = {static_cast<float>(transition), position, 0.0f, 0.0f};
+    bgfx::UniformHandle ux;
+    ux.idx = xfade_uniform_;
+    bgfx::setUniform(ux, xfade);
 
     bgfx::UniformHandle s0, s1, s2;
     s0.idx = samplers_[0];

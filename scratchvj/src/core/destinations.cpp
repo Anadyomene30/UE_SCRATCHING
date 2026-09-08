@@ -4,7 +4,7 @@ namespace svj {
 
 const std::vector<DestinationSpec>& destination_catalogue() {
     static const std::vector<DestinationSpec> table = {
-        {"mix.transition", Dest::MixTransition, false, "transition A/B (le crossfader y va déjà tout seul)"},
+        {"mix.transition", Dest::MixTransition, false, "la transition du crossfader : cut, fondu, additif, multiplié, screen, wipe luma, wipe, RVB, zoom"},
         {"mix.xfader.curve", Dest::MixXfaderCurve, false, "courbe du crossfader : douce, linéaire, sharp, cut"},
         {"mix.fader.curve", Dest::MixFaderCurve, false, "courbe des faders de voie"},
         {"mix.xfader.reverse", Dest::MixXfaderReverse, false, "crossfader inversé (hamster)"},

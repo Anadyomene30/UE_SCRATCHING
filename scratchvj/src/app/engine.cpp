@@ -1,5 +1,7 @@
 #include "app/engine.h"
 
+#include "core/compose.h"
+
 #include <algorithm>
 
 namespace svj {
@@ -490,7 +492,7 @@ void Engine::dispatch(std::size_t index, Dest dest, float value, DeckCommands& a
     }
 
     switch (dest) {
-        case Dest::MixTransition: break;  // the crossfader reaches the mixer directly
+        case Dest::MixTransition: mix_.transition = transition_from_unit(value); break;
         case Dest::MixXfaderCurve: mix_.xfader = curve_from_unit(value); break;
         case Dest::MixFaderCurve:
             mix_.channel = curve_from_unit(value);
@@ -604,7 +606,8 @@ void Engine::step(const EngineFrame& frame) {
     const float crossfader = value_or(surface_, xfader_, 0.5f);
     const float fader_a = value_or(surface_, fader_a_, 1.0f);
     const float fader_b = value_or(surface_, fader_b_, 1.0f);
-    cuts_.update(frame.time_s, mix_.xfader_reverse ? 1.0f - crossfader : crossfader);
+    xfade_position_ = mix_.xfader_reverse ? 1.0f - crossfader : crossfader;
+    cuts_.update(frame.time_s, xfade_position_);
     weights_ = mix_weights(crossfader, fader_a, fader_b, mix_);
     stack_ = stack_weights(crossfader, fader_a, fader_b, mix_, overlay_layer_);
 

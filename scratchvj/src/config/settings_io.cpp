@@ -6,6 +6,8 @@
 
 #include <nlohmann/json.hpp>
 
+#include "core/compose.h"
+
 namespace svj {
 namespace {
 
@@ -58,7 +60,8 @@ std::string settings_to_json(const DeskSettings& settings) {
                        {"fader_b_curve", curve_key(settings.mix.channel_b)},
                        {"xfader_reverse", settings.mix.xfader_reverse},
                        {"fader_reverse", settings.mix.channel_reverse},
-                       {"fader_b_reverse", settings.mix.channel_b_reverse}};
+                       {"fader_b_reverse", settings.mix.channel_b_reverse},
+                       {"transition", transition_name(settings.mix.transition)}};
     root["library"] = json{{"folders", settings.library_folders},
                            {"cache_dir", settings.cache_dir},
                            {"sequence_fps", settings.sequence_fps},
@@ -219,6 +222,20 @@ bool settings_from_json(std::string_view text, DeskSettings& out, std::string& e
         parsed.mix.xfader_reverse = mix.value("xfader_reverse", parsed.mix.xfader_reverse);
         parsed.mix.channel_reverse = mix.value("fader_reverse", parsed.mix.channel_reverse);
         parsed.mix.channel_b_reverse = mix.value("fader_b_reverse", parsed.mix.channel_reverse);
+        if (mix.contains("transition")) {
+            bool found = false;
+            for (int t = 0; t < 9; ++t) {
+                if (mix.at("transition").is_string() &&
+                    mix.at("transition").get<std::string>() == transition_name(static_cast<Transition>(t))) {
+                    parsed.mix.transition = static_cast<Transition>(t);
+                    found = true;
+                }
+            }
+            if (!found) {
+                error = "'mix.transition' inconnue : " + mix.at("transition").dump();
+                return false;
+            }
+        }
     }
 
     if (root.contains("library")) {

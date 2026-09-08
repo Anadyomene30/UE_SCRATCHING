@@ -135,8 +135,17 @@ en un clic.
 > actif, six potards avec « assigner » (le prochain contrôle touché sur la
 > table devient la source, par une liaison ordinaire), sync tempo.
 >
-> Ce qui n'est pas fait : l'enum `Transition` (neuf transitions de crossfader,
-> toujours sans code) et la géométrie de la RP-8000. Ni gcc ni clang n'étant
+> Et les **neuf transitions du crossfader** ont enfin leur code : la référence
+> CPU est `compose_decks` (`core/compose`), le shader `fs_program.sc` la
+> transcrit, et `gpu_check` tient les neuf à 2/255 près, à mi-course et aux
+> deux bouts. Fondu et Additif lisent les *poids* (la courbe) ; Cut, Multiplié,
+> Screen, wipe luma, wipe, RVB décalé et Zoom lisent la *position*, pour qu'une
+> courbe sharp ne réduise pas un wipe à un cut. Le menu est dans la colonne du
+> mixer, `mix.transition` en liaison, `mix.transition` dans `settings.json`.
+> Le « zoom blur » est un zoom : le flou serait l'affaire des taps du rack, et
+> il est nommé ainsi à l'écran.
+>
+> Ce qui n'est pas fait : la géométrie de la RP-8000. Ni gcc ni clang n'étant
 > installés sur ce bureau, la vérification multi-compilateurs est celle de la CI.
 
 > **La démo a cessé d'être l'état par défaut** (2026-09-08). Elle était

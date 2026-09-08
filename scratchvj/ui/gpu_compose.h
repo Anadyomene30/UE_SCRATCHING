@@ -30,8 +30,11 @@ public:
     // Composites one frame. Texture arguments are bgfx handle indices
     // (0xFFFF = absent, sampled as black), gains 0..1, `overlay_mode` a
     // core/mixer BlendMode value.
+    // `transition` is a core/mixer Transition value and `position` the
+    // crossfader after reverse, 0 on A, 1 on B (see core/compose's Crossfade).
     void render(std::uint16_t deck_a, std::uint16_t deck_b, std::uint16_t overlay,
-                float gain_a, float gain_b, float gain_overlay, int overlay_mode);
+                float gain_a, float gain_b, float gain_overlay, int overlay_mode,
+                int transition = 2, float position = 0.0f);
 
     // Queues a copy of `source` for readback. Separate from render() because
     // the picture that leaves the machine is the one the EFFECT RACK produced,
@@ -69,6 +72,7 @@ private:
     std::uint16_t readback_ = 0xFFFF;
     std::uint16_t program_ = 0xFFFF;
     std::uint16_t uniform_ = 0xFFFF;
+    std::uint16_t xfade_uniform_ = 0xFFFF;
     std::uint16_t samplers_[3] = {0xFFFF, 0xFFFF, 0xFFFF};
     std::uint16_t vertices_ = 0xFFFF;
     std::uint16_t black_ = 0xFFFF;  // stands in for an absent layer

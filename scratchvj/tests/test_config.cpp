@@ -431,3 +431,16 @@ SVJ_TEST("settings: each channel keeps its own curve, and an old file gives both
     CHECK(old.mix.channel_b == FaderCurve::Cut);
     CHECK(old.mix.channel_b_reverse);
 }
+
+SVJ_TEST("settings: the crossfader transition is written by name and read back") {
+    DeskSettings desk;
+    desk.mix.transition = Transition::LumaWipe;
+    DeskSettings back;
+    std::string error;
+    const std::string json = settings_to_json(desk);
+    CHECK(json.find("luma_wipe") != std::string::npos);
+    CHECK(settings_from_json(json, back, error));
+    CHECK(back.mix.transition == Transition::LumaWipe);
+    CHECK(!settings_from_json("{\"mix\": {\"transition\": \"wobble\"}}", back, error));
+    CHECK(error.find("transition") != std::string::npos);
+}

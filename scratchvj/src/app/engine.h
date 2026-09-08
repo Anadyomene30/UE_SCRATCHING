@@ -323,6 +323,9 @@ public:
     void set_window_budget(std::uint64_t bytes);
     std::uint64_t window_budget() const { return window_budget_; }
     MixWeights weights() const { return weights_; }
+    // The crossfader as the transitions read it: 0 on A, 1 on B, reverse
+    // applied. The weights are the curve's; this is the position.
+    float crossfader_position() const { return xfade_position_; }
     double bpm() const { return bpm_; }
 
     void set_link_loss_policy(LinkLossPolicy policy) { policy_ = policy; }
@@ -375,6 +378,7 @@ private:
     DeckMotion motion_a_;
     DeckMotion motion_b_;
     MixWeights weights_;
+    float xfade_position_ = 0.5f;
     double bpm_ = 120.0;
     LinkLossPolicy policy_ = LinkLossPolicy::Hold;
 };

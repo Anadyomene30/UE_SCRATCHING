@@ -1602,7 +1602,9 @@ int main(int argc, char** argv) {
                        deck_b_source,
                        overlay_source, engine.stack().a,
                        engine.stack().b, engine.stack().overlay,
-                       static_cast<int>(engine.overlay_layer().blend));
+                       static_cast<int>(engine.overlay_layer().blend),
+                       static_cast<int>(engine.mix_settings().transition),
+                       engine.crossfader_position());
             // The rack, over the composited program. What leaves the machine
             // is what the effects made of it, so Spout and the preview see the
             // same thing the audience does.

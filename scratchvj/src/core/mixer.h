@@ -62,6 +62,8 @@ struct MixSettings {
     bool xfader_reverse = false;   // "hamster": A on the right
     bool channel_reverse = false;  // fully open at the bottom
     bool channel_b_reverse = false;
+    // How B arrives over A along the crossfader; see core/compose's Crossfade.
+    Transition transition = Transition::Additive;
 };
 
 // A curve from a 0..1 control: four positions over the travel, so a knob or a
