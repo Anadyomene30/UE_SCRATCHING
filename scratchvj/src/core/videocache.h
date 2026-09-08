@@ -13,8 +13,8 @@
 //
 // Layout:
 //
-//   [ header, 64 bytes ]
-//   [ metadata: u32 length + that many bytes ]   thumbnail, beatgrid, source path
+//   [ header, 64 bytes ]                 (carries the metadata length)
+//   [ metadata: that many bytes ]         source path, thumbnail -- core/cachemeta
 //   [ frame data: frame_count x frame_bytes ]
 //
 // Little-endian throughout, written byte by byte (see core/bytes.h).
@@ -82,6 +82,13 @@ public:
               const std::vector<std::uint8_t>& metadata, std::string& error);
 
     bool write_frame(const std::uint8_t* data, std::size_t size, std::string& error);
+
+    // Replaces the metadata blob with one of EXACTLY the same length. The
+    // blob sits between the header and the frames, so its length is fixed
+    // the moment the first frame is written; but its content -- a thumbnail
+    // -- is only known once frames have been decoded. Open with a
+    // placeholder of the final size, rewrite before close.
+    bool rewrite_metadata(const std::vector<std::uint8_t>& metadata, std::string& error);
 
     // Rewrites the header with the frame count actually written, which is only
     // known once the source has been decoded to the end.

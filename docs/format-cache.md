@@ -17,8 +17,8 @@ aucune différence de coût entre lire en avant, en arrière, ou sauter n'import
 ## Disposition
 
 ```
-[ en-tête, 64 octets ]
-[ métadonnées : u32 longueur + autant d'octets ]   vignette, beatgrid, chemin source
+[ en-tête, 64 octets ]                 (dont la longueur des métadonnées)
+[ métadonnées : autant d'octets ]      chemin source, vignette
 [ données : frame_count × frame_bytes ]
 ```
 
@@ -38,6 +38,27 @@ En-tête :
 Tout est en petit-boutien, écrit octet par octet (`core/bytes.h`) : pas de surprise
 de padding, pas de piège d'alignement, les mêmes octets depuis tous les
 compilateurs.
+
+### Le bloc de métadonnées (`core/cachemeta`)
+
+Sa longueur est fixée à l'ouverture, avant la première frame ; son contenu est
+réécrit **en place** avant la fermeture (`CacheWriter::rewrite_metadata`),
+parce que la vignette vient d'une frame que la passe n'a pas encore décodée
+quand elle ouvre le fichier.
+
+```
+[ magic u32 "SVM1" ]
+[ u32 longueur + chemin source ]
+[ u32 largeur, u32 hauteur, u32 longueur + blocs BC1 de la vignette ]
+```
+
+La vignette fait 128 px de large, la hauteur garde le ratio arrondi au
+multiple de quatre (128 × 72 pour du 16:9, 128 × 64 pour un équirect), prise
+au tiers du clip — passé le fondu et le clap d'ouverture. Un bloc **sans** le
+magic est lu comme un chemin source nu : c'est ce que tous les caches écrits
+avant la vignette contiennent, et ré-analyser une bibliothèque pour gagner une
+image serait le mauvais prix. Une vignette dont la taille n'est pas exactement
+celle de ses blocs est ignorée, le chemin gardé.
 
 ## Choix des formats de bloc
 

@@ -40,6 +40,7 @@ public:
 
     std::uint32_t width() const { return reader_.header().width; }
     std::uint32_t height() const { return reader_.header().height; }
+    bool has_alpha() const { return reader_.header().has_alpha(); }
 
     // The bgfx handle index of the deck's texture, for the GPU compositor.
     // 0xFFFF until a first frame has been shown.

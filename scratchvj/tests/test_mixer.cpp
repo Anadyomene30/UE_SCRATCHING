@@ -176,3 +176,83 @@ SVJ_TEST("stack: an out of range opacity is clamped rather than trusted") {
     CHECK_NEAR(stack_weights(0.5f, 1.0f, 1.0f, FaderCurve::Linear, overlay).overlay,
                0.0, 1e-6);
 }
+
+SVJ_TEST("mixer: the channel curve is independent of the crossfader curve") {
+    // A battle mixer's crossfader is sharp while its channel faders stay
+    // linear; one FaderCurve for both was a lie the old signature told.
+    MixSettings s;
+    s.xfader = FaderCurve::Sharp;
+    s.channel = FaderCurve::Linear;
+    s.channel_b = FaderCurve::Linear;
+    const MixWeights w = mix_weights(0.5f, 0.5f, 1.0f, s);
+    CHECK_NEAR(w.a, 0.5, 1e-6);  // the fader at half through a linear law
+    CHECK_NEAR(w.b, 1.0, 1e-6);
+    s.channel = FaderCurve::Cut;
+    s.channel_b = FaderCurve::Cut;
+    const MixWeights c = mix_weights(0.5f, 0.4f, 0.6f, s);
+    CHECK_NEAR(c.a, 0.0, 1e-6);
+    CHECK_NEAR(c.b, 1.0, 1e-6);
+}
+
+SVJ_TEST("mixer: reversing the crossfader swaps its ends and leaves the overlay alone") {
+    MixSettings s;
+    s.xfader = FaderCurve::Linear;
+    s.xfader_reverse = true;
+    const MixWeights w = mix_weights(0.0f, 1.0f, 1.0f, s);
+    CHECK_NEAR(w.a, 0.0, 1e-6);  // hard left is now B
+    CHECK_NEAR(w.b, 1.0, 1e-6);
+    Layer overlay;
+    overlay.enabled = true;
+    overlay.opacity = 0.7f;
+    const StackWeights st = stack_weights(0.0f, 1.0f, 1.0f, s, overlay);
+    CHECK_NEAR(st.overlay, 0.7, 1e-6);
+    CHECK_NEAR(st.b, 1.0, 1e-6);
+}
+
+SVJ_TEST("mixer: reversing the channel faders opens them at the bottom") {
+    MixSettings s;
+    s.xfader = FaderCurve::Linear;
+    s.channel_reverse = true;
+    s.channel_b_reverse = true;  // one switch per channel since the front edge was measured
+    const MixWeights w = mix_weights(0.5f, 0.0f, 1.0f, s);
+    CHECK_NEAR(w.a, 0.5, 1e-6);  // fader at the bottom = fully open, through the 0.5 crossfader
+    CHECK_NEAR(w.b, 0.0, 1e-6);
+}
+
+SVJ_TEST("mixer: a curve is picked from a control's four quarters") {
+    // A four-position button or a knob both land on one of the four curves.
+    CHECK(curve_from_unit(0.0f) == FaderCurve::Smooth);
+    CHECK(curve_from_unit(0.3f) == FaderCurve::Linear);
+    CHECK(curve_from_unit(0.6f) == FaderCurve::Sharp);
+    CHECK(curve_from_unit(1.0f) == FaderCurve::Cut);
+}
+
+SVJ_TEST("mixer: the old single-curve signature still means sharp crossfader, linear faders") {
+    // The seventeen tests above describe the crossfader through it; they
+    // must keep meaning what they meant.
+    const MixWeights old = mix_weights(0.5f, 0.5f, 1.0f, FaderCurve::Sharp);
+    MixSettings s;
+    s.xfader = FaderCurve::Sharp;
+    s.channel = FaderCurve::Linear;
+    const MixWeights fresh = mix_weights(0.5f, 0.5f, 1.0f, s);
+    CHECK_NEAR(old.a, fresh.a, 1e-6);
+    CHECK_NEAR(old.b, fresh.b, 1e-6);
+}
+
+SVJ_TEST("mixer: EACH CHANNEL FADER HAS ITS OWN CURVE AND ITS OWN REVERSE") {
+    // The Elite's front edge has three switches, not two; a mixer that gave
+    // both channels one curve could not be the mirror of that desk.
+    MixSettings settings;
+    settings.xfader = FaderCurve::Linear;
+    settings.channel = FaderCurve::Cut;
+    settings.channel_b = FaderCurve::Linear;
+    const MixWeights half = mix_weights(0.5f, 0.5f, 0.5f, settings);
+    // Cut: half travel is already full open; linear: half.
+    CHECK(half.a > half.b);
+    CHECK_NEAR(half.a, mix_weights(0.5f, 1.0f, 1.0f, settings).a, 1e-6);
+
+    settings.channel_b_reverse = true;
+    const MixWeights reversed = mix_weights(0.5f, 1.0f, 1.0f, settings);
+    CHECK_NEAR(reversed.b, 0.0, 1e-6);
+    CHECK(reversed.a > 0.0f);
+}

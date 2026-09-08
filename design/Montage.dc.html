@@ -1,0 +1,65 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap">
+  <style>
+    body { margin: 0; background: #141412; color: #8A867C; font-size: 13px;
+           font-family: Archivo, "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+    .mono { font-family: "DM Mono", ui-monospace, Consolas, monospace; }
+    .box { border: 1px dashed #605D56; display: flex; align-items: center; justify-content: center; text-align: center; padding: 8px; color: #8A867C; }
+    .box b { color: #E9E6DF; font-weight: 500; }
+    .pad { border: 1px dashed #605D56; height: 70px; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; height: 1040px; display: flex; flex-direction: column; gap: 10px; padding: 14px; box-sizing: border-box; background: #141412;">
+  <div style="display: flex; align-items: center; gap: 14px; padding-bottom: 6px;">
+    <span style="font-size: 15px; color: #E9E6DF; font-weight: 500;">Direction B &#183; « montage »</span>
+    <span>basse fid&#233;lit&#233;, pos&#233;e &#224; c&#244;t&#233; pour m&#233;moire &#183; non retenue</span>
+  </div>
+  <div class="box" style="height: 34px;"><b>barre d'&#233;tat</b>&nbsp;&#183; onglets JOUER &#183; BIBLIOTH&#200;QUE &#183; EFFETS &#183; TABLE &#183; SORTIE &#183; R&#201;GLAGES</div>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; height: 300px;">
+    <div class="box"><span><b>Deck A</b><br>petit aper&#231;u</span></div>
+    <div class="box" style="border-color: #C9762F;"><span><b>PROGRAMME en grand</b><br>ce que voit la salle, en haut et au centre<br><span class="mono">incrustation &#183; opacit&#233; &#183; rack en une ligne</span></span></div>
+    <div class="box"><span><b>Deck B</b><br>petit aper&#231;u</span></div>
+  </div>
+
+  <div class="box" style="height: 56px;"><span><b>Deck A</b> en bande : &#9198; &#9654; &#9209; &#183; barre de position &#183; source &#183; boucle &#183; 2D|360 &#183; <b>Deck B</b> en bande, sym&#233;trique</span></div>
+
+  <div style="display: grid; grid-template-columns: 1fr 120px 1fr; gap: 10px; flex: 1;">
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <span><b style="color: #C99A2F; font-weight: 500;">Pads A en grand</b> &#183; 2 banques visibles &#183; mode cues / clips / boucles</span>
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
+        <div class="pad" style="border-color: #C99A2F;">1 intro</div><div class="pad" style="border-color: #C99A2F;">2 drop</div><div class="pad" style="border-color: #C99A2F;">3 break</div><div class="pad">4</div>
+        <div class="pad">5</div><div class="pad">6</div><div class="pad">7</div><div class="pad">8</div>
+        <div class="pad">9</div><div class="pad">10</div><div class="pad">11</div><div class="pad">12</div>
+        <div class="pad">13</div><div class="pad">14</div><div class="pad">15</div><div class="pad">16</div>
+      </div>
+    </div>
+    <div class="box"><span><b>mixer</b><br>faders<br>xf<br>courbes</span></div>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <span><b style="color: #6E8696; font-weight: 500;">Pads B en grand</b> &#183; 2 banques visibles &#183; mode cues / clips / boucles</span>
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
+        <div class="pad" style="border-color: #6E8696;">1 tokyo</div><div class="pad" style="border-color: #6E8696;">2 grain</div><div class="pad" style="border-color: #6E8696;">3 city</div><div class="pad" style="border-color: #6E8696;">4 rush</div>
+        <div class="pad">5</div><div class="pad">6</div><div class="pad">7</div><div class="pad">8</div>
+        <div class="pad">9</div><div class="pad">10</div><div class="pad">11</div><div class="pad">12</div>
+        <div class="pad">13</div><div class="pad">14</div><div class="pad">15</div><div class="pad">16</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; gap: 24px; padding-top: 6px; font-size: 12px;">
+    <span><b style="color: #E9E6DF; font-weight: 500;">Pour :</b> le programme domine, les 24 pads de la RP-8000 tiennent &#224; l'&#233;cran, on monte en direct sans regarder les decks.</span>
+    <span><b style="color: #E9E6DF; font-weight: 500;">Contre :</b> les decks deviennent des bandes, la barre de position se lit mal, le miroir de la table (A &#183; mixer &#183; B) dispara&#238;t. Retenue : la direction A.</span>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

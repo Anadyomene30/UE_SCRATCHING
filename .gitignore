@@ -21,6 +21,7 @@ Thumbs.db
 # Seeded design canvas: a ~2.5 MB generated payload that bundles the editor.
 # Regenerate it from the .dc.html working files with the design skill's helper.
 design/maquette-scratchvj.html
+design/interface-scratchvj.html
 # Presets de mapping crees a l execution (specifiques a une salle)
 mappings/
 
@@ -32,3 +33,8 @@ platter.log
 
 # Reglages propres au bureau (entree, paire de canaux, porteuse) : jamais partages.
 settings.json
+
+# Runtime state written next to the working directory by scratchvj_ui:
+# learned MIDI bindings, and the library (sources, projections, crates).
+mapping.json
+library.json

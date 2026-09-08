@@ -73,6 +73,63 @@ SVJ_TEST("library: a clip can be found by its path") {
     CHECK_EQ(library.find_by_path("/clips/missing.mp4"), kNoClip);
 }
 
+SVJ_TEST("library: a clip is found by the source it was analysed from") {
+    // The cache is what the deck opens; the source is what the performer
+    // dropped on the window. Dropping the same file twice must find the entry
+    // that already exists rather than adding a twin.
+    Library library;
+    ClipEntry entry = clip("a.mp4.svcache");
+    entry.source_path = "/rushes/a.mp4";
+    const ClipId id = library.add(entry);
+    CHECK_EQ(library.find_by_source("/rushes/a.mp4"), id);
+    CHECK_EQ(library.find_by_source("/rushes/b.mp4"), kNoClip);
+    // An orphan cache has no source; an empty query must not match it.
+    library.add(clip("orphan.svcache"));
+    CHECK_EQ(library.find_by_source(""), kNoClip);
+}
+
+SVJ_TEST("library: a flat override on 2:1 footage wins over the header's guess") {
+    // The analysis pass takes any 2:1 picture for a sphere. A cinemascope-ish
+    // loop that happens to be 2:1 is not one, and the performer's word must be
+    // final -- otherwise the deck reprojects a flat picture into nonsense.
+    ClipEntry entry = clip("wide_loop.mp4");
+    entry.equirect = true;
+    entry.projection = ProjectionOverride::Flat;
+    CHECK(!entry.shown_equirect());
+    CHECK(!effective_equirect(true, ProjectionOverride::Flat));
+}
+
+SVJ_TEST("library: an equirect override makes a sphere of footage the header missed") {
+    // A 360 clip cropped to 16:9 for delivery has no 2:1 to be recognised by.
+    CHECK(effective_equirect(false, ProjectionOverride::Equirect));
+}
+
+SVJ_TEST("library: auto follows the header, whichever way it points") {
+    CHECK(effective_equirect(true, ProjectionOverride::Auto));
+    CHECK(!effective_equirect(false, ProjectionOverride::Auto));
+}
+
+SVJ_TEST("library: the overlay is a load target distinct from the two decks") {
+    // A logo is chosen from the same library by the same button as a clip; it
+    // has to be nameable as a destination, and must not be mistaken for A or B.
+    CHECK(DeckTarget::Overlay != DeckTarget::A);
+    CHECK(DeckTarget::Overlay != DeckTarget::B);
+    CHECK(DeckTarget::Overlay != DeckTarget::None);
+    Queue queue;
+    queue.push(3, DeckTarget::Overlay);
+    CHECK_EQ(queue.peek_for(DeckTarget::Overlay), 3);
+    CHECK_EQ(queue.peek_for(DeckTarget::A), kNoClip);
+}
+
+SVJ_TEST("queue: a queued clip with no deck named goes to A") {
+    // The rule used to live in the interface, next to the button. A pad on the
+    // mixer will press the same "next", so the rule has to live where both
+    // can reach it.
+    CHECK(default_target(QueueItem{5, DeckTarget::None}) == DeckTarget::A);
+    CHECK(default_target(QueueItem{5, DeckTarget::B}) == DeckTarget::B);
+    CHECK(default_target(QueueItem{5, DeckTarget::Overlay}) == DeckTarget::Overlay);
+}
+
 SVJ_TEST("library: an out-of-range id throws rather than returning nonsense") {
     Library library;
     bool threw = false;

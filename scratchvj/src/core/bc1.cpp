@@ -71,28 +71,12 @@ int distance_sq(const Texel& a, const Texel& b) {
     return dr * dr + dg * dg + db * db;
 }
 
-}  // namespace
-
-std::uint64_t bc1_frame_bytes(std::uint32_t width, std::uint32_t height) {
-    const std::uint64_t bw = (width + 3) / 4;
-    const std::uint64_t bh = (height + 3) / 4;
-    return bw * bh * 8;
-}
-
-void encode_bc1(const std::uint8_t* rgba, std::uint32_t width, std::uint32_t height,
-                std::vector<std::uint8_t>& out) {
-    const std::uint32_t bw = (width + 3) / 4;
-    const std::uint32_t bh = (height + 3) / 4;
-    out.resize(static_cast<std::size_t>(bw) * bh * 8);
-
-    std::uint8_t* dst = out.data();
-    Texel block[16];
+// Encodes one gathered block. The encoder proper; the frame function only
+// walks the picture and gathers.
+void encode_block(const Texel block[16], std::uint8_t* dst) {
     Texel palette[4];
-
-    for (std::uint32_t by = 0; by < bh; ++by) {
-        for (std::uint32_t bx = 0; bx < bw; ++bx, dst += 8) {
-            gather_block(rgba, width, height, bx, by, block);
-
+    {
+        {
             Texel lo, hi;
             choose_endpoints(block, lo, hi);
             std::uint16_t c0 = pack565(hi.r, hi.g, hi.b);
@@ -108,7 +92,7 @@ void encode_bc1(const std::uint8_t* rgba, std::uint32_t width, std::uint32_t hei
                 dst[2] = static_cast<std::uint8_t>(c1 & 0xFF);
                 dst[3] = static_cast<std::uint8_t>(c1 >> 8);
                 dst[4] = dst[5] = dst[6] = dst[7] = 0;  // every index -> c0
-                continue;
+                return;
             }
 
             int r0, g0, b0, r1, g1, b1;
@@ -145,6 +129,76 @@ void encode_bc1(const std::uint8_t* rgba, std::uint32_t width, std::uint32_t hei
     }
 }
 
+// Reads one block's palette and index word. Edge clipping is the caller's.
+void decode_block(const std::uint8_t* src, Texel palette[4], std::uint32_t& indices) {
+    const std::uint16_t c0 = static_cast<std::uint16_t>(src[0] | (src[1] << 8));
+    const std::uint16_t c1 = static_cast<std::uint16_t>(src[2] | (src[3] << 8));
+    indices = static_cast<std::uint32_t>(src[4]) | (static_cast<std::uint32_t>(src[5]) << 8) |
+              (static_cast<std::uint32_t>(src[6]) << 16) |
+              (static_cast<std::uint32_t>(src[7]) << 24);
+
+    int r0, g0, b0, r1, g1, b1;
+    unpack565(c0, r0, g0, b0);
+    unpack565(c1, r1, g1, b1);
+    palette[0] = Texel{r0, g0, b0};
+    palette[1] = Texel{r1, g1, b1};
+    if (c0 > c1) {
+        palette[2] = Texel{(2 * r0 + r1) / 3, (2 * g0 + g1) / 3, (2 * b0 + b1) / 3};
+        palette[3] = Texel{(r0 + 2 * r1) / 3, (g0 + 2 * g1) / 3, (b0 + 2 * b1) / 3};
+    } else {
+        // Punch-through mode. The encoder never writes it, but the decoder
+        // honours it anyway: these bytes may one day come from a cache another
+        // tool produced.
+        palette[2] = Texel{(r0 + r1) / 2, (g0 + g1) / 2, (b0 + b1) / 2};
+        palette[3] = Texel{0, 0, 0};
+    }
+}
+
+}  // namespace
+
+std::uint64_t bc1_frame_bytes(std::uint32_t width, std::uint32_t height) {
+    const std::uint64_t bw = (width + 3) / 4;
+    const std::uint64_t bh = (height + 3) / 4;
+    return bw * bh * 8;
+}
+
+void encode_bc1_block(const std::uint8_t* rgba16, std::uint8_t out[8]) {
+    Texel block[16];
+    for (int i = 0; i < 16; ++i) {
+        block[i] = Texel{rgba16[i * 4], rgba16[i * 4 + 1], rgba16[i * 4 + 2]};
+    }
+    encode_block(block, out);
+}
+
+void decode_bc1_block(const std::uint8_t in[8], std::uint8_t* rgba16) {
+    Texel palette[4];
+    std::uint32_t indices = 0;
+    decode_block(in, palette, indices);
+    for (int i = 0; i < 16; ++i) {
+        const Texel& t = palette[(indices >> (i * 2)) & 3];
+        rgba16[i * 4] = static_cast<std::uint8_t>(t.r);
+        rgba16[i * 4 + 1] = static_cast<std::uint8_t>(t.g);
+        rgba16[i * 4 + 2] = static_cast<std::uint8_t>(t.b);
+        rgba16[i * 4 + 3] = 255;
+    }
+}
+
+void encode_bc1(const std::uint8_t* rgba, std::uint32_t width, std::uint32_t height,
+                std::vector<std::uint8_t>& out) {
+    const std::uint32_t bw = (width + 3) / 4;
+    const std::uint32_t bh = (height + 3) / 4;
+    out.resize(static_cast<std::size_t>(bw) * bh * 8);
+
+    std::uint8_t* dst = out.data();
+    Texel block[16];
+    for (std::uint32_t by = 0; by < bh; ++by) {
+        for (std::uint32_t bx = 0; bx < bw; ++bx, dst += 8) {
+            gather_block(rgba, width, height, bx, by, block);
+            encode_block(block, dst);
+        }
+    }
+}
+
 void decode_bc1(const std::uint8_t* bc1, std::uint32_t width, std::uint32_t height,
                 std::vector<std::uint8_t>& out) {
     const std::uint32_t bw = (width + 3) / 4;
@@ -156,30 +210,8 @@ void decode_bc1(const std::uint8_t* bc1, std::uint32_t width, std::uint32_t heig
 
     for (std::uint32_t by = 0; by < bh; ++by) {
         for (std::uint32_t bx = 0; bx < bw; ++bx, src += 8) {
-            const std::uint16_t c0 = static_cast<std::uint16_t>(src[0] | (src[1] << 8));
-            const std::uint16_t c1 = static_cast<std::uint16_t>(src[2] | (src[3] << 8));
-            const std::uint32_t indices = static_cast<std::uint32_t>(src[4]) |
-                                          (static_cast<std::uint32_t>(src[5]) << 8) |
-                                          (static_cast<std::uint32_t>(src[6]) << 16) |
-                                          (static_cast<std::uint32_t>(src[7]) << 24);
-
-            int r0, g0, b0, r1, g1, b1;
-            unpack565(c0, r0, g0, b0);
-            unpack565(c1, r1, g1, b1);
-            palette[0] = Texel{r0, g0, b0};
-            palette[1] = Texel{r1, g1, b1};
-            if (c0 > c1) {
-                palette[2] =
-                    Texel{(2 * r0 + r1) / 3, (2 * g0 + g1) / 3, (2 * b0 + b1) / 3};
-                palette[3] =
-                    Texel{(r0 + 2 * r1) / 3, (g0 + 2 * g1) / 3, (b0 + 2 * b1) / 3};
-            } else {
-                // Punch-through mode. The encoder never writes it, but the
-                // decoder honours it anyway: these bytes may one day come from a
-                // cache another tool produced.
-                palette[2] = Texel{(r0 + r1) / 2, (g0 + g1) / 2, (b0 + b1) / 2};
-                palette[3] = Texel{0, 0, 0};
-            }
+            std::uint32_t indices = 0;
+            decode_block(src, palette, indices);
 
             for (std::uint32_t y = 0; y < 4; ++y) {
                 const std::uint32_t py = by * 4 + y;

@@ -26,9 +26,16 @@ std::size_t data_bytes(std::uint8_t status) {
 }
 
 void CALLBACK on_midi(HMIDIIN, UINT status, DWORD_PTR user, DWORD_PTR param1, DWORD_PTR) {
-    if (status != MIM_DATA) return;
     auto* self = reinterpret_cast<MidiInput*>(user);
-    if (self != nullptr) self->push_raw(static_cast<std::uint32_t>(param1));
+    if (self == nullptr) return;
+    if (status == MIM_DATA) {
+        self->push_raw(static_cast<std::uint32_t>(param1));
+    } else if (status == MIM_CLOSE) {
+        // The driver closed the handle under us: the cable was pulled. Not
+        // every driver sends this, which is why the rig also re-enumerates,
+        // but when it arrives it is the fastest word we get.
+        self->mark_closed();
+    }
 }
 
 }  // namespace
@@ -47,20 +54,24 @@ std::vector<std::string> MidiInput::ports() {
 
 MidiInput::~MidiInput() { close(); }
 
-bool MidiInput::open(const std::string& port) {
+bool MidiInput::open(const std::string& port, int ordinal, std::uint8_t device) {
     close();
 
     const UINT count = midiInGetNumDevs();
     const std::string want = lowered(port);
+    if (want.empty()) return false;
     UINT chosen = count;
+    int seen = 0;
     for (UINT i = 0; i < count; ++i) {
         MIDIINCAPSA caps{};
         if (midiInGetDevCapsA(i, &caps, sizeof(caps)) != MMSYSERR_NOERROR) continue;
-        if (lowered(caps.szPname).find(want) != std::string::npos) {
+        if (lowered(caps.szPname).find(want) == std::string::npos) continue;
+        if (seen == ordinal) {
             chosen = i;
             port_ = caps.szPname;
             break;
         }
+        ++seen;
     }
     if (chosen >= count) return false;
 
@@ -72,6 +83,8 @@ bool MidiInput::open(const std::string& port) {
         return false;
     }
     handle_ = handle;
+    device_ = device;
+    closed_.store(false);
     midiInStart(handle);
     return true;
 }
@@ -84,6 +97,7 @@ void MidiInput::close() {
         handle_ = nullptr;
     }
     port_.clear();
+    closed_.store(false);
     std::lock_guard<std::mutex> guard(lock_);
     bytes_.clear();
     messages_ = 0;
@@ -108,6 +122,7 @@ void MidiInput::drain(std::vector<MidiEvent>& out) {
         raw.swap(bytes_);
     }
     if (!raw.empty()) decoder_.feed(raw.data(), raw.size(), out);
+    for (MidiEvent& event : out) event.device = device_;
 }
 
 std::uint64_t MidiInput::message_count() const {
@@ -122,7 +137,7 @@ std::uint64_t MidiInput::message_count() const {
 namespace svj::ui {
 MidiInput::~MidiInput() = default;
 std::vector<std::string> MidiInput::ports() { return {}; }
-bool MidiInput::open(const std::string&) { return false; }
+bool MidiInput::open(const std::string&, int, std::uint8_t) { return false; }
 void MidiInput::close() {}
 void MidiInput::push_raw(std::uint32_t) {}
 void MidiInput::drain(std::vector<MidiEvent>& out) { out.clear(); }

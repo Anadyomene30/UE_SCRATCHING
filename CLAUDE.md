@@ -25,19 +25,93 @@ Toute nouvelle fonctionnalité doit respecter ces deux règles.
 
 ```sh
 cmake -S . -B build && cmake --build build
-ctest --test-dir build --output-on-failure    # 441 tests, doivent tous passer
+ctest --test-dir build --output-on-failure    # 574 tests, doivent tous passer
 ./build/scratchvj/scratchvj demo              # démo sans matériel
 ./build/scratchvj/scratchvj effects           # catalogue d'effets
-./build/scratchvj/scratchvj layout            # checklist MIDI learn
+./build/scratchvj/scratchvj layout            # checklist MIDI learn (tout le rig)
+./build/scratchvj/scratchvj profile export reloop_elite   # un profil intégré, en JSON
+./build/scratchvj/scratchvj analyze clip.mp4  # vidéo → .svcache (ffmpeg dans le PATH)
+./build/scratchvj/scratchvj scan D:/rushes    # ce que la bibliothèque verrait dans un dossier
 ```
+
+L'analyse pilote l'**exécutable** ffmpeg (jamais lié) : tout ce que ce ffmpeg
+décode passe — H.264, HEVC, ProRes, HAP, DXV, VP9, AV1 vérifiés. Une source avec
+alpha sort en **BC3** (`core/bc3`), le reste en BC1 ; une image fixe donne une
+frame tenue, une séquence numérotée (`frame_%04d.png`) une cadence imposée.
+Dans l'interface, l'import se fait par glisser-déposer ou par les boutons
+« Importer… » / « Dossier… » ; les dossiers surveillés, le dossier des caches et
+le rig MIDI sont dans `settings.json` (onglet RÉGLAGES) ; ce qui a été décidé sur
+les clips (projection 360/plan forcée, caisses) est dans `library.json`. Les
+deux fichiers sont ignorés par git.
+
+**Les contrôleurs sont des données** (`core/profile`) : l'Elite et la RP-8000
+sont des tables dans `core/profiles_builtin.cpp`, tout autre appareil est un
+fichier `profiles/*.json` (APC40 mk2 et Push 2 livrés, `verified: false` tant
+qu'un `midi_probe` ne les a pas confirmés — voir `profiles/README.md`). La
+surface à l'écran est **dessinée depuis le profil**, jamais à la main ; le rig
+ouvre un port par appareil (`ui/midi_rig`) et chaque adresse MIDI porte
+l'index de son appareil.
+
+**Un profil peut porter la géométrie de son panneau**, en millimètres réels.
+Celle de l'Elite est *mesurée* sur le rendu officiel de Reloop et recoupée
+avec le diagramme du manuel : 290 × 400 mm, chaque section à sa place. L'onglet
+**TABLE** la dessine en grand ; la bande de la cabine ne garde que ce qu'on
+regarde en jouant. Un profil sans géométrie (la RP-8000, l'APC40, le Push) est
+dessiné en rangée — **ne pas inventer de coordonnées** : un panneau faux est
+pire qu'une liste honnête. Ce que la mesure a corrigé au passage : l'Elite n'a
+**pas** de boutons cue par voie (c'est un slider au centre), le sélecteur
+d'entrée est sur le dessus, il y a **un** SHIFT, et la face avant porte
+**trois** paires courbe/reverse (voie 1, crossfader, voie 2). Les destinations de mapping sont un **registre**
+(`core/destinations`) : une cible inconnue est rapportée au `bind()`, jamais
+ignorée en silence.
 
 Avec l'interface (nécessite un GPU, donc jamais en CI) :
 
 ```sh
 cmake -S . -B build-ui -DSCRATCHVJ_BUILD_UI=ON && cmake --build build-ui --config Release
 ctest --test-dir build-ui -C Release --output-on-failure
+./build-ui/scratchvj/ui/Release/scratchvj_ui.exe          # decks vides, prêt à recevoir
 ./build-ui/scratchvj/ui/Release/scratchvj_ui.exe --live   # deck A sur le vrai plateau (MOTU 5/6)
+./build-ui/scratchvj/ui/Release/scratchvj_ui.exe --demo   # la performance scriptée d'avant le matériel
+./build-ui/scratchvj/ui/Release/scratchvj_ui.exe clip.mp4 # comme un glisser-déposer : analyse et charge
+./build-ui/scratchvj/ui/Release/scratchvj_ui.exe --output 2  # programme sur l'écran n° 2
+./build-ui/scratchvj/ui/Release/scratchvj_ui.exe --screen bibliotheque  # ouvrir sur cet écran
 ```
+
+**L'interface a six écrans sur une seule rangée d'onglets** — JOUER,
+BIBLIOTHÈQUE, EFFETS, TABLE, SORTIE, RÉGLAGES — et trois familles de
+contrôles, pas plus : le bouton (une action), le sélecteur segmenté (un choix
+exclusif), le basculeur (on/off). Tout ce qui se clique a un fond et un bord ;
+un libellé n'est jamais cliquable. **Le deck est un lecteur** (`Deck::play/
+pause/stop`, la platine est une source parmi trois) ; le mixer est *entre* les
+decks comme l'Elite entre les platines ; les pads sont à l'écran (cues, clips
+depuis les banques de `core/matrix`, boucles) et passent par les mêmes
+`DeckCommands` qu'un pad MIDI. Les diagnostics DVS vivent dans un tiroir par
+deck. Le raisonnement complet est dans la note « L'interface a été refaite »
+du roadmap, et la maquette qui la précède dans `design/`.
+
+**L'écran de sortie** se choisit dans l'onglet SORTIE : le programme part en
+plein écran sans bordure sur le moniteur choisi (`ui/output_window`), par une
+**seconde chaîne d'échange bgfx sur le même device** — c'est la texture que
+l'aperçu montre et que Spout publie, sans relecture ni copie par la mémoire
+centrale. La géométrie de SORTIE (coins, grille, masque) est **rendue sur
+cet écran** par une grille 32 × 32 placée par `core/warp` et `core/mesh`, les
+mêmes fonctions que l'aperçu dessine ; Spout reçoit l'image avant. Un écran
+d'une autre forme reçoit des **bandes noires**, jamais une image étirée : un
+masque ou un corner pin calé sur une image déformée serait faux d'exactement
+cette déformation. L'écran est retenu **par son nom** dans
+`settings.json` (les index changent dès qu'on branche quelque chose) ; `--output`
+est un remplacement ponctuel qui n'écrit pas le fichier. Échap ferme d'abord la
+sortie, puis quitte : sortir sur un bureau devant une salle est ce que cet ordre
+évite.
+
+**L'interface démarre sans démo.** Les decks sont vides, la liaison Phase dit
+« aucune entrée » plutôt qu'un pourcentage inventé, et rien ne prétend être du
+360. La performance scriptée (`app/simulation`) reste l'échafaudage qui a permis
+de construire l'instrument avant le matériel : elle est derrière `--demo`, avec
+ses clips fabriqués, et `Engine::configure` prend un `DemoContent` pour ça.
+Un fichier déposé sur la fenêtre (ou passé en argument) est analysé puis **posé
+sur le premier deck libre** ; un deck déjà chargé n'est jamais volé.
 
 `--live` démarre le deck A sur le Phase réel via `core/quadrature` ; l'état du
 plateau s'écrit chaque seconde dans `platter.log`. **Lire ce fichier, pas
@@ -89,7 +163,7 @@ locaux attrapent déjà l'essentiel des warnings avant même d'y arriver.
   stable.
 - PR en cours : [#1](https://github.com/Anadyomene30/UE_SCRATCHING/pull/1).
 - `design/` contient les fichiers source de la maquette d'interface (canvas
-  Claude Design). Le fichier assemblé (`maquette-scratchvj.html`, ~2,5 Mo) est
+  Claude Design). Le fichier assemblé (`interface-scratchvj.html`, ~2,5 Mo) est
   ignoré par git — c'est un artefact généré, voir `design/README.md` pour le
   régénérer.
 - `docs/` contient tout le raisonnement de conception : `roadmap.md` (la feuille

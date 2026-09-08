@@ -18,7 +18,9 @@
 struct ImFont;
 
 #include "app/engine.h"
+#include "config/settings_io.h"
 #include "core/library.h"
+#include "core/profile.h"
 
 namespace svj::ui {
 
@@ -42,27 +44,25 @@ struct HandState {
     }
 };
 
-// How the performance screen is arranged. Not decoration: a set has phases,
-// and each wants a different thing large. The names are the phases, not the
-// widgets -- you pick where you ARE, and the arrangement follows.
-enum class Layout : int {
-    Booth = 0,   // CABINE: everything reachable, nothing large. The cockpit.
-    Stage,       // SCENE: the program dominates; decks reduced to what you glance at.
-    Prepare,     // PREPA: no program at all; library wide, filmstrips tall to scrub.
-    Sphere,      // 360: the projected view large, with the gaze and a sight frame.
-    FullFrame,   // PLEIN CADRE: the program edge to edge, and nothing else.
-};
-
-inline constexpr int kLayoutCount = 5;
+// The screens, in tab order. One axis of navigation: a set lives in JOUER,
+// the others are preparation and configuration. The five "layouts" this
+// replaces (cabine, scène, prépa, 360, plein cadre) were a second axis on top
+// of the tabs, and nobody could say where they were.
+enum class Screen : int { Play = 0, Library, Effects, Table, Output, Settings };
 
 struct Frame {
-    // Which arrangement to draw. Written back when the performer picks another,
-    // so the front end owns it across frames and the keyboard can drive it.
-    Layout layout = Layout::Booth;
+    // Written by the panel when a click asks for another screen (the rack
+    // summary on JOUER opens EFFETS), consumed by draw() on the next pass.
+    Screen screen_request = Screen::Play;
+    bool screen_requested = false;
+
+    // JOUER's two switches, which the keyboard also drives (F and B). Owned
+    // here so they survive the frame.
+    bool full_frame = false;   // the program edge to edge, nothing else
+    bool rail_open = true;     // the library rail beside the decks
 
     double elapsed_s = 0.0;
     std::string phase;
-    bool follower_mode = true;
 
     // Where the mixer widgets deposit what the hand did this frame. Null makes
     // the whole surface read-only (a replayed take, for instance).
@@ -107,6 +107,115 @@ struct Frame {
     // hands the same recycled index back, so it fails only sometimes.
     ClipId load_clip = kNoClip;
     DeckTarget load_target = DeckTarget::None;
+    // With `keep_position`, the deck holds its played position across the
+    // load: the deck header's 2D | 360 selector reloads the SAME clip with a
+    // different projection, and the picture must not jump to the head.
+    bool load_keep_position = false;
+
+    // Which library clip each layer is showing, so the deck header can write a
+    // projection back to the library entry. kNoClip on a deck that holds no
+    // analysed clip (the demo's fabricated ones included).
+    ClipId clip_on_a = kNoClip;
+    ClipId clip_on_b = kNoClip;
+    ClipId clip_on_overlay = kNoClip;
+
+    // --- the library: imports, analyses, the queue -------------------------------
+    // All requests, served at the frame boundary like the clip load: a file
+    // dialog, a folder walk and an analysis are I/O, and none of it belongs in
+    // a view. The panel says what was asked; the front end does it.
+    bool import_files_request = false;   // open the file picker
+    bool import_folder_request = false;  // open the folder picker, import what it holds
+    bool add_folder_request = false;     // settings: pick a folder to keep watching
+    bool rescan_request = false;         // walk the library folders again
+    ClipId analyse_clip = kNoClip;       // analyse this one now
+    bool analyse_all_request = false;    // analyse everything not yet analysed
+    bool load_next_request = false;      // take the head of the queue
+    // The panel changed something library.json remembers (a projection, a
+    // crate). The front end writes the file.
+    bool library_dirty = false;
+    char library_search[64] = {};
+    int library_crate = -1;              // -1 shows every clip
+    int library_filter = 0;              // 0 all, 1 flat, 2 spheres, 3 alpha
+    ClipId library_selected = kNoClip;   // the inspector's clip
+    // One ImTextureID per ClipId (null: no picture yet), filled by the front
+    // end from the caches' thumbnails.
+    std::vector<void*> thumbnails;
+
+    // --- a take: the control stream on disk --------------------------------------
+    // REC on the status bar. The front end owns the file; the panel asks.
+    bool take_recording = false;
+    bool take_toggle_request = false;
+    std::string take_name;            // the file being written, for display
+    std::uint32_t take_records = 0;
+
+    // Replaying a take: the front end lists takes/ on request, opens the one
+    // asked for, drives the surface and the decks from it until it ends.
+    bool take_list_request = false;
+    std::vector<std::string> takes;
+    std::string take_replay_request;   // a path to start replaying
+    bool take_replay_stop = false;
+    bool take_replaying = false;
+    std::string take_replay_name;
+    float take_replay_progress = 0.0f;
+
+    // Deck A's anchor against Serato: "here, now". Served by the front end.
+    bool anchor_request = false;
+
+    // The mapping list changed (a row added, edited, dropped): the front end
+    // rebinds the engine and writes mapping.json.
+    bool mappings_dirty = false;
+    int mapping_selected = -1;
+    // "Bouger un contrôle": the next control that moves names the selected
+    // mapping's source. Filled by the front end from the surface.
+    bool mapping_listen = false;
+
+    // Which tool the SORTIE screen is on: 0 pin, 1 mesh, 2 mask.
+    int output_tool = 0;
+    int mask_selected = -1;
+
+    // --- the pads ---------------------------------------------------------------
+    // What a pad does on each deck: 0 cues, 1 clips (the matrix), 2 loops.
+    int pad_mode_a = 0;
+    int pad_mode_b = 0;
+    // What the pads and the loop row asked this frame. Merged by the front
+    // end into the next engine step, through the same DeckCommands a mapped
+    // pad writes, so a click and a pad cannot disagree.
+    DeckCommands commands_a;
+    DeckCommands commands_b;
+    // Filled by the front end for display.
+    std::size_t analysis_pending = 0;
+    bool analysis_busy = false;
+    bool share_open = false;             // the Spout sender is publishing
+    // The last thing that went wrong, in one line, so a failed analysis or an
+    // unreadable file is said on screen rather than lost in a stderr nobody
+    // can read from a WIN32 application.
+    std::string last_error;
+
+    // The desk's settings, edited on the RÉGLAGES screen and written by the
+    // front end when `settings_dirty` is set.
+    DeskSettings* settings = nullptr;
+    bool settings_dirty = false;
+
+    // --- the output screen ---------------------------------------------------
+    // Every display the machine offers, refilled about once a second so a
+    // projector switched on mid-set appears without a restart. Filled by the
+    // front end; the panel picks one and asks.
+    struct DisplayView {
+        std::uint32_t id = 0;
+        std::string name;
+        int width = 0;
+        int height = 0;
+        float refresh_hz = 0.0f;
+        bool primary = false;
+        bool is_output = false;  // the program is on this one right now
+    };
+    std::vector<DisplayView> displays;
+    bool output_open = false;
+    std::string output_error;
+    // Requests, served at the frame boundary: opening a window and a swap
+    // chain is I/O and does not belong in a view.
+    std::uint32_t open_output_display = 0;  // non-zero opens the program there
+    bool close_output_request = false;
 
     // The overlay layer's source. Written back by the panel and read by the
     // front end, which owns the Spout receiver -- opening a receiver is I/O and
@@ -143,22 +252,50 @@ struct Frame {
     std::size_t midi_bound = 0;   // controls with a binding
     std::size_t midi_total = 0;   // controls declared
 
+    // The rig, for the surface panel to draw and the settings to edit: one
+    // entry per configured device, in device-index order.
+    struct RigDeviceView {
+        const DeviceProfile* profile = nullptr;  // null when the name is unknown
+        std::string profile_name;
+        std::string port;                        // the fragment, or the open port's name
+        bool connected = false;
+        char deck = 'a';
+    };
+    std::vector<RigDeviceView> rig;
+    std::vector<std::string> midi_ports;      // what the machine lists, for the settings
+    std::vector<std::string> profile_names;   // built-in and loaded, for the settings
+    bool rig_reconfigure_request = false;     // the devices changed in the settings
+
     // MIDI learn, driven from the panel and served by the front end. `learning`
     // reflects whether a run is in progress; the two requests below are edges
     // the front end consumes and clears, the same shape as the clip load.
+    // A run is per DEVICE: sweeping the mixer must not bind a turntable's pad
+    // that happened to be pressed.
     bool learning = false;
+    int learn_device = -1;        // which device the run is (or is asked) for
     std::string learn_prompt;     // what to sweep now
     std::size_t learn_remaining = 0;
-    bool learn_start = false;     // begin a run over the default rig
+    bool learn_start = false;     // begin a run over learn_device's profile
     bool learn_skip = false;      // leave the current control unbound
     bool learn_cancel = false;    // stop, keeping what was learned so far
+
+    // The row a mapped "library next/prev" walks, and a pad loads from.
+    int library_cursor = -1;
 
     // Whether the scripted performance is running. It animates whatever nobody
     // has taken over, which is what lets the instrument be plugged in mid-set
     // without the screen going dark -- but while testing by hand it hides your
     // own changes under its own. Off freezes the decks where they are and
     // leaves every control alone.
-    bool script_running = true;
+    bool script_running = false;
+    // Whether this session has the demo's fabricated clips. Without them the
+    // DÉMO button has nothing to animate, so it is not offered.
+    bool demo_content = false;
+
+    // What the front end just did by itself, said on screen for a few seconds:
+    // a drop that analysed and landed on a deck must not look like nothing
+    // happened. Cleared by the front end.
+    std::string notice;
 };
 
 // The three faces the mockup uses. Archivo carries the interface, DM Mono every

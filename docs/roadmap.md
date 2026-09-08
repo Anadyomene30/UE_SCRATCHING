@@ -8,9 +8,9 @@ tout ce qui reste à faire survive à la session qui l'a produit.
 
 | Jalon du plan initial | État | Modules |
 |---|---|---|
-| 1. Voir la table | Logique faite, matériel réel non branché | `core/surface`, `core/learn`, `core/layout`, `core/mapping`, `core/protocol` |
+| 1. Voir la table | **Fait sur le vrai rig** : trois ports ouverts à la fois (Elite + deux RP-8000, `ui/midi_rig`), chaque adresse MIDI porte son appareil, les encodeurs sans fin sont lus en relatif, la surface est **dessinée depuis un profil de données** (`core/profile`, Elite complète : 2 voies, 2 unités FX, boucles, 16 pads + modes, browse, sorties, face avant en `optional`), APC40 mk2 et Push 2 livrés en JSON non vérifié, courbes et reverse du crossfader **et** des faders de voie pilotables (`MixSettings`), destinations de mapping en registre (`core/destinations`) | `core/surface`, `core/learn`, `core/profile`, `core/destinations`, `core/mapping`, `core/protocol`, `ui/midi_rig` |
 | 2. Suivre le timecode | **Fait sur le vrai matériel** : le Phase émet une porteuse nue (direction + vitesse, pas de position), lue par `core/quadrature` depuis la MOTU en WASAPI partagé, verrou et suivi de la main vérifiés dans la fenêtre (`--live`). Le décodeur xwax est vendu et testé (`dvs/`) pour un vrai disque de contrôle | `core/timecode`, `core/quadrature`, `core/anchor`, `core/gestures`, `ui/audio_in`, `dvs/` |
-| 3. Voir la vidéo | Fait de bout en bout : `scratchvj analyze` décode via l'exécutable ffmpeg, compresse en BC1 (`core/bc1`, testé) et écrit le `.svcache` ; l'interface affiche les frames | `core/videocache`, `core/framewindow`, `core/bc1`, `app/analyze` |
+| 3. Voir la vidéo | Fait de bout en bout : `scratchvj analyze` décode via l'exécutable ffmpeg, compresse en BC1 (`core/bc1`, testé) — ou en **BC3** quand la source a un canal alpha (`core/bc3`, testé, la moitié couleur est le bloc BC1 lui-même) — et écrit le `.svcache` ; images fixes et séquences numérotées passent par la même passe. L'interface **importe** (glisser-déposer, dialogues SDL3, dossiers surveillés de `settings.json`) et **analyse en arrière-plan** (`app/analysis_queue`, un worker, rapports à la frontière de frame) | `core/videocache`, `core/framewindow`, `core/bc1`, `core/bc3`, `app/analyze`, `app/analysis_queue`, `app/library_scan`, `config/library_io` |
 | 4. Le Mac tourne | CI verte sur macOS depuis le premier commit ; portage audio/GPU réel non fait | `.github/workflows/ci.yml` |
 | 5. Mixer | Courbes, blend modes, détection de transform faits ; le program est composité sur le GPU (`fs_program.sc`), tenu conforme à sa référence `core/compose` par l'outil `gpu_check` (écart max 1/255) | `core/mixer`, `core/compose` |
 | 6. Transport | Fait en entier : boucles, hot cues, beat jump, slip, ABS/REL/INT, plus la source de position et les modes de lecture par deck | `core/transport`, `core/playback` |
@@ -24,10 +24,171 @@ tout ce qui reste à faire survive à la session qui l'a produit.
 Plus, hors plan initial : `core/playback` (source de transport et modes de
 lecture par deck), `core/library` (bibliothèque et queue), `core/take`
 (enregistrement/relecture d'une prise), `app/` (démo et tableau de bord qui font
-tourner tout ça sans matériel), et `ui/` — l'interface ImGui réelle : cinq
-dispositions (cabine, scène, prépa, 360, plein cadre), scrub à la souris sur la
-timeline, faders et crossfader, éditeur de warp, et **chargement d'un clip de la
-bibliothèque sur un deck** en un clic.
+tourner tout ça sans matériel), et `ui/` — l'interface ImGui réelle : six
+écrans sur une seule rangée d'onglets (JOUER, BIBLIOTHÈQUE, EFFETS, TABLE,
+SORTIE, RÉGLAGES), le deck comme lecteur, scrub à la souris sur la barre de
+position, mixer entre les decks, pads à l'écran, éditeur de warp et de masque,
+et **chargement d'un clip de la bibliothèque sur un deck ou sur l'incrustation**
+en un clic.
+
+> **Le programme a un écran à lui** (2026-09-08). Jusque-là la seule sortie
+> était Spout, ce qui est juste pour nourrir Resolume ou Unreal et inutile
+> pour le cas ordinaire : un projecteur sur la seconde sortie du bureau.
+> `ui/output_window` ouvre une fenêtre sans bordure en plein écran sur
+> l'écran choisi et y dessine la texture du rack d'effets par une **seconde
+> chaîne d'échange bgfx sur le même device** — pas de relecture, pas de copie
+> par la mémoire centrale, donc rien de plus que la vsync de ce moniteur. Les
+> trois sorties (aperçu, Spout, écran) partagent la même texture et ne peuvent
+> pas diverger. Un écran d'une autre forme reçoit des bandes noires : un
+> projecteur est un instrument de mesure pour un VJ, et une image étirée en
+> silence rendrait faux tout masque calé dessus. L'écran est retenu **par son
+> nom**, jamais par son index — ceux-ci sont renumérotés dès qu'on branche
+> quoi que ce soit, et un set qui s'ouvre sur le mauvais écran est pire qu'un
+> set qui ne s'ouvre sur aucun. Échap ferme la sortie avant de quitter.
+> La géométrie (corner pin, grille, masque) est **appliquée sur cet écran**
+> depuis la refonte de l'interface (voir plus bas) ; restent Syphon/NDI.
+
+> **La table est dessinée où elle est, pas en liste** (2026-09-08). Un profil
+> peut porter la géométrie de son panneau en millimètres réels ; celle de
+> l'Elite est **mesurée** sur le rendu officiel de Reloop, lue au pixel et
+> recoupée avec le diagramme de callouts du manuel (290 × 400 mm, portrait).
+> Une main trouve le potard de filtre par sa *place* ; une interface qui montre
+> les mêmes contrôles autrement est un second panneau à apprendre plutôt qu'un
+> miroir du premier. Un profil sans géométrie mesurée reste dessiné en rangée —
+> la RP-8000, l'APC40 et le Push en sont là, et inventer leurs coordonnées
+> serait pire que la liste. Deux tests gardent le panneau : aucune section n'en
+> recouvre une autre, et aucun contrôle déclaré n'est laissé hors du dessin.
+>
+> La mesure a corrigé quatre suppositions : l'Elite n'a **aucun** bouton cue
+> par voie (le monitoring est un slider de sélection au centre), le sélecteur
+> d'entrée est sur le dessus et non à l'arrière, il y a **un** SHIFT et non un
+> par côté, et la face avant porte **trois** paires courbe/reverse — voie 1,
+> crossfader, voie 2. Le mixeur n'applique pour l'instant qu'**une** courbe de
+> voie aux deux canaux là où le matériel en a deux : simplification connue,
+> à lever quand `MixSettings` séparera les deux voies.
+>
+> Un panneau portrait ne tient pas dans une bande en bas de l'écran de jeu :
+> il a son onglet, **TABLE**, et JOUER garde le mixer entre les deux decks —
+> les deux faders, le crossfader et les courbes, ce pour quoi l'œil quitte
+> l'image pendant un set.
+
+> **L'interface a été refaite** (2026-09-08). Trois lots avaient corrigé une
+> pièce chacun et l'ensemble restait incompréhensible : pas de bouton lecture,
+> deux axes de navigation (six onglets *et* cinq dispositions), des boutons qui
+> ressemblaient à des libellés, le jargon du DVS sous chaque deck, les pads
+> absents de l'écran alors qu'ils sont l'interface principale du matériel. La
+> maquette Claude Design (`design/`) a été refaite d'abord, puis le code en six
+> lots :
+>
+> 1. **Le deck est un lecteur.** `Deck::play/pause/stop` (façade sur
+>    `DeckClock`), un clip chargé sans platine *joue*, la barre de position se
+>    glisse et rend le deck à la source d'où la main l'a pris (`Deck::grab/
+>    scrub/release` — le clock seul l'oubliait et rendait tout à la platine,
+>    ce qui gelait un deck qui jouait : c'était le « je ne peux pas scrubber »).
+>    `Deck::load` prend le temps mur, sinon une horloge libre reconstruite à
+>    t = 0 ouvrait un clip à *temps-mur modulo durée*. 2D | 360 sur l'en-tête
+>    du deck, source Platine | Lecture | Tempo en sélecteur segmenté, Platine
+>    proposée seulement s'il y a une platine.
+> 2. **Un seul axe.** Les cinq dispositions et les touches 1–5 disparaissent ;
+>    F = image seule, B = rail replié. JOUER = rail | deck A | mixer | deck B,
+>    programme en bas. MAPPING fusionne dans TABLE. La barre d'état passe aux
+>    voyants (Phase, Table) et perd « Serato | Autonome » (rien ne l'écrivait).
+> 3. **La bibliothèque est un écran** : dossiers et caisses (création,
+>    ajout/retrait — `Library::create_crate` n'était appelé par rien),
+>    liste avec **vignettes** (BC1 128 px, rangées par la passe d'analyse dans
+>    le bloc de métadonnées du cache, `core/cachemeta`, lisible aussi depuis les
+>    caches d'avant), inspecteur, glisser-déposer vers les **banques de pads**
+>    (`core/matrix`, dans `library.json`).
+> 4. **Les pads sont à l'écran**, huit par deck, trois modes : cues (Maj + clic
+>    pose, clic droit efface — `set_cue`/`clear_cue` n'étaient appelés que par
+>    la démo), clips (la banque), boucles (1/8 à 16 temps). Boucle entrée/
+>    sortie/×, saut de temps, quantisé. Un pad à l'écran et un pad de l'Elite
+>    passent par les mêmes `DeckCommands`.
+> 5. **La géométrie est rendue sur l'écran de sortie** : grille 32 × 32
+>    placée par `homography_from` ou `WarpMesh::map`, alpha par
+>    `Mask::coverage`, `vs_warp`/`fs_warp` — les mêmes fonctions que l'aperçu,
+>    donc le projecteur et l'aperçu ne peuvent pas diverger. Spout reçoit
+>    l'image *avant* la géométrie. Le masque a enfin un éditeur, et les presets
+>    l'écrivent (ils l'écrivaient vide).
+> 6. **Le jargon en tiroir** (« diagnostic platine », ouvert seul quand une
+>    platine est en direct), et ce que le moteur savait faire sans qu'aucun
+>    bouton n'y mène : fusion de l'incrustation, budget de mémoire vidéo,
+>    hôte/port UDP (RÉGLAGES), **Ancrer** (deck A), **REC** d'une prise
+>    (`core/take`, `takes/*.svtake`), éditeur de liaisons dans TABLE (ajout,
+>    « bouger un contrôle », destination depuis le registre, courbe, zone
+>    morte, lissage, suppression — `MappingEngine::remove` est nouveau). Les
+>    liaisons OSC par défaut (`/ue/shake`, `/ue/whippan`) sont retirées : aucun
+>    transport ne les portait, et une liaison qui ne fait rien apprend à se
+>    méfier des autres.
+>
+> Trois familles de contrôles et pas plus — bouton, sélecteur segmenté,
+> basculeur — avec un fond et un bord sur tout ce qui se clique ; l'orange
+> plein pour une seule action par panneau ; le rouge réservé à « délié ». Les
+> contrôles fantômes restent. `--screen <nom>` ouvre sur un écran donné.
+>
+> Puis, le même jour : la **relecture** d'une prise (« Relire… » sur la barre
+> d'état ; la table et les platines sont rejouées depuis `takes/*.svtake`, le
+> schéma de la prise est rapproché de la surface par identifiant), **une
+> courbe par voie** (`MixSettings::channel_b`, trois paires dans TABLE comme
+> sur la face avant ; les destinations `mix.fader.a/b.*` s'ajoutent, et
+> `mix.fader.*` écrit les deux), et **EFFETS en cartes** : sélecteur, lien,
+> actif, six potards avec « assigner » (le prochain contrôle touché sur la
+> table devient la source, par une liaison ordinaire), sync tempo.
+>
+> Ce qui n'est pas fait : l'enum `Transition` (neuf transitions de crossfader,
+> toujours sans code) et la géométrie de la RP-8000. Ni gcc ni clang n'étant
+> installés sur ce bureau, la vérification multi-compilateurs est celle de la CI.
+
+> **La démo a cessé d'être l'état par défaut** (2026-09-08). Elle était
+> l'échafaudage qui a permis de construire tout l'instrument avant qu'il y ait
+> du matériel ou une passe d'analyse : deux decks aux noms inventés, dont un
+> équirectangulaire, et une bibliothèque de fichiers qui n'existent pas. Vue
+> par quelqu'un qui ouvre le logiciel, cette scène *est* le logiciel — d'où
+> « on est en mode simulation » et « on ne peut faire que de la 360 », deux
+> reproches qui décrivaient exactement ce qui était à l'écran. `--demo` la
+> rallume. Sans elle les decks sont vides, et un fichier déposé est analysé
+> puis **posé sur le premier deck libre** : rendre un `.svcache` sans rien
+> montrer n'est pas un import, c'est un devoir à faire.
+>
+> Corollaire trouvé du même coup : un fader de voie jamais touché comptait
+> **zéro**, donc charger un clip sur une installation neuve donnait un
+> programme noir. La règle du fantôme porte sur ce qu'on *affiche* ; le mixeur,
+> lui, doit calculer, et « fermé » est aussi inventé qu'« ouvert » tout en
+> étant le seul des deux qui fait croire que le logiciel est cassé. Un fader
+> inconnu compte donc comme **ouvert**, le crossfader comme **au centre**, et
+> la vraie valeur gagne dès qu'on y touche.
+
+> **La surface a cessé d'être un dessin de huit potards** (2026-09-08). Le
+> profil dit ce qu'un appareil a et comment on le dessine ; le rig ouvre un
+> port par appareil et stampe chaque événement de son index, ce qui fait de
+> « CC 7 sur l'Elite » et « CC 7 sur la platine » deux adresses. Les encodeurs
+> sans fin (browse, beats, loop) sont lus comme des distances (`relative64` ou
+> `signed7`), plus comme des positions à 0,49. Les courbes et reverse du
+> crossfader et des faders sont des réglages du moteur, des cibles de mapping
+> et des puces à l'écran ; leurs boutons en face avant de l'Elite sont
+> déclarés `optional` tant que leur MIDI n'est pas mesuré. Le dispatch des
+> mappings par comparaison de chaînes (quatre cibles vivantes sur huit) est
+> remplacé par le registre `core/destinations` : un pad sur un hot cue saute
+> sur le front, une cible inconnue est nommée au `bind()`. **Le hash de schéma
+> change avec le roster** — c'est le comportement prévu par le protocole, un
+> client Unreal doit s'y attendre. Correction au passage : l'Elite est une
+> table **2 voies** ; l'exploration qui l'avait décrite en quatre se trompait.
+
+> **La bibliothèque a cessé d'être un coup d'œil à `clips/`** (2026-09-07). Elle
+> se remplit par glisser-déposer, par un dialogue de fichiers ou de dossier, et
+> par les dossiers de `settings.json` parcourus récursivement au lancement. Ce
+> qui arrive par un geste explicite (drop, dialogue) s'analyse tout de suite ;
+> ce qu'un dossier révèle n'est que listé, à analyser à la demande — un dossier
+> de 4K analysé sans qu'on l'ait demandé, en plein set, saturerait la machine.
+> L'analyse tourne sur **un** thread (`app/analysis_queue`) et ne touche jamais
+> la `Library` : elle rapporte, et la boucle principale applique à la frontière
+> de frame, comme un chargement de clip. Deux corrections trouvées en chemin :
+> `Deck::load` remettait la source, le mode et la politique de prise en main du
+> deck à zéro (un logo déposé sur l'incrustation en faisait un deck timecode
+> bouclé qui suivait le plateau gauche), et « ce clip est du 360 » était dérivé
+> de l'aspect en cinq endroits de l'interface — c'est maintenant une décision
+> par clip (`ProjectionOverride` dans `library.json`) que le deck porte dans son
+> drapeau, et tout le reste demande au deck.
 
 Et `core/headset` : la géométrie de la sphère vue à travers un casque, avec sa
 passe GPU (`ui/gpu_eye`, `fs_view360_eye.sc`) tenue à sa référence par
@@ -520,7 +681,7 @@ déjà été traité.
 | Écarté | Raison |
 |---|---|
 | **Edge blending multi-projecteurs, slices** | Projet à soi seul. On sort en **Spout / NDI** vers Resolume ou MadMapper pour ces cas-là. |
-| **Compositing N couches, groupes, matrice de clips** | On construit un instrument de scratch, pas un VJ compositeur généraliste. Trois couches suffisent. |
+| **Compositing N couches, groupes** | On construit un instrument de scratch, pas un VJ compositeur généraliste. Trois couches suffisent. La **matrice de clips** n'est plus dans cette ligne : décidée le 2026-09-07 sous la forme de banques de clips déclenchées par les pads **sur ces trois couches** (montage live par cut, pas compositing), elle respecte les deux principes et arrive avec la surface complète. |
 | **Sync, beatmatch, détection de tonalité, mix harmonique** | Antithétique au turntablisme, et couvert par Serato en mode suiveur. |
 | **Ableton Link, horloge MIDI** | Reporté. Le mapping OSC ouvre déjà une porte. |
 | **DMX / Art-Net** | Reporté. Atteignable plus tard par la couche de mapping. |

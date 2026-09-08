@@ -1,0 +1,1718 @@
+{
+  "version": 1,
+  "name": "apc40_mk2",
+  "display_name": "Akai APC40 mk2",
+  "port_hint": "APC40",
+  "verified": false,
+  "controls": [
+    {
+      "id": "pad.apc40.r1.c1",
+      "kind": "pad"
+    },
+    {
+      "id": "pad.apc40.r1.c2",
+      "kind": "pad"
+    },
+    {
+      "id": "pad.apc40.r1.c3",
+      "kind": "pad"
+    },
+    {
+      "id": "pad.apc40.r1.c4",
+      "kind": "pad"
+    },
+    {
+      "id": "pad.apc40.r1.c5",
+      "kind": "pad"
+    },
+    {
+      "id": "pad.apc40.r1.c6",
+      "kind": "pad"
+    },
+    {
+      "id": "pad.apc40.r1.c7",
+      "kind": "pad"
+    },
+    {
+      "id": "pad.apc40.r1.c8",
+      "kind": "pad"
+    },
+    {
+      "id": "pad.apc40.r2.c1",
+      "kind": "pad"
+    },
+    {
+      "id": "pad.apc40.r2.c2",
+      "kind": "pad"
+    },
+    {
+      "id": "pad.apc40.r2.c3",
+      "kind": "pad"
+    },
+    {
+      "id": "pad.apc40.r2.c4",
+      "kind": "pad"
+    },
+    {
+      "id": "pad.apc40.r2.c5",
+      "kind": "pad"
+    },
+    {
+      "id": "pad.apc40.r2.c6",
+      "kind": "pad"
+    },
+    {
+      "id": "pad.apc40.r2.c7",
+      "kind": "pad"
+    },
+    {
+      "id": "pad.apc40.r2.c8",
+      "kind": "pad"
+    },
+    {
+      "id": "pad.apc40.r3.c1",
+      "kind": "pad"
+    },
+    {
+      "id": "pad.apc40.r3.c2",
+      "kind": "pad"
+    },
+    {
+      "id": "pad.apc40.r3.c3",
+      "kind": "pad"
+    },
+    {
+      "id": "pad.apc40.r3.c4",
+      "kind": "pad"
+    },
+    {
+      "id": "pad.apc40.r3.c5",
+      "kind": "pad"
+    },
+    {
+      "id": "pad.apc40.r3.c6",
+      "kind": "pad"
+    },
+    {
+      "id": "pad.apc40.r3.c7",
+      "kind": "pad"
+    },
+    {
+      "id": "pad.apc40.r3.c8",
+      "kind": "pad"
+    },
+    {
+      "id": "pad.apc40.r4.c1",
+      "kind": "pad"
+    },
+    {
+      "id": "pad.apc40.r4.c2",
+      "kind": "pad"
+    },
+    {
+      "id": "pad.apc40.r4.c3",
+      "kind": "pad"
+    },
+    {
+      "id": "pad.apc40.r4.c4",
+      "kind": "pad"
+    },
+    {
+      "id": "pad.apc40.r4.c5",
+      "kind": "pad"
+    },
+    {
+      "id": "pad.apc40.r4.c6",
+      "kind": "pad"
+    },
+    {
+      "id": "pad.apc40.r4.c7",
+      "kind": "pad"
+    },
+    {
+      "id": "pad.apc40.r4.c8",
+      "kind": "pad"
+    },
+    {
+      "id": "pad.apc40.r5.c1",
+      "kind": "pad"
+    },
+    {
+      "id": "pad.apc40.r5.c2",
+      "kind": "pad"
+    },
+    {
+      "id": "pad.apc40.r5.c3",
+      "kind": "pad"
+    },
+    {
+      "id": "pad.apc40.r5.c4",
+      "kind": "pad"
+    },
+    {
+      "id": "pad.apc40.r5.c5",
+      "kind": "pad"
+    },
+    {
+      "id": "pad.apc40.r5.c6",
+      "kind": "pad"
+    },
+    {
+      "id": "pad.apc40.r5.c7",
+      "kind": "pad"
+    },
+    {
+      "id": "pad.apc40.r5.c8",
+      "kind": "pad"
+    },
+    {
+      "id": "scene.apc40.1",
+      "kind": "button"
+    },
+    {
+      "id": "scene.apc40.2",
+      "kind": "button"
+    },
+    {
+      "id": "scene.apc40.3",
+      "kind": "button"
+    },
+    {
+      "id": "scene.apc40.4",
+      "kind": "button"
+    },
+    {
+      "id": "scene.apc40.5",
+      "kind": "button"
+    },
+    {
+      "id": "scene.apc40.stop_all",
+      "kind": "button"
+    },
+    {
+      "id": "track.apc40.1.stop",
+      "kind": "button"
+    },
+    {
+      "id": "track.apc40.1.select",
+      "kind": "button"
+    },
+    {
+      "id": "track.apc40.1.activator",
+      "kind": "button"
+    },
+    {
+      "id": "track.apc40.1.solo",
+      "kind": "button"
+    },
+    {
+      "id": "track.apc40.1.arm",
+      "kind": "button"
+    },
+    {
+      "id": "track.apc40.2.stop",
+      "kind": "button"
+    },
+    {
+      "id": "track.apc40.2.select",
+      "kind": "button"
+    },
+    {
+      "id": "track.apc40.2.activator",
+      "kind": "button"
+    },
+    {
+      "id": "track.apc40.2.solo",
+      "kind": "button"
+    },
+    {
+      "id": "track.apc40.2.arm",
+      "kind": "button"
+    },
+    {
+      "id": "track.apc40.3.stop",
+      "kind": "button"
+    },
+    {
+      "id": "track.apc40.3.select",
+      "kind": "button"
+    },
+    {
+      "id": "track.apc40.3.activator",
+      "kind": "button"
+    },
+    {
+      "id": "track.apc40.3.solo",
+      "kind": "button"
+    },
+    {
+      "id": "track.apc40.3.arm",
+      "kind": "button"
+    },
+    {
+      "id": "track.apc40.4.stop",
+      "kind": "button"
+    },
+    {
+      "id": "track.apc40.4.select",
+      "kind": "button"
+    },
+    {
+      "id": "track.apc40.4.activator",
+      "kind": "button"
+    },
+    {
+      "id": "track.apc40.4.solo",
+      "kind": "button"
+    },
+    {
+      "id": "track.apc40.4.arm",
+      "kind": "button"
+    },
+    {
+      "id": "track.apc40.5.stop",
+      "kind": "button"
+    },
+    {
+      "id": "track.apc40.5.select",
+      "kind": "button"
+    },
+    {
+      "id": "track.apc40.5.activator",
+      "kind": "button"
+    },
+    {
+      "id": "track.apc40.5.solo",
+      "kind": "button"
+    },
+    {
+      "id": "track.apc40.5.arm",
+      "kind": "button"
+    },
+    {
+      "id": "track.apc40.6.stop",
+      "kind": "button"
+    },
+    {
+      "id": "track.apc40.6.select",
+      "kind": "button"
+    },
+    {
+      "id": "track.apc40.6.activator",
+      "kind": "button"
+    },
+    {
+      "id": "track.apc40.6.solo",
+      "kind": "button"
+    },
+    {
+      "id": "track.apc40.6.arm",
+      "kind": "button"
+    },
+    {
+      "id": "track.apc40.7.stop",
+      "kind": "button"
+    },
+    {
+      "id": "track.apc40.7.select",
+      "kind": "button"
+    },
+    {
+      "id": "track.apc40.7.activator",
+      "kind": "button"
+    },
+    {
+      "id": "track.apc40.7.solo",
+      "kind": "button"
+    },
+    {
+      "id": "track.apc40.7.arm",
+      "kind": "button"
+    },
+    {
+      "id": "track.apc40.8.stop",
+      "kind": "button"
+    },
+    {
+      "id": "track.apc40.8.select",
+      "kind": "button"
+    },
+    {
+      "id": "track.apc40.8.activator",
+      "kind": "button"
+    },
+    {
+      "id": "track.apc40.8.solo",
+      "kind": "button"
+    },
+    {
+      "id": "track.apc40.8.arm",
+      "kind": "button"
+    },
+    {
+      "id": "fader.apc40.1",
+      "kind": "fader"
+    },
+    {
+      "id": "fader.apc40.2",
+      "kind": "fader"
+    },
+    {
+      "id": "fader.apc40.3",
+      "kind": "fader"
+    },
+    {
+      "id": "fader.apc40.4",
+      "kind": "fader"
+    },
+    {
+      "id": "fader.apc40.5",
+      "kind": "fader"
+    },
+    {
+      "id": "fader.apc40.6",
+      "kind": "fader"
+    },
+    {
+      "id": "fader.apc40.7",
+      "kind": "fader"
+    },
+    {
+      "id": "fader.apc40.8",
+      "kind": "fader"
+    },
+    {
+      "id": "fader.apc40.master",
+      "kind": "fader"
+    },
+    {
+      "id": "xfader",
+      "kind": "fader"
+    },
+    {
+      "id": "cue.level",
+      "kind": "encoder",
+      "encoder": "signed7"
+    },
+    {
+      "id": "knob.apc40.track.1",
+      "kind": "knob"
+    },
+    {
+      "id": "knob.apc40.track.2",
+      "kind": "knob"
+    },
+    {
+      "id": "knob.apc40.track.3",
+      "kind": "knob"
+    },
+    {
+      "id": "knob.apc40.track.4",
+      "kind": "knob"
+    },
+    {
+      "id": "knob.apc40.track.5",
+      "kind": "knob"
+    },
+    {
+      "id": "knob.apc40.track.6",
+      "kind": "knob"
+    },
+    {
+      "id": "knob.apc40.track.7",
+      "kind": "knob"
+    },
+    {
+      "id": "knob.apc40.track.8",
+      "kind": "knob"
+    },
+    {
+      "id": "knob.apc40.device.1",
+      "kind": "knob"
+    },
+    {
+      "id": "knob.apc40.device.2",
+      "kind": "knob"
+    },
+    {
+      "id": "knob.apc40.device.3",
+      "kind": "knob"
+    },
+    {
+      "id": "knob.apc40.device.4",
+      "kind": "knob"
+    },
+    {
+      "id": "knob.apc40.device.5",
+      "kind": "knob"
+    },
+    {
+      "id": "knob.apc40.device.6",
+      "kind": "knob"
+    },
+    {
+      "id": "knob.apc40.device.7",
+      "kind": "knob"
+    },
+    {
+      "id": "knob.apc40.device.8",
+      "kind": "knob"
+    },
+    {
+      "id": "transport.play",
+      "kind": "button"
+    },
+    {
+      "id": "transport.record",
+      "kind": "button"
+    },
+    {
+      "id": "transport.session",
+      "kind": "button"
+    },
+    {
+      "id": "transport.shift",
+      "kind": "button"
+    },
+    {
+      "id": "transport.tap",
+      "kind": "button"
+    },
+    {
+      "id": "transport.nudge.minus",
+      "kind": "button"
+    },
+    {
+      "id": "transport.nudge.plus",
+      "kind": "button"
+    },
+    {
+      "id": "transport.metronome",
+      "kind": "button"
+    },
+    {
+      "id": "transport.bank",
+      "kind": "button"
+    },
+    {
+      "id": "view.master",
+      "kind": "button"
+    },
+    {
+      "id": "view.pan",
+      "kind": "button"
+    },
+    {
+      "id": "view.sends",
+      "kind": "button"
+    },
+    {
+      "id": "view.user",
+      "kind": "button"
+    },
+    {
+      "id": "tempo.encoder",
+      "kind": "encoder",
+      "encoder": "signed7"
+    }
+  ],
+  "layout": [
+    {
+      "title": "GRILLE 8×5",
+      "accent": "amber",
+      "controls": [
+        "pad.apc40.r1.c1",
+        "pad.apc40.r1.c2",
+        "pad.apc40.r1.c3",
+        "pad.apc40.r1.c4",
+        "pad.apc40.r1.c5",
+        "pad.apc40.r1.c6",
+        "pad.apc40.r1.c7",
+        "pad.apc40.r1.c8",
+        "pad.apc40.r2.c1",
+        "pad.apc40.r2.c2",
+        "pad.apc40.r2.c3",
+        "pad.apc40.r2.c4",
+        "pad.apc40.r2.c5",
+        "pad.apc40.r2.c6",
+        "pad.apc40.r2.c7",
+        "pad.apc40.r2.c8",
+        "pad.apc40.r3.c1",
+        "pad.apc40.r3.c2",
+        "pad.apc40.r3.c3",
+        "pad.apc40.r3.c4",
+        "pad.apc40.r3.c5",
+        "pad.apc40.r3.c6",
+        "pad.apc40.r3.c7",
+        "pad.apc40.r3.c8",
+        "pad.apc40.r4.c1",
+        "pad.apc40.r4.c2",
+        "pad.apc40.r4.c3",
+        "pad.apc40.r4.c4",
+        "pad.apc40.r4.c5",
+        "pad.apc40.r4.c6",
+        "pad.apc40.r4.c7",
+        "pad.apc40.r4.c8",
+        "pad.apc40.r5.c1",
+        "pad.apc40.r5.c2",
+        "pad.apc40.r5.c3",
+        "pad.apc40.r5.c4",
+        "pad.apc40.r5.c5",
+        "pad.apc40.r5.c6",
+        "pad.apc40.r5.c7",
+        "pad.apc40.r5.c8"
+      ],
+      "columns": 8
+    },
+    {
+      "title": "SCÈNES",
+      "accent": "amber",
+      "controls": [
+        "scene.apc40.1",
+        "scene.apc40.2",
+        "scene.apc40.3",
+        "scene.apc40.4",
+        "scene.apc40.5",
+        "scene.apc40.stop_all"
+      ],
+      "columns": 1
+    },
+    {
+      "title": "PISTES",
+      "accent": "faint",
+      "controls": [
+        "track.apc40.1.stop",
+        "track.apc40.1.select",
+        "track.apc40.1.activator",
+        "track.apc40.1.solo",
+        "track.apc40.1.arm",
+        "track.apc40.2.stop",
+        "track.apc40.2.select",
+        "track.apc40.2.activator",
+        "track.apc40.2.solo",
+        "track.apc40.2.arm",
+        "track.apc40.3.stop",
+        "track.apc40.3.select",
+        "track.apc40.3.activator",
+        "track.apc40.3.solo",
+        "track.apc40.3.arm",
+        "track.apc40.4.stop",
+        "track.apc40.4.select",
+        "track.apc40.4.activator",
+        "track.apc40.4.solo",
+        "track.apc40.4.arm",
+        "track.apc40.5.stop",
+        "track.apc40.5.select",
+        "track.apc40.5.activator",
+        "track.apc40.5.solo",
+        "track.apc40.5.arm",
+        "track.apc40.6.stop",
+        "track.apc40.6.select",
+        "track.apc40.6.activator",
+        "track.apc40.6.solo",
+        "track.apc40.6.arm",
+        "track.apc40.7.stop",
+        "track.apc40.7.select",
+        "track.apc40.7.activator",
+        "track.apc40.7.solo",
+        "track.apc40.7.arm",
+        "track.apc40.8.stop",
+        "track.apc40.8.select",
+        "track.apc40.8.activator",
+        "track.apc40.8.solo",
+        "track.apc40.8.arm"
+      ],
+      "columns": 8
+    },
+    {
+      "title": "FADERS",
+      "accent": "slate",
+      "controls": [
+        "fader.apc40.1",
+        "fader.apc40.2",
+        "fader.apc40.3",
+        "fader.apc40.4",
+        "fader.apc40.5",
+        "fader.apc40.6",
+        "fader.apc40.7",
+        "fader.apc40.8",
+        "fader.apc40.master"
+      ]
+    },
+    {
+      "title": "CROSSFADER",
+      "accent": "ink",
+      "controls": [
+        "xfader"
+      ]
+    },
+    {
+      "title": "POTARDS PISTE",
+      "accent": "slate",
+      "controls": [
+        "knob.apc40.track.1",
+        "knob.apc40.track.2",
+        "knob.apc40.track.3",
+        "knob.apc40.track.4",
+        "knob.apc40.track.5",
+        "knob.apc40.track.6",
+        "knob.apc40.track.7",
+        "knob.apc40.track.8"
+      ]
+    },
+    {
+      "title": "POTARDS DEVICE",
+      "accent": "sage",
+      "controls": [
+        "knob.apc40.device.1",
+        "knob.apc40.device.2",
+        "knob.apc40.device.3",
+        "knob.apc40.device.4",
+        "knob.apc40.device.5",
+        "knob.apc40.device.6",
+        "knob.apc40.device.7",
+        "knob.apc40.device.8"
+      ]
+    },
+    {
+      "title": "TRANSPORT",
+      "accent": "faint",
+      "controls": [
+        "transport.play",
+        "transport.record",
+        "transport.session",
+        "transport.shift",
+        "transport.tap",
+        "transport.nudge.minus",
+        "transport.nudge.plus",
+        "transport.metronome",
+        "transport.bank",
+        "view.master",
+        "view.pan",
+        "view.sends",
+        "view.user",
+        "tempo.encoder",
+        "cue.level"
+      ],
+      "columns": 7
+    }
+  ],
+  "bindings": [
+    {
+      "id": "pad.apc40.r1.c1",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 32
+      }
+    },
+    {
+      "id": "pad.apc40.r1.c2",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 33
+      }
+    },
+    {
+      "id": "pad.apc40.r1.c3",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 34
+      }
+    },
+    {
+      "id": "pad.apc40.r1.c4",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 35
+      }
+    },
+    {
+      "id": "pad.apc40.r1.c5",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 36
+      }
+    },
+    {
+      "id": "pad.apc40.r1.c6",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 37
+      }
+    },
+    {
+      "id": "pad.apc40.r1.c7",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 38
+      }
+    },
+    {
+      "id": "pad.apc40.r1.c8",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 39
+      }
+    },
+    {
+      "id": "pad.apc40.r2.c1",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 24
+      }
+    },
+    {
+      "id": "pad.apc40.r2.c2",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 25
+      }
+    },
+    {
+      "id": "pad.apc40.r2.c3",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 26
+      }
+    },
+    {
+      "id": "pad.apc40.r2.c4",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 27
+      }
+    },
+    {
+      "id": "pad.apc40.r2.c5",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 28
+      }
+    },
+    {
+      "id": "pad.apc40.r2.c6",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 29
+      }
+    },
+    {
+      "id": "pad.apc40.r2.c7",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 30
+      }
+    },
+    {
+      "id": "pad.apc40.r2.c8",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 31
+      }
+    },
+    {
+      "id": "pad.apc40.r3.c1",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 16
+      }
+    },
+    {
+      "id": "pad.apc40.r3.c2",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 17
+      }
+    },
+    {
+      "id": "pad.apc40.r3.c3",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 18
+      }
+    },
+    {
+      "id": "pad.apc40.r3.c4",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 19
+      }
+    },
+    {
+      "id": "pad.apc40.r3.c5",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 20
+      }
+    },
+    {
+      "id": "pad.apc40.r3.c6",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 21
+      }
+    },
+    {
+      "id": "pad.apc40.r3.c7",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 22
+      }
+    },
+    {
+      "id": "pad.apc40.r3.c8",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 23
+      }
+    },
+    {
+      "id": "pad.apc40.r4.c1",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 8
+      }
+    },
+    {
+      "id": "pad.apc40.r4.c2",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 9
+      }
+    },
+    {
+      "id": "pad.apc40.r4.c3",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 10
+      }
+    },
+    {
+      "id": "pad.apc40.r4.c4",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 11
+      }
+    },
+    {
+      "id": "pad.apc40.r4.c5",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 12
+      }
+    },
+    {
+      "id": "pad.apc40.r4.c6",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 13
+      }
+    },
+    {
+      "id": "pad.apc40.r4.c7",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 14
+      }
+    },
+    {
+      "id": "pad.apc40.r4.c8",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 15
+      }
+    },
+    {
+      "id": "pad.apc40.r5.c1",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 0
+      }
+    },
+    {
+      "id": "pad.apc40.r5.c2",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 1
+      }
+    },
+    {
+      "id": "pad.apc40.r5.c3",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 2
+      }
+    },
+    {
+      "id": "pad.apc40.r5.c4",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 3
+      }
+    },
+    {
+      "id": "pad.apc40.r5.c5",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 4
+      }
+    },
+    {
+      "id": "pad.apc40.r5.c6",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 5
+      }
+    },
+    {
+      "id": "pad.apc40.r5.c7",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 6
+      }
+    },
+    {
+      "id": "pad.apc40.r5.c8",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 7
+      }
+    },
+    {
+      "id": "scene.apc40.1",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 82
+      }
+    },
+    {
+      "id": "scene.apc40.2",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 83
+      }
+    },
+    {
+      "id": "scene.apc40.3",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 84
+      }
+    },
+    {
+      "id": "scene.apc40.4",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 85
+      }
+    },
+    {
+      "id": "scene.apc40.5",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 86
+      }
+    },
+    {
+      "id": "scene.apc40.stop_all",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 81
+      }
+    },
+    {
+      "id": "track.apc40.1.stop",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 52
+      }
+    },
+    {
+      "id": "track.apc40.1.select",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 51
+      }
+    },
+    {
+      "id": "track.apc40.1.activator",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 50
+      }
+    },
+    {
+      "id": "track.apc40.1.solo",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 49
+      }
+    },
+    {
+      "id": "track.apc40.1.arm",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 48
+      }
+    },
+    {
+      "id": "track.apc40.2.stop",
+      "midi": {
+        "type": "note",
+        "channel": 1,
+        "number": 52
+      }
+    },
+    {
+      "id": "track.apc40.2.select",
+      "midi": {
+        "type": "note",
+        "channel": 1,
+        "number": 51
+      }
+    },
+    {
+      "id": "track.apc40.2.activator",
+      "midi": {
+        "type": "note",
+        "channel": 1,
+        "number": 50
+      }
+    },
+    {
+      "id": "track.apc40.2.solo",
+      "midi": {
+        "type": "note",
+        "channel": 1,
+        "number": 49
+      }
+    },
+    {
+      "id": "track.apc40.2.arm",
+      "midi": {
+        "type": "note",
+        "channel": 1,
+        "number": 48
+      }
+    },
+    {
+      "id": "track.apc40.3.stop",
+      "midi": {
+        "type": "note",
+        "channel": 2,
+        "number": 52
+      }
+    },
+    {
+      "id": "track.apc40.3.select",
+      "midi": {
+        "type": "note",
+        "channel": 2,
+        "number": 51
+      }
+    },
+    {
+      "id": "track.apc40.3.activator",
+      "midi": {
+        "type": "note",
+        "channel": 2,
+        "number": 50
+      }
+    },
+    {
+      "id": "track.apc40.3.solo",
+      "midi": {
+        "type": "note",
+        "channel": 2,
+        "number": 49
+      }
+    },
+    {
+      "id": "track.apc40.3.arm",
+      "midi": {
+        "type": "note",
+        "channel": 2,
+        "number": 48
+      }
+    },
+    {
+      "id": "track.apc40.4.stop",
+      "midi": {
+        "type": "note",
+        "channel": 3,
+        "number": 52
+      }
+    },
+    {
+      "id": "track.apc40.4.select",
+      "midi": {
+        "type": "note",
+        "channel": 3,
+        "number": 51
+      }
+    },
+    {
+      "id": "track.apc40.4.activator",
+      "midi": {
+        "type": "note",
+        "channel": 3,
+        "number": 50
+      }
+    },
+    {
+      "id": "track.apc40.4.solo",
+      "midi": {
+        "type": "note",
+        "channel": 3,
+        "number": 49
+      }
+    },
+    {
+      "id": "track.apc40.4.arm",
+      "midi": {
+        "type": "note",
+        "channel": 3,
+        "number": 48
+      }
+    },
+    {
+      "id": "track.apc40.5.stop",
+      "midi": {
+        "type": "note",
+        "channel": 4,
+        "number": 52
+      }
+    },
+    {
+      "id": "track.apc40.5.select",
+      "midi": {
+        "type": "note",
+        "channel": 4,
+        "number": 51
+      }
+    },
+    {
+      "id": "track.apc40.5.activator",
+      "midi": {
+        "type": "note",
+        "channel": 4,
+        "number": 50
+      }
+    },
+    {
+      "id": "track.apc40.5.solo",
+      "midi": {
+        "type": "note",
+        "channel": 4,
+        "number": 49
+      }
+    },
+    {
+      "id": "track.apc40.5.arm",
+      "midi": {
+        "type": "note",
+        "channel": 4,
+        "number": 48
+      }
+    },
+    {
+      "id": "track.apc40.6.stop",
+      "midi": {
+        "type": "note",
+        "channel": 5,
+        "number": 52
+      }
+    },
+    {
+      "id": "track.apc40.6.select",
+      "midi": {
+        "type": "note",
+        "channel": 5,
+        "number": 51
+      }
+    },
+    {
+      "id": "track.apc40.6.activator",
+      "midi": {
+        "type": "note",
+        "channel": 5,
+        "number": 50
+      }
+    },
+    {
+      "id": "track.apc40.6.solo",
+      "midi": {
+        "type": "note",
+        "channel": 5,
+        "number": 49
+      }
+    },
+    {
+      "id": "track.apc40.6.arm",
+      "midi": {
+        "type": "note",
+        "channel": 5,
+        "number": 48
+      }
+    },
+    {
+      "id": "track.apc40.7.stop",
+      "midi": {
+        "type": "note",
+        "channel": 6,
+        "number": 52
+      }
+    },
+    {
+      "id": "track.apc40.7.select",
+      "midi": {
+        "type": "note",
+        "channel": 6,
+        "number": 51
+      }
+    },
+    {
+      "id": "track.apc40.7.activator",
+      "midi": {
+        "type": "note",
+        "channel": 6,
+        "number": 50
+      }
+    },
+    {
+      "id": "track.apc40.7.solo",
+      "midi": {
+        "type": "note",
+        "channel": 6,
+        "number": 49
+      }
+    },
+    {
+      "id": "track.apc40.7.arm",
+      "midi": {
+        "type": "note",
+        "channel": 6,
+        "number": 48
+      }
+    },
+    {
+      "id": "track.apc40.8.stop",
+      "midi": {
+        "type": "note",
+        "channel": 7,
+        "number": 52
+      }
+    },
+    {
+      "id": "track.apc40.8.select",
+      "midi": {
+        "type": "note",
+        "channel": 7,
+        "number": 51
+      }
+    },
+    {
+      "id": "track.apc40.8.activator",
+      "midi": {
+        "type": "note",
+        "channel": 7,
+        "number": 50
+      }
+    },
+    {
+      "id": "track.apc40.8.solo",
+      "midi": {
+        "type": "note",
+        "channel": 7,
+        "number": 49
+      }
+    },
+    {
+      "id": "track.apc40.8.arm",
+      "midi": {
+        "type": "note",
+        "channel": 7,
+        "number": 48
+      }
+    },
+    {
+      "id": "fader.apc40.1",
+      "midi": {
+        "type": "cc",
+        "channel": 0,
+        "number": 7
+      }
+    },
+    {
+      "id": "fader.apc40.2",
+      "midi": {
+        "type": "cc",
+        "channel": 1,
+        "number": 7
+      }
+    },
+    {
+      "id": "fader.apc40.3",
+      "midi": {
+        "type": "cc",
+        "channel": 2,
+        "number": 7
+      }
+    },
+    {
+      "id": "fader.apc40.4",
+      "midi": {
+        "type": "cc",
+        "channel": 3,
+        "number": 7
+      }
+    },
+    {
+      "id": "fader.apc40.5",
+      "midi": {
+        "type": "cc",
+        "channel": 4,
+        "number": 7
+      }
+    },
+    {
+      "id": "fader.apc40.6",
+      "midi": {
+        "type": "cc",
+        "channel": 5,
+        "number": 7
+      }
+    },
+    {
+      "id": "fader.apc40.7",
+      "midi": {
+        "type": "cc",
+        "channel": 6,
+        "number": 7
+      }
+    },
+    {
+      "id": "fader.apc40.8",
+      "midi": {
+        "type": "cc",
+        "channel": 7,
+        "number": 7
+      }
+    },
+    {
+      "id": "fader.apc40.master",
+      "midi": {
+        "type": "cc",
+        "channel": 0,
+        "number": 14
+      }
+    },
+    {
+      "id": "xfader",
+      "midi": {
+        "type": "cc",
+        "channel": 0,
+        "number": 15
+      }
+    },
+    {
+      "id": "cue.level",
+      "midi": {
+        "type": "cc",
+        "channel": 0,
+        "number": 47
+      }
+    },
+    {
+      "id": "knob.apc40.track.1",
+      "midi": {
+        "type": "cc",
+        "channel": 0,
+        "number": 48
+      }
+    },
+    {
+      "id": "knob.apc40.track.2",
+      "midi": {
+        "type": "cc",
+        "channel": 0,
+        "number": 49
+      }
+    },
+    {
+      "id": "knob.apc40.track.3",
+      "midi": {
+        "type": "cc",
+        "channel": 0,
+        "number": 50
+      }
+    },
+    {
+      "id": "knob.apc40.track.4",
+      "midi": {
+        "type": "cc",
+        "channel": 0,
+        "number": 51
+      }
+    },
+    {
+      "id": "knob.apc40.track.5",
+      "midi": {
+        "type": "cc",
+        "channel": 0,
+        "number": 52
+      }
+    },
+    {
+      "id": "knob.apc40.track.6",
+      "midi": {
+        "type": "cc",
+        "channel": 0,
+        "number": 53
+      }
+    },
+    {
+      "id": "knob.apc40.track.7",
+      "midi": {
+        "type": "cc",
+        "channel": 0,
+        "number": 54
+      }
+    },
+    {
+      "id": "knob.apc40.track.8",
+      "midi": {
+        "type": "cc",
+        "channel": 0,
+        "number": 55
+      }
+    },
+    {
+      "id": "knob.apc40.device.1",
+      "midi": {
+        "type": "cc",
+        "channel": 0,
+        "number": 16
+      }
+    },
+    {
+      "id": "knob.apc40.device.2",
+      "midi": {
+        "type": "cc",
+        "channel": 0,
+        "number": 17
+      }
+    },
+    {
+      "id": "knob.apc40.device.3",
+      "midi": {
+        "type": "cc",
+        "channel": 0,
+        "number": 18
+      }
+    },
+    {
+      "id": "knob.apc40.device.4",
+      "midi": {
+        "type": "cc",
+        "channel": 0,
+        "number": 19
+      }
+    },
+    {
+      "id": "knob.apc40.device.5",
+      "midi": {
+        "type": "cc",
+        "channel": 0,
+        "number": 20
+      }
+    },
+    {
+      "id": "knob.apc40.device.6",
+      "midi": {
+        "type": "cc",
+        "channel": 0,
+        "number": 21
+      }
+    },
+    {
+      "id": "knob.apc40.device.7",
+      "midi": {
+        "type": "cc",
+        "channel": 0,
+        "number": 22
+      }
+    },
+    {
+      "id": "knob.apc40.device.8",
+      "midi": {
+        "type": "cc",
+        "channel": 0,
+        "number": 23
+      }
+    },
+    {
+      "id": "transport.play",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 91
+      }
+    },
+    {
+      "id": "transport.record",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 93
+      }
+    },
+    {
+      "id": "transport.session",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 102
+      }
+    },
+    {
+      "id": "transport.shift",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 98
+      }
+    },
+    {
+      "id": "transport.tap",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 99
+      }
+    },
+    {
+      "id": "transport.nudge.minus",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 100
+      }
+    },
+    {
+      "id": "transport.nudge.plus",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 101
+      }
+    },
+    {
+      "id": "transport.metronome",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 90
+      }
+    },
+    {
+      "id": "transport.bank",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 103
+      }
+    },
+    {
+      "id": "view.master",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 80
+      }
+    },
+    {
+      "id": "view.pan",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 87
+      }
+    },
+    {
+      "id": "view.sends",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 88
+      }
+    },
+    {
+      "id": "view.user",
+      "midi": {
+        "type": "note",
+        "channel": 0,
+        "number": 89
+      }
+    },
+    {
+      "id": "tempo.encoder",
+      "midi": {
+        "type": "cc",
+        "channel": 0,
+        "number": 13
+      }
+    }
+  ]
+}

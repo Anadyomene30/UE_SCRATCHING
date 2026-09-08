@@ -1,0 +1,1208 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>scratchvj — Manuel</title>
+<link rel="stylesheet" href="_style.css">
+</head>
+<body>
+
+<section class="cover">
+  <div>
+    <p class="mark">scratchvj</p>
+    <h1>Manuel de l'instrument</h1>
+    <p class="sub">Instrument DJ vidéo scratchable, piloté au timecode DVS.
+    Installation, câblage, jeu, effets appairés, 360, mapping, sorties et dépannage.</p>
+  </div>
+  <div class="meta">
+    <b>Version du logiciel</b> &nbsp; 0.1.0 — socle vérifié, matériel partiellement branché<br>
+    <b>Plateformes</b> &nbsp; Windows (référence) · macOS (CI verte) · Linux (noyau et tests)<br>
+    <b>Noyau</b> &nbsp; C++20, aucune dépendance externe, 441 tests<br>
+    <b>Licence</b> &nbsp; voir annexe E — la configuration par défaut n'embarque aucun code GPL<br>
+    <b>Document</b> &nbsp; septembre 2026
+  </div>
+</section>
+
+<h2 class="cont"><span class="n">SOMMAIRE</span>Ce que contient ce manuel</h2>
+
+<div class="toc">
+  <div><span class="t">1</span> &nbsp;Ce qu'est scratchvj<span class="s">Le principe, l'état réel de la version, ce qui n'existe pas encore</span></div>
+  <div><span class="t">2</span> &nbsp;Installation<span class="s">Compiler le noyau, l'interface, le décodeur DVS optionnel</span></div>
+  <div><span class="t">3</span> &nbsp;Prise en main sans matériel<span class="s">La démo, le tableau de bord, enregistrer une prise</span></div>
+  <div><span class="t">4</span> &nbsp;Préparer les clips<span class="s">La passe d'analyse, le format .svcache, le budget VRAM</span></div>
+  <div><span class="t">5</span> &nbsp;Brancher le matériel<span class="s">Les trois câblages, Phase, Elite, Serato, settings.json</span></div>
+  <div><span class="t">6</span> &nbsp;L'interface<span class="s">Barre d'état, onglets, cinq dispositions, panneaux</span></div>
+  <div><span class="t">7</span> &nbsp;Jouer<span class="s">Plateau, ancrage, transport, mixer, 360</span></div>
+  <div><span class="t">8</span> &nbsp;Les effets<span class="s">Le principe des paires, le rack, modulateurs, FFT</span></div>
+  <div><span class="t">9</span> &nbsp;MIDI learn et mapping<span class="s">Mode fantôme, apprentissage, mapping.json, courbes</span></div>
+  <div><span class="t">10</span> &nbsp;Sorties<span class="s">Warp et masque, Spout, le flux UDP, Unreal</span></div>
+  <div><span class="t">11</span> &nbsp;Vérification et dépannage<span class="s">Les outils de contrôle, les sondes, les symptômes courants</span></div>
+  <div><span class="t">A</span> &nbsp;Référence des commandes</div>
+  <div><span class="t">B</span> &nbsp;Les 63 contrôles de la surface</div>
+  <div><span class="t">C</span> &nbsp;Le catalogue des 32 effets</div>
+  <div><span class="t">D</span> &nbsp;Fichiers et formats</div>
+  <div><span class="t">E</span> &nbsp;Licences</div>
+</div>
+
+<div class="note" style="margin-top:8mm">
+  <span class="label">Comment lire ce manuel</span>
+  <p>Les sections 1 à 4 ne demandent aucun matériel : elles suffisent à installer le
+  logiciel, le faire tourner et préparer des clips. La section 5 est le moment où
+  les platines entrent en jeu. Les sections 6 à 10 décrivent le jeu proprement dit.</p>
+  <p>Chaque fonction porte une étiquette d'état : <span class="tag ok">vérifié</span>
+  quand un test automatique ou une mesure sur le matériel réel la couvre,
+  <span class="tag part">écrit, non éprouvé en scène</span> quand le code existe et
+  passe ses tests mais n'a jamais servi dans un set, <span class="tag no">à venir</span>
+  quand elle n'est pas encore écrite. Un manuel qui promet ce que le logiciel ne
+  fait pas est pire qu'un manuel incomplet.</p>
+</div>
+
+<h2><span class="n">SECTION 1</span>Ce qu'est scratchvj</h2>
+
+<p class="lead">scratchvj est un instrument : il joue de la vidéo comme une platine
+joue un disque. Deux decks, un crossfader, des boucles, des hot cues, un rack
+d'effets — mais l'objet manipulé est une image, et la main qui la manipule est
+sur un plateau de platine vinyle.</p>
+
+<p>La différence avec un logiciel de VJ tient en une phrase : ici, l'image n'est
+pas <em>lue</em>, elle est <em>indexée</em>. Un lecteur vidéo avance dans un flux et
+sait mal reculer ; scratchvj adresse une frame par sa position, exactement comme un
+tableau. Reculer ne coûte donc rien, et un backspin est une opération aussi
+ordinaire qu'une lecture normale.</p>
+
+<h3>Les deux principes de conception</h3>
+
+<p><strong>1. Tout ce qui doit être scratchable est une fonction de la position,
+jamais un intégrateur.</strong> Une horloge qui accumule (<code>pos += vitesse × dt</code>)
+ne se scratche pas, ne se rejoue pas à l'identique et dérive sur la durée d'un set.
+Toute position dans scratchvj est une forme close : <code>pos = origine + taux·(t − t₀)</code>,
+où un changement de vitesse rebase l'origine au lieu d'accumuler. Trois heures plus
+tard la position est encore exacte.</p>
+
+<p><strong>2. L'audio agit sur les fréquences temporelles d'un signal 1D, la vidéo
+sur les fréquences spatiales d'un signal 2D.</strong> Un passe-bas <em>est</em> un flou :
+le même calcul, dans l'autre domaine. C'est ce qui permet à un seul potard de piloter
+un effet audio et son pendant visuel sans que le lien soit une métaphore décorative.
+Quand la correspondance n'est pas exacte — une reverb n'est pas un smear — l'analogue
+le plus proche est choisi et <strong>marqué comme analogue</strong> dans le catalogue,
+jamais présenté comme identique.</p>
+
+<h3>Le matériel autour duquel il est construit</h3>
+
+<p>MWM Phase, Reloop Elite, Reloop RP-8000 MK2. Mais <strong>rien de cette table
+n'est câblé en dur</strong> : la surface est apprise par MIDI learn (section 9), donc
+n'importe quel contrôleur MIDI convient. Le timecode se lit sur n'importe quelle
+entrée audio ligne — la table n'est pas obligatoire (section 5).</p>
+
+<h3>1.1 &nbsp;L'état réel de la version 0.1.0</h3>
+
+<p>Le noyau de l'instrument est écrit et couvert par <strong>441 tests</strong> qui
+passent sur Windows, macOS et Linux. Ce qui touche au matériel est à des stades
+différents, et le tableau ci-dessous dit lequel, module par module.</p>
+
+<table class="long">
+<tr><th style="width:31%">Fonction</th><th style="width:19%">État</th><th>Ce que ça veut dire concrètement</th></tr>
+<tr><td>Moteur vidéo indexé</td><td><span class="tag ok">vérifié</span></td><td>Analyse hors ligne, cache <code>.svcache</code>, fenêtre VRAM roulante. Marche arrière gratuite.</td></tr>
+<tr><td>Compositeur GPU</td><td><span class="tag ok">vérifié</span></td><td>Le shader est tenu à sa référence CPU par <code>gpu_check</code>, écart maximal 1/255.</td></tr>
+<tr><td>Reprojection 360</td><td><span class="tag ok">vérifié</span></td><td>Perspective, petite planète, fisheye — <code>sphere_check</code>, même écart maximal.</td></tr>
+<tr><td>Effets une-frame</td><td><span class="tag ok">vérifié</span></td><td><code>fx_check</code> compare le shader au calcul CPU, canal par canal.</td></tr>
+<tr><td>Effets multi-taps</td><td><span class="tag ok">vérifié</span></td><td>Traînées et slit scan lisent le clip à huit moments — <code>taps_check</code>.</td></tr>
+<tr><td>Lecture du plateau</td><td><span class="tag ok">vérifié</span></td><td>Le Phase est lu en direct via <code>core/quadrature</code> sur la MOTU, verrou et suivi de la main constatés.</td></tr>
+<tr><td>Décodeur DVS xwax</td><td><span class="tag part">écrit, non éprouvé</span></td><td>Vendu et testé, pour un vrai disque de contrôle. Option de compilation séparée (annexe E).</td></tr>
+<tr><td>Surface MIDI et learn</td><td><span class="tag ok">vérifié</span></td><td>Décodage MIDI, mode fantôme, apprentissage, courbes, mapping — mesuré sur l'Elite.</td></tr>
+<tr><td>Transport et mixer</td><td><span class="tag part">écrit, non éprouvé</span></td><td>Boucles, cues, slip, courbes de crossfader, blend modes : testés, jamais joués en set.</td></tr>
+<tr><td>Sortie Spout</td><td><span class="tag ok">vérifié</span></td><td>Reçue par un récepteur indépendant (<code>spout_check</code>).</td></tr>
+<tr><td>Flux UDP vers Unreal</td><td><span class="tag ok">vérifié</span></td><td>Émission constatée par <code>net_check</code> ; le plugin <code>ScratchLink</code> compile contre UE 5.7.</td></tr>
+<tr><td>Warp, masque, presets</td><td><span class="tag part">écrit, non éprouvé</span></td><td>Corner pin, maillage bézier, presets de salle — testés, jamais projetés.</td></tr>
+<tr><td>Casque OpenXR</td><td><span class="tag part">géométrie faite</span></td><td>La vue par œil est vérifiée (<code>eye_check</code>) ; la session et la boucle de frame attendent un casque réveillé.</td></tr>
+<tr><td>Sortie audio autonome</td><td><span class="tag no">à venir</span></td><td>L'entrée audio existe ; le mode où l'app joue le son elle-même n'est pas écrit.</td></tr>
+<tr><td>NDI, Syphon</td><td><span class="tag no">à venir</span></td><td>NDI est bloqué sur l'acceptation d'un EULA, pas sur du code. Syphon suppose un portage macOS.</td></tr>
+<tr><td>Entrées vidéo live</td><td><span class="tag part">réception Spout</span></td><td>Un deck peut recevoir une texture Spout ; caméra et NDI restent à faire.</td></tr>
+</table>
+
+<div class="note">
+  <span class="label">Ce que scratchvj ne fera pas</span>
+  <p>Ces exclusions sont des décisions, pas des oublis. <strong>Pas de mapping
+  multi-projecteurs</strong> (edge blending, slices) : on sort en Spout ou NDI vers
+  Resolume ou MadMapper pour ces cas. <strong>Pas de compositing à N couches</strong>
+  avec groupes et matrice de clips : trois couches suffisent à un instrument de
+  scratch. <strong>Pas de sync, de beatmatch ni de mix harmonique</strong> : c'est
+  antithétique au turntablisme, et Serato le fait déjà en mode suiveur.</p>
+</div>
+
+<h2><span class="n">SECTION 2</span>Installation</h2>
+
+<h3>2.1 &nbsp;Prérequis</h3>
+
+<table>
+<tr><th style="width:28%">Pour</th><th>Il faut</th></tr>
+<tr><td>Le noyau et la démo</td><td>CMake ≥ 3.20 et un compilateur C++20 (MSVC 2022, gcc 12, clang 15). <strong>Rien d'autre</strong> : le noyau n'a aucune dépendance externe.</td></tr>
+<tr><td>L'interface</td><td>La même chose, plus un GPU et une connexion réseau au premier <code>configure</code> : SDL3, Dear ImGui et bgfx sont récupérés automatiquement.</td></tr>
+<tr><td>L'analyse de clips</td><td>L'exécutable <code>ffmpeg</code> accessible dans le <code>PATH</code>. Il est <em>appelé</em>, jamais lié — c'est une frontière de processus, et elle a aussi des conséquences de licence (annexe E).</td></tr>
+<tr><td>Le décodeur DVS</td><td>Rien de plus, mais une option de compilation à activer explicitement — et une licence GPL-3 à accepter.</td></tr>
+</table>
+
+<h3>2.2 &nbsp;Compiler le noyau et la démo</h3>
+
+<pre><code>cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo
+cmake --build build
+ctest --test-dir build --output-on-failure</code></pre>
+
+<p>Les 441 tests doivent tous passer. C'est la configuration que la CI construit sur
+les trois systèmes, et c'est aussi celle qui n'embarque aucune dépendance : si elle
+compile depuis un dépôt fraîchement cloné, l'installation est saine.</p>
+
+<h3>2.3 &nbsp;Compiler l'interface</h3>
+
+<pre><code>cmake -S . -B build-ui -DSCRATCHVJ_BUILD_UI=ON
+cmake --build build-ui --config Release
+ctest --test-dir build-ui -C Release --output-on-failure</code></pre>
+
+<p>L'interface est derrière une option, et éteinte par défaut, parce que l'activer
+fait descendre SDL3, Dear ImGui et bgfx. Ce <code>ctest</code>-là ajoute les cinq
+outils qui tiennent les shaders à leur référence CPU : <code>gpu_check</code>,
+<code>sphere_check</code>, <code>eye_check</code>, <code>fx_check</code>,
+<code>taps_check</code>.</p>
+
+<div class="note warn">
+  <span class="label">Lancer ces outils par ctest, jamais à la main</span>
+  <p>Lancés directement, ils ont déjà « passé » depuis un binaire périmé alors que
+  leur source ne lisait plus rien. <code>ctest</code> les fait précéder de la
+  compilation, donc le verdict porte sur le code actuel. La même règle vaut pour le
+  binaire de tests : un <code>441 passed</code> obtenu sans recompiler ne prouve
+  rien.</p>
+</div>
+
+<p>Trois outils restent en dehors de <code>ctest</code>, pour des raisons qui leur
+sont propres : <code>spout_check</code> et <code>net_check</code> écoutent une
+instance de <code>scratchvj_ui</code> <em>en cours d'exécution</em>, et
+<code>xr_check</code> rapporte ce que la machine offre en OpenXR — son verdict dépend
+du casque branché, pas du code.</p>
+
+<h3>2.4 &nbsp;Le décodeur DVS (optionnel, et sous GPL)</h3>
+
+<pre><code>cmake -S . -B build-dvs -DSCRATCHVJ_BUILD_DVS=ON
+cmake --build build-dvs --config Release</code></pre>
+
+<p>Cette option compile <code>timecoder.c</code>, le décodeur de timecode d'xwax,
+dans une cible à part. Il sert à lire un <strong>vrai disque de contrôle</strong>
+(Serato, Traktor, MixVibes), c'est-à-dire un signal qui porte une position absolue.
+Le MWM Phase n'en émet pas — il émet une porteuse nue — et se lit sans cette option,
+par <code>core/quadrature</code>.</p>
+
+<div class="note">
+  <span class="label">Conséquence de licence, à connaître avant de distribuer</span>
+  <p>xwax est sous GPL-3. Un binaire compilé avec <code>SCRATCHVJ_BUILD_DVS=ON</code>
+  est donc un binaire GPL-3, avec les obligations qui vont avec. La cible est séparée
+  et éteinte par défaut exactement pour que cette frontière soit visible plutôt
+  qu'implicite. L'annexe E détaille les trois configurations possibles.</p>
+</div>
+
+<h3>2.5 &nbsp;Vérifier que l'installation est saine</h3>
+
+<table>
+<tr><th style="width:38%">Commande</th><th>Ce qu'elle prouve</th></tr>
+<tr><td class="mono">ctest --test-dir build</td><td>441/441. La logique de l'instrument est intacte.</td></tr>
+<tr><td class="mono">scratchvj demo</td><td>Le moteur complet tourne : decks, mixer, mapping, effets.</td></tr>
+<tr><td class="mono">scratchvj effects</td><td>Le catalogue répond : 32 effets, 16 paires, 16 vidéo seuls.</td></tr>
+<tr><td class="mono">scratchvj layout</td><td>63 contrôles à apprendre. La checklist du MIDI learn existe.</td></tr>
+<tr><td class="mono">ctest --test-dir build-ui</td><td>Les cinq shaders sont conformes à leur référence CPU.</td></tr>
+</table>
+
+<h2><span class="n">SECTION 3</span>Prise en main sans matériel</h2>
+
+<p class="lead">Il y a quelque chose à faire tourner avant d'avoir branché quoi que
+ce soit — et ce n'est pas une maquette : c'est le moteur complet, piloté par une
+performance scriptée au lieu d'une main.</p>
+
+<h3>3.1 &nbsp;La démo</h3>
+
+<pre><code>scratchvj demo [--seconds N] [--fps N] [--plain] [--record FICHIER]</code></pre>
+
+<p>Une performance scriptée traverse tout le moteur pendant qu'un tableau de bord de
+terminal montre ce qu'il fait : lecture des decks, filmstrip avec sa fenêtre VRAM,
+surface dont les contrôles jamais touchés sont dessinés comme inconnus, et sortie
+vivante du moteur de mapping.</p>
+
+<p>Le script contient <strong>délibérément les moments difficiles</strong> : un
+backspin, une boucle scratchée à l'intérieur, et une coupure de liaison Phase. Ce
+sont les seuls qui valent d'être regardés, parce que ce sont ceux où un moteur mal
+conçu se trahit — une image qui se téléporte au lieu de geler, une boucle qui se
+replie avant que le transport ne la voie.</p>
+
+<table>
+<tr><th style="width:26%">Option</th><th>Effet</th></tr>
+<tr><td class="mono">--seconds N</td><td>Durée de la performance (24 s par défaut).</td></tr>
+<tr><td class="mono">--fps N</td><td>Cadence de rafraîchissement du tableau de bord (30 par défaut).</td></tr>
+<tr><td class="mono">--plain</td><td>Sans couleurs ANSI — pour un terminal qui ne les gère pas, ou pour rediriger vers un fichier.</td></tr>
+<tr><td class="mono">--record F</td><td>Écrit une prise <code>.scratchtake</code> : le flux de contrôle horodaté de la performance.</td></tr>
+</table>
+
+<h3>3.2 &nbsp;Enregistrer et rejouer une prise</h3>
+
+<pre><code>scratchvj demo --seconds 60 --record ma-prise.scratchtake
+scratchvj play ma-prise.scratchtake</code></pre>
+
+<p>Une prise est le flux de contrôle d'une performance, horodaté. C'est ce qui permet
+de développer le reste du logiciel avant que les platines soient branchées :
+<strong>on enregistre une fois, puis on éprouve chaque changement ultérieur contre
+une vraie performance au lieu d'une supposition</strong>. En usage courant, c'est
+aussi la façon de rejouer un passage exact pour régler un effet, ou de garder la
+trace gestuelle d'un set.</p>
+
+<h3>3.3 &nbsp;Lire le tableau de bord</h3>
+
+<table>
+<tr><th style="width:26%">Zone</th><th>Ce qu'elle dit</th></tr>
+<tr><td>Deck A / Deck B</td><td>Position en secondes, vitesse signée (1,0 = nominal, négatif = arrière), confiance du verrou timecode, état de liaison.</td></tr>
+<tr><td>Filmstrip</td><td>Les frames autour de la tête de lecture, et où se situe la fenêtre chargée en mémoire vidéo.</td></tr>
+<tr><td>Surface</td><td>Un contrôle par ligne. Ceux qui n'ont jamais bougé sont dessinés comme <strong>inconnus</strong> — pas à zéro (voir le mode fantôme, section 9.1).</td></tr>
+<tr><td>Mapping</td><td>Chaque route source → destination avec sa valeur courante, telle que le moteur la calcule.</td></tr>
+</table>
+
+<h2><span class="n">SECTION 4</span>Préparer les clips</h2>
+
+<p class="lead">Un clip ne se joue pas directement : il est analysé une fois, puis
+joué depuis un cache. C'est la même idée que l'analyse d'un morceau par Serato avant
+de le passer, et c'est ce qui rend le scratch possible.</p>
+
+<h3>4.1 &nbsp;Pourquoi une passe d'analyse</h3>
+
+<p>Chercher dans un flux compressé ne suivra jamais une main sur un plateau : un
+codec moderne reconstruit une image à partir des précédentes, donc reculer d'une
+frame peut coûter le décodage de plusieurs dizaines. C'est l'erreur classique, et
+même les lecteurs conçus pour le scrubbing la subissent.</p>
+
+<p>scratchvj sort donc du décodage temps réel. FFmpeg décode le clip <strong>une
+seule fois</strong>, hors ligne, chaque frame est compressée en blocs — le format
+natif du GPU — et écrite dans un <code>.svcache</code>. Ensuite, plus jamais de
+décodage : lire la frame <em>n</em> est une multiplication d'offset.</p>
+
+<div class="note">
+  <span class="label">Pourquoi les frames font toutes la même taille</span>
+  <p>Ce n'est pas une contrainte subie, c'est le point. Avec des frames de taille
+  constante il n'y a pas d'index à consulter, pas de recherche à rater, et
+  <strong>aucune différence de coût entre lire en avant, en arrière, ou sauter
+  n'importe où</strong>. La marche arrière est gratuite — ce qui est exactement la
+  propriété qu'un instrument de scratch exige.</p>
+</div>
+
+<h3>4.2 &nbsp;Analyser un clip</h3>
+
+<pre><code>scratchvj analyze entree.mp4 [--out clips/entree.svcache] [--max-width 1024]</code></pre>
+
+<table>
+<tr><th style="width:26%">Option</th><th>Effet</th></tr>
+<tr><td class="mono">--out</td><td>Chemin du cache. Par défaut, à côté de l'entrée.</td></tr>
+<tr><td class="mono">--max-width</td><td>Largeur maximale d'analyse (1024 par défaut). C'est le réglage qui arbitre entre définition et occupation mémoire — voir 4.4.</td></tr>
+</table>
+
+<p>L'interface charge automatiquement les <code>.svcache</code> trouvés dans le
+dossier <code>clips/</code> à côté du répertoire de travail. L'attribution aux decks
+se fait par la nature du clip : une vidéo <strong>équirectangulaire</strong> va au
+deck A (le deck 360), le clip le plus court devient la couche d'incrustation, le
+reste va au deck B.</p>
+
+<h3>4.3 &nbsp;Inspecter un cache</h3>
+
+<pre><code>scratchvj info clips/mon-clip.svcache</code></pre>
+
+<p>Affiche définition, nombre de frames, cadence exacte (rationnelle : 30000/1001
+reste exactement 29,97), durée, format de bloc, présence d'alpha, nature 360, poids
+par frame et taille des métadonnées.</p>
+
+<div class="note warn">
+  <span class="label">Deux refus délibérés</span>
+  <p>Une frame de mauvaise taille est <strong>refusée à l'écriture</strong> : une
+  frame courte décalerait silencieusement toutes les suivantes, et le dégât
+  n'apparaîtrait que bien plus tard, sous forme d'une image fausse. Un fichier dont
+  la taille ne correspond pas à son compte de frames est <strong>refusé à la
+  lecture</strong> : c'est la signature d'une analyse interrompue. Dans les deux cas,
+  un message clair vaut mieux qu'une image de garbage.</p>
+</div>
+
+<h3>4.4 &nbsp;Le budget de mémoire vidéo</h3>
+
+<p>Un clip entier ne tient pas forcément en VRAM. Une plage roulante autour de la
+tête de lecture y est maintenue et réalimentée depuis le cache par lecture disque
+brute, sans décodage.</p>
+
+<p><strong>Elle est dimensionnée par un budget de VRAM, pas par une durée fixe.</strong>
+C'est ce seul choix qui fait tenir la 2D et la 360 dans le même mécanisme : le même
+gigaoctet contient environ <strong>36 secondes de 720p</strong> ou environ
+<strong>4 secondes de 4K équirectangulaire</strong>, sans cas particulier. La barre
+d'état affiche en permanence l'occupation courante.</p>
+
+<table>
+<tr><th style="width:20%">Format de bloc</th><th style="width:22%">Octets / bloc 4×4</th><th style="width:14%">Alpha</th><th>Quand le choisir</th></tr>
+<tr><td class="mono">BC1</td><td class="mono">8</td><td>non</td><td>Le plus compact : quand la VRAM est le facteur limitant, ou en 360 haute définition.</td></tr>
+<tr><td class="mono">BC3</td><td class="mono">16</td><td>oui</td><td>De l'alpha à la moitié du coût d'encodage de BC7.</td></tr>
+<tr><td class="mono">BC7</td><td class="mono">16</td><td>oui</td><td>Le choix qualité. L'analyse tournant hors ligne, il est abordable.</td></tr>
+</table>
+
+<div class="note">
+  <span class="label">Règle anti-battement</span>
+  <p>La fenêtre n'est recentrée que lorsque la tête approche d'un <strong>bord</strong>,
+  jamais parce que le sens a changé. Un scratch travaille d'avant en arrière au milieu
+  de la fenêtre : s'il fallait recentrer à chaque inversion, le cas qui doit
+  absolument ne jamais hoqueter serait précisément celui qui martèlerait le disque.
+  Un glissement ne recharge que le nouveau bord ; seul un needle drop <em>hors</em> de
+  la fenêtre recharge tout. C'est le seul temps de chargement que vous devriez
+  sentir.</p>
+</div>
+
+<h2><span class="n">SECTION 5</span>Brancher le matériel</h2>
+
+<h3>5.1 &nbsp;Ce dont le timecode a besoin</h3>
+
+<p>Le timecode est un <strong>signal analogique</strong>. Il lui faut donc une entrée
+audio — mais n'importe laquelle. Le récepteur Phase, alimenté en 5 V USB, peut entrer
+directement dans une interface ligne quelconque, sans toucher au mixeur.</p>
+
+<table>
+<tr><th style="width:30%">Usage</th><th>Câblage</th></tr>
+<tr><td>Vidéo seule</td><td>Récepteur Phase → RCA → entrées ligne de n'importe quelle interface. Pas de table.</td></tr>
+<tr><td>Vidéo + surface de contrôle</td><td>Pareil, plus l'Elite en USB comme simple surface MIDI — aucun routage audio.</td></tr>
+<tr><td>Serato + vidéo (mode suiveur)</td><td>Récepteur → RCA → entrées <strong>LINE</strong> de l'Elite ; Serato sur USB-B1, scratchvj sur USB-B2. La table n'intervient que parce que Serato doit lire le même signal.</td></tr>
+</table>
+
+<div class="note warn">
+  <span class="label">Le mode HID du Phase ne convient pas — et c'est important</span>
+  <p>Le récepteur Phase a deux modes qui s'excluent. En <strong>HID</strong>, il se
+  branche en USB au laptop, Serato règle le deck sur « WIR », et il n'y a
+  <strong>aucun câble RCA, donc aucun signal analogique à lire</strong> : scratchvj
+  ne voit rien du tout. En <strong>DVS/RCA</strong>, le récepteur est alimenté en USB,
+  ses RCA vont aux entrées LINE, et deux lecteurs peuvent décoder le même signal en
+  parallèle. C'est le mode qu'il faut.</p>
+  <p>Si toutes vos entrées mesurent le silence alors que tout semble branché,
+  c'est presque toujours ça : le Phase est en HID.</p>
+</div>
+
+<h3>5.2 &nbsp;Réglages, dans l'ordre</h3>
+
+<h4>Sur le récepteur Phase (via Phase Manager)</h4>
+<ul>
+<li>Configuration DVS : <strong>Serato DJ (default)</strong>. Le dock n'invente pas
+un signal maison, il émule le disque de contrôle Serato.</li>
+<li>Vitesse des remotes : <strong>33 RPM</strong> — c'est la vitesse de référence
+attendue par le décodeur.</li>
+</ul>
+
+<h4>Sur la Reloop Elite</h4>
+<ul>
+<li>Sélecteur de voie sur <strong>USB A/B</strong>, pas sur PHONO. Le sélecteur
+choisit ce que vous <em>écoutez</em>, pas ce que l'ordinateur <em>reçoit</em> :
+le trajet entrée analogique → USB est interne et permanent. Mettre la voie sur PHONO
+reviendrait à écouter le timecode au lieu de la musique.</li>
+<li><strong>Utilities → USB OUT ROUTING</strong> (SHIFT + BACK tenus 3 s) : DECK 1 et
+DECK 2 sur <strong>CD</strong> — le Phase entre au niveau <em>ligne</em>, pas phono.
+C'est là que se décide ce qui part vers l'ordinateur.</li>
+</ul>
+
+<h4>Dans Serato, en mode suiveur</h4>
+<ul>
+<li>Decks virtuels en <strong>REL</strong> (relatif). Ce n'est pas un détail : le
+timecode synthétisé par le Phase n'a pas de position absolue significative, il avance
+depuis un point arbitraire. <strong>Un needle drop absolu n'existe pas dans cette
+chaîne</strong>, et scratchvj se comporte de la même façon.</li>
+<li>Settings → Audio → cliquer sur <strong>CDJ</strong> (prescription du constructeur
+pour l'Elite).</li>
+</ul>
+
+<h3>5.3 &nbsp;Décrire votre bureau : <span class="mono">settings.json</span></h3>
+
+<p>Quelle entrée, quelle paire de canaux, quelle porteuse, quel port MIDI : ce sont
+des faits sur <em>votre</em> installation, pas sur le logiciel. Ils vivent donc dans
+un <code>settings.json</code> à côté du répertoire de travail, lisible et modifiable
+à la main.</p>
+
+<pre><code>{
+  "platter_endpoint": "MOTU",
+  "platter_first_channel": 4,
+  "carrier_hz": 1000.0,
+  "midi_port": "ELITE"
+}</code></pre>
+
+<table>
+<tr><th style="width:30%">Champ</th><th>Sens</th></tr>
+<tr><td class="mono">platter_endpoint</td><td>Fragment du nom du point de capture, insensible à la casse : <code>"MOTU"</code> trouve <code>In 1-24 (MOTU Pro Audio)</code>.</td></tr>
+<tr><td class="mono">platter_first_channel</td><td>Index (base 0) de la voie gauche de la paire. <code>4</code> signifie les canaux 5/6.</td></tr>
+<tr><td class="mono">carrier_hz</td><td>Fréquence de la porteuse à vitesse nominale : 1000 pour la famille Serato qu'émule le Phase, 2000 pour Traktor, 1300 pour MixVibes. <strong>C'est un étalonnage d'échelle</strong> — faux d'un facteur, et toutes les vitesses le sont aussi. À mesurer avec <code>quad_check</code>, jamais à deviner.</td></tr>
+<tr><td class="mono">midi_port</td><td>Fragment du nom du port MIDI d'entrée. Seul le <em>port</em> est nommé ici : la carte des contrôles, elle, n'est jamais en dur.</td></tr>
+</table>
+
+<p>Un fichier absent n'est pas une erreur : les valeurs par défaut sont celles du
+bureau de référence. Un fichier présent mais illisible est <strong>refusé
+entièrement</strong> plutôt qu'appliqué à moitié.</p>
+
+<h3>5.4 &nbsp;Le partage de l'entrée sous Windows</h3>
+
+<p>C'est le point dur en mode suiveur : les pilotes ASIO de DJ sont souvent
+mono-client, donc si Serato tient le périphérique, l'application ne peut pas
+l'ouvrir. Quatre issues, par ordre de préférence :</p>
+
+<table>
+<tr><th style="width:26%">Voie</th><th style="width:44%">Détail</th><th>Verdict</th></tr>
+<tr><td>2ᵉ port USB de l'Elite</td><td>L'Elite est une double interface 10×10 : Serato sur USB-B1, scratchvj sur USB-B2, les deux reçoivent les mêmes entrées.</td><td>Matériel déjà possédé, à essayer en premier — un câble de distance.</td></tr>
+<tr><td>Split RCA passif</td><td>Sortie du Phase dupliquée vers une petite interface d'entrée dédiée.</td><td>Fonctionne toujours, ~50 €.</td></tr>
+<tr><td>WASAPI partagé</td><td>Ouvrir la même entrée en mode partagé pendant que Serato tourne.</td><td><strong>Constaté fonctionnel</strong> sur ce bureau : le pilote Ploytec de l'Elite est multi-client, et Serato parle à l'Elite en HID, pas en MIDI — les ports MIDI restent libres.</td></tr>
+<tr><td>Deux machines</td><td>Laptop Serato + PC vidéo.</td><td>Le repli qui marche toujours.</td></tr>
+</table>
+
+<p><strong>Sur macOS le problème n'existe pas</strong> : CoreAudio est multi-client,
+l'application ouvre la même entrée que Serato sans disposition particulière.</p>
+
+<div class="note warn">
+  <span class="label">Ne jamais ouvrir l'entrée en exclusif en mode suiveur</span>
+  <p>C'est l'erreur à ne pas commettre : elle empêcherait Serato de fonctionner.
+  En mode suiveur, l'application ouvre l'entrée <strong>seule, jamais en
+  exclusif</strong>, et n'a ni moteur de lecture audio ni sortie.</p>
+</div>
+
+<h3>5.5 &nbsp;Budget de latence</h3>
+
+<table>
+<tr><th style="width:60%">Étage</th><th>Ordre de grandeur</th></tr>
+<tr><td>Buffer audio (128 échantillons @ 48 kHz)</td><td class="mono">2,7 ms</td></tr>
+<tr><td>Pilote (WASAPI partagé)</td><td class="mono">~10 ms</td></tr>
+<tr><td>UDP vers Unreal</td><td class="mono">&lt; 1 ms</td></tr>
+<tr><td>Une frame Unreal (60–120 fps)</td><td class="mono">8–16 ms</td></tr>
+</table>
+
+<p>Sous <strong>30 ms</strong> l'ensemble est bon visuellement ; sous
+<strong>20 ms</strong> ça « colle » à la main. Si nécessaire : WASAPI exclusif ou
+ASIO. <strong>Méthode de mesure</strong> : filmer la main et l'écran au ralenti et
+compter les frames d'écart. Rien d'autre ne donne le chiffre réel de bout en bout.</p>
+
+<h2><span class="n">SECTION 6</span>L'interface</h2>
+
+<pre><code>scratchvj_ui            <span class="c"># démarre avec la performance scriptée</span>
+scratchvj_ui --live     <span class="c"># démarre avec le deck A sur le vrai plateau</span></code></pre>
+
+<div class="note">
+  <span class="label">Où lisent les messages de l'interface</span>
+  <p><code>scratchvj_ui</code> est une application WIN32 sans console : son
+  <code>stderr</code> ne va nulle part, même redirigé. L'état du plateau en mode
+  <code>--live</code> s'écrit chaque seconde dans <strong><code>platter.log</code></strong>,
+  à côté du répertoire de travail. C'est ce fichier qu'il faut lire, pas la sortie
+  d'erreur.</p>
+</div>
+
+<h3>6.1 &nbsp;La barre d'état</h3>
+
+<table>
+<tr><th style="width:26%">Indicateur</th><th>Ce qu'il dit</th></tr>
+<tr><td>Serato / Autonome</td><td>Le mode audio courant : qui possède le son.</td></tr>
+<tr><td>Liaison Phase A · B</td><td>La confiance du verrou timecode par deck, en pourcentage, colorée par l'état de liaison.</td></tr>
+<tr><td>VRAM</td><td>L'occupation courante de la fenêtre de frames, en gigaoctets.</td></tr>
+<tr><td>BPM</td><td>Le tempo de référence des effets synchronisés et des boucles quantifiées.</td></tr>
+<tr><td>DÉMO / FIGÉ</td><td>Bascule la performance scriptée. Le script anime tout ce dont personne ne s'est saisi — ce qui permet de brancher l'instrument en plein set sans que l'écran s'éteigne. En réglage à la main, le figer évite qu'il cache vos propres changements sous les siens.</td></tr>
+<tr><td>Sorties</td><td>L'état des partages de texture.</td></tr>
+</table>
+
+<p><kbd>Échap</kbd> quitte.</p>
+
+<h3>6.2 &nbsp;Quatre onglets, cinq dispositions</h3>
+
+<table>
+<tr><th style="width:22%">Onglet</th><th>Contenu</th></tr>
+<tr><td><strong>PERFORMANCE</strong></td><td>Le jeu. Cinq dispositions, choisies par les touches <kbd>1</kbd> à <kbd>5</kbd> ou par les boutons de la rangée — en set, personne ne vise un petit bouton.</td></tr>
+<tr><td><strong>EFFETS</strong></td><td>Le rack complet, chaque effet avec sa correspondance audio↔vidéo énoncée, et les bandes de la FFT.</td></tr>
+<tr><td><strong>MAPPING</strong></td><td>Le tableau des routes source → destination avec leur valeur courante, et l'apprentissage MIDI.</td></tr>
+<tr><td><strong>SORTIE</strong></td><td>La géométrie de projection : corner pin, maillage bézier, masque, presets.</td></tr>
+</table>
+
+<table>
+<tr><th style="width:22%">Disposition</th><th>Pour quoi</th></tr>
+<tr><td><kbd>1</kbd> CABINE</td><td>La vue de travail complète : decks, mixer, bibliothèque, surface.</td></tr>
+<tr><td><kbd>2</kbd> SCÈNE</td><td>Le programme en grand, avec le minimum autour — ce qu'on regarde quand on joue.</td></tr>
+<tr><td><kbd>3</kbd> PRÉPA</td><td>Bibliothèque et préparation de clips.</td></tr>
+<tr><td><kbd>4</kbd> 360</td><td>La sphère : projection, direction du regard, cadre de visée.</td></tr>
+<tr><td><kbd>5</kbd> PLEIN CADRE</td><td>L'image seule, sans interface.</td></tr>
+</table>
+
+<h3>6.3 &nbsp;Les panneaux</h3>
+
+<dl class="kv">
+<dt>Bibliothèque</dt><dd>Les clips analysés, leurs crates et la file d'attente. Un clic charge un clip sur le deck de votre choix.</dd>
+<dt>Deck A / Deck B</dt><dd>Image, timeline scrubbable à la souris, position, vitesse, état de la boucle et des hot cues, source de transport, mode de lecture.</dd>
+<dt>Mixer</dt><dd>Faders de voie, crossfader, courbe, transition, blend mode. C'est le seul endroit où la souris est un contrôleur à part entière.</dd>
+<dt>Surface</dt><dd>Le miroir du matériel : un contrôle par entrée, ceux jamais touchés dessinés en pointillé. C'est aussi d'ici que se lance l'apprentissage MIDI (bouton <strong>apprendre</strong>).</dd>
+<dt>Spectre</dt><dd>Les bandes logarithmiques de la FFT, telles que les mappings audio-réactifs les lisent.</dd>
+</dl>
+
+<h2><span class="n">SECTION 7</span>Jouer</h2>
+
+<h3>7.1 &nbsp;Le plateau</h3>
+
+<p>Deux profils de signal, parce que deux natures de source existent :</p>
+
+<table>
+<tr><th style="width:22%">Profil</th><th>Pour</th></tr>
+<tr><td class="mono">Vinyl</td><td>Un vrai disque de contrôle, gravé : bruit de surface, usure, position absolue lisible.</td></tr>
+<tr><td class="mono">Wireless</td><td>Un timecode synthétisé — MWM Phase et équivalents. Signal propre, mais pas de position absolue significative.</td></tr>
+</table>
+
+<p>Et trois modes de transport, les mêmes qu'un DJ connaît :</p>
+
+<table>
+<tr><th style="width:22%">Mode</th><th>Comportement</th></tr>
+<tr><td><strong>ABS</strong> absolu</td><td>La position sur le disque <em>est</em> la position dans le clip. Le needle drop marche.</td></tr>
+<tr><td><strong>REL</strong> relatif</td><td>Le plateau apporte du mouvement ; les discontinuités sont absorbées. <strong>C'est le mode du Phase</strong>, et celui que Serato prescrit pour lui.</td></tr>
+<tr><td><strong>INT</strong> interne</td><td>Le plateau est ignoré, le deck joue tout seul.</td></tr>
+</table>
+
+<h4>La prise en main du plateau</h4>
+
+<p>Quand un deck bascule sur le plateau alors que le clip tourne déjà, trois
+politiques existent :</p>
+
+<table>
+<tr><th style="width:22%">Politique</th><th>Effet</th></tr>
+<tr><td class="mono">Grab</td><td><strong>Par défaut.</strong> Le plateau reprend la main <em>là où le clip est déjà</em>, ancré par un offset. On peut donc attraper une boucle en vol pour la scratcher sans que l'image saute. Le prix, assumé : la position du plateau ne veut plus rien dire en absolu.</td></tr>
+<tr><td class="mono">Jump</td><td>Le clip saute là où le plateau dit qu'il est.</td></tr>
+<tr><td class="mono">Ignore</td><td>Le plateau est mort pour ce deck jusqu'à ce que la source soit changée à la main. C'est le réglage de la couche d'incrustation : une main qui traîne sur un plateau ne doit jamais capturer le masque.</td></tr>
+</table>
+
+<h4>Quand la liaison décroche</h4>
+
+<div class="note warn">
+  <span class="label">Un décrochage gèle, il ne téléporte jamais</span>
+  <p>Sous un seuil de confiance, le suiveur de gestes <strong>tient sa dernière
+  sortie</strong> au lieu de réagir — et il ne décroît même pas vers zéro, parce que
+  cela bougerait encore l'image. Un décrochage du Phase doit figer l'image et la
+  caméra Unreal, jamais les faire sauter. Le bit <code>Holding</code> du flux réseau
+  porte cette information : un client qui l'ignore produira un artefact visible en
+  live.</p>
+</div>
+
+<h4>Les grandeurs de geste</h4>
+
+<p>Quatre quantités sont dérivées du mouvement du plateau, une seule fois, pour que
+le moteur vidéo, les effets, l'interface et Unreal voient tous les mêmes nombres.
+Ce sont des <strong>sources de modulation de plein droit</strong> (section 9.4) :</p>
+
+<table>
+<tr><th style="width:26%">Grandeur</th><th>Définition</th></tr>
+<tr><td>vitesse</td><td>Ratio signé, 1,0 nominal, négatif en arrière.</td></tr>
+<tr><td>accélération</td><td>Dérivée lissée de la vitesse.</td></tr>
+<tr><td><strong>scratch_rate</strong></td><td>Inversions de sens par seconde sur une fenêtre glissante. La meilleure mesure de « à quel point ça scratche fort en ce moment ».</td></tr>
+<tr><td>backspin</td><td>Marche arrière rapide et soutenue, comme un état booléen.</td></tr>
+</table>
+
+<h3>7.2 &nbsp;Le mode suiveur et l'ancrage</h3>
+
+<p>En mode suiveur, Serato joue et scratche le son, scratchvj ne fait que la vidéo.
+Comme les deux lisent le <strong>même</strong> timecode, une fois alignés ils le
+restent : l'ancrage n'est que l'offset entre la position sur le disque et la position
+dans le clip. On le pose d'un coup de pad, au moment voulu.</p>
+
+<div class="note">
+  <span class="label">Pourquoi une « fraîcheur » et pas une « dérive »</span>
+  <p>Serato n'a pas d'API publique : sa vraie tête de lecture est illisible. Si le DJ
+  boucle, censure ou pose l'aiguille dans Serato, l'audio bouge et le timecode ne
+  bouge pas — la correspondance casse sans que rien ne soit observable de notre côté.
+  Un nombre de secondes affiché comme « dérive » serait donc <em>inventé</em>, et un
+  nombre inventé sur scène est pire que pas de nombre.</p>
+  <p>Ce qui <em>est</em> observable, c'est ce qui s'est passé depuis la pose : le
+  temps écoulé et le nombre de discontinuités de timecode vues. L'interface affiche
+  donc une <strong>fraîcheur</strong> — une mesure de risque, pas d'erreur. Elle
+  répond à la seule question qui compte en set : est-il temps de re-ancrer ?</p>
+</div>
+
+<p>Re-ancrez après tout ce qui casse la correspondance : needle drop, boucle, censor,
+ou passage en mode relatif dans Serato. C'est un pad, pas un menu — délibérément.</p>
+
+<h3>7.3 &nbsp;Transport : boucles, hot cues, beat jump, slip</h3>
+
+<p>Tout fonctionne <strong>par offset</strong> plutôt qu'en déplaçant une tête de
+lecture. Un hot cue, un beat jump et un repli de boucle ne font que changer l'offset
+entre là où le plateau est et là où le clip joue. C'est ce qui garde l'ensemble une
+fonction pure de la position — donc <strong>tout reste scratchable, boucles
+comprises</strong>.</p>
+
+<table>
+<tr><th style="width:26%">Fonction</th><th>Détail</th></tr>
+<tr><td>Boucles</td><td>In/out à la main, ou auto-loop en nombre de temps. Quantifiées sur la beatgrid pour tomber musicalement plutôt que là où la main était.</td></tr>
+<tr><td>Hot cues</td><td>Huit par deck, avec couleur.</td></tr>
+<tr><td>Beat jump</td><td>Saut d'un nombre de temps, dans les deux sens.</td></tr>
+<tr><td>Slip</td><td>Le clip continue d'avancer par-dessous ; à la sortie du slip on retombe là où l'on serait sans avoir rien fait.</td></tr>
+</table>
+
+<h3>7.4 &nbsp;Le mixer</h3>
+
+<table>
+<tr><th style="width:26%">Réglage</th><th>Valeurs</th></tr>
+<tr><td>Courbe de crossfader</td><td><span class="mono">Smooth</span> (puissance constante, pour les fondus) · <span class="mono">Linear</span> · <span class="mono">Sharp</span> (courbe battle : plein volume en quelques pour cent) · <span class="mono">Cut</span> (bascule franche au milieu)</td></tr>
+<tr><td>Transition</td><td><span class="mono">Cut · Fade · Additive · Multiply · Screen · LumaWipe · GeoWipe · RgbSplit · ZoomBlur</span></td></tr>
+<tr><td>Blend par couche</td><td><span class="mono">Normal · Add · Multiply · Screen · Alpha</span></td></tr>
+</table>
+
+<p>Le mixer détecte aussi les <strong>transforms</strong> — coupes rapides au
+crossfader pendant que le plateau tourne — et en fait un bit de geste utilisable
+comme source de modulation.</p>
+
+<h4>La troisième couche</h4>
+
+<div class="note">
+  <span class="label">La couche d'incrustation ne répond pas au crossfader</span>
+  <p>Un logo qui disparaît à chaque transition est pire que pas de logo, et un masque
+  qui s'ouvre en plein transform montre exactement ce qu'il existe pour cacher. La
+  troisième couche est la part de l'image qui <strong>survit</strong> à la transition
+  en dessous d'elle. N'ayant pas de plateau, son horloge est sa seule entrée — c'est
+  le premier consommateur du moteur de lecture autonome.</p>
+</div>
+
+<h4>Modes de lecture d'un clip</h4>
+
+<table>
+<tr><th style="width:26%">Mode</th><th>Comportement au bout du clip</th></tr>
+<tr><td class="mono">Loop</td><td>Reboucle, autant de fois qu'il faut.</td></tr>
+<tr><td class="mono">PingPong</td><td>Va et vient ; le retour est le clip à l'envers.</td></tr>
+<tr><td class="mono">Once</td><td>Tient la frame de la borne qu'il a dépassée.</td></tr>
+</table>
+
+<p>Ces modes sont un <strong>repliement de la position</strong>, pas un lecteur : la
+même fonction pure sert au fond en aller-retour et au deck scratché qui dépasse la
+fin du clip. Elle s'applique <em>après</em> le transport, jamais avant — sinon une
+boucle posée à cheval sur la fin du clip serait repliée avant que le transport ne la
+voie.</p>
+
+<h4>Sources de transport par deck</h4>
+
+<table>
+<tr><th style="width:26%">Source</th><th>D'où vient la position</th></tr>
+<tr><td class="mono">Timecode</td><td>Le plateau, à travers le suiveur de timecode. Les decks à scratcher.</td></tr>
+<tr><td class="mono">FreeRun</td><td>Son horloge propre, à son rythme, plateau ignoré.</td></tr>
+<tr><td class="mono">TempoLocked</td><td>Son horloge, mais le clip étiré sur un nombre de temps.</td></tr>
+<tr><td class="mono">Hand</td><td>Une main qui tient le clip directement : le scrub à la souris sur la timeline.</td></tr>
+</table>
+
+<h3>7.5 &nbsp;La 360</h3>
+
+<p>Un clip équirectangulaire est un clip comme un autre : indexé par position, donc
+scratchable de la même façon. Ce qui change est <strong>où l'on regarde</strong>.
+La reprojection tourne sur le GPU et offre trois projections :</p>
+
+<table>
+<tr><th style="width:26%">Projection</th><th>Ce qu'elle donne</th></tr>
+<tr><td class="mono">Perspective</td><td>La vue plate ordinaire, dirigée au potard.</td></tr>
+<tr><td class="mono">LittlePlanet</td><td>Stéréographique, vue du dessus : toute la sphère dans un disque.</td></tr>
+<tr><td class="mono">Fisheye</td><td>Équidistante, une vue circulaire très large.</td></tr>
+</table>
+
+<p>Le regard (yaw, pitch, roll, champ) est une destination de mapping comme une
+autre : n'importe quel potard, LFO ou grandeur de geste peut le piloter pendant que
+la main scratche le temps. C'est la combinaison qui n'existe nulle part ailleurs —
+<strong>scratcher le temps d'une main et le regard de l'autre</strong>.</p>
+
+<h4>Dans un casque</h4>
+
+<div class="note">
+  <span class="label">Le casque est la tête, le performeur est le monde</span>
+  <p>En VR la tête <em>est</em> le regard, donc le potard de lacet ne peut pas être le
+  regard aussi sans que les deux se disputent le même degré de liberté. Le potard
+  tourne donc <strong>la sphère</strong> : le spectateur regarde librement autour de
+  lui pendant que le DJ fait tourner le monde. La vue plate et la vue casque restent
+  ainsi un seul mécanisme, pas deux qui peuvent diverger.</p>
+</div>
+
+<p>Deux propriétés d'OpenXR ont façonné cette géométrie, et elles expliquent des
+choix qui paraîtraient sinon arbitraires : le champ de vision est
+<strong>asymétrique</strong> (quatre demi-angles indépendants — une lentille voit plus
+loin du côté du nez, donc le pixel central n'est pas l'axe de vue), et l'orientation
+est <strong>par œil</strong>, pas partagée (les dalles des Quest 3 et Pro sont
+inclinées ; une seule pose de tête pour les deux yeux penche une des deux images, et
+un horizon penché en VR se sent bien avant de se voir).</p>
+
+<p><strong>La position de l'œil est délibérément absente.</strong> Un équirect est une
+sphère à l'infini : aucun écart interoculaire ne peut en tirer de parallaxe. Y
+injecter l'IPD n'ajouterait pas de profondeur, seulement de l'erreur. Le 360
+monoscopique dans un casque est réellement plat-mais-enveloppant — c'est une
+propriété du format, pas une insuffisance du logiciel.</p>
+
+<p class="footnote">État : la géométrie est écrite, testée, et son shader est tenu à
+sa référence CPU par <code>eye_check</code>. La <em>session</em> OpenXR — swapchain
+partagée avec le device D3D11 et boucle de frame — attend un casque réveillé pour
+être écrite, parce qu'aucun runtime de simulation n'existe côté Oculus et qu'écrire
+cette boucle à l'aveugle irait contre la règle du projet.</p>
+
+<h2><span class="n">SECTION 8</span>Les effets</h2>
+
+<p class="lead">Trente-deux effets : seize paires audio/vidéo et seize effets vidéo
+qui n'ont pas d'équivalent sonore. C'est le rack qui distingue le plus nettement
+scratchvj d'un logiciel de VJ.</p>
+
+<h3>8.1 &nbsp;Le principe des paires</h3>
+
+<p>Un effet audio agit sur les fréquences temporelles d'un signal à une dimension ;
+un effet vidéo agit sur les fréquences spatiales d'un signal à deux dimensions.
+Quand la correspondance est exacte, <strong>c'est le même calcul</strong> — et le
+catalogue le déclare :</p>
+
+<table>
+<tr><th style="width:22%">Relation</th><th>Ce que ça garantit</th></tr>
+<tr><td><strong>identique</strong></td><td>Les deux côtés sont littéralement la même opération dans l'autre domaine. Un passe-bas <em>est</em> un flou gaussien ; un bitcrusher <em>est</em> une postérisation ; un delay à contre-réaction et des traînées d'image obéissent à la même équation.</td></tr>
+<tr><td><strong>analogue</strong></td><td>Aucune correspondance exacte n'existe, donc l'analogue perceptif le plus proche a été choisi — et il est <strong>marqué comme tel</strong>. Une reverb n'est pas un smear ; le dire est la partie honnête.</td></tr>
+<tr><td><strong>vidéo seul</strong></td><td>Aucun équivalent sonore n'existe, et aucun n'est inventé.</td></tr>
+</table>
+
+<p>Le catalogue complet est en annexe C, et il est aussi imprimable à tout moment
+par <code>scratchvj effects</code> — la même source de vérité que le code, donc
+la documentation et l'implémentation ne peuvent pas diverger.</p>
+
+<h3>8.2 &nbsp;Le rack</h3>
+
+<p>Chaque unité expose <strong>six paramètres, délibérément peu nombreux et
+partagés par tous les effets</strong> : c'est ce qui fait qu'un potard veut dire la
+même chose partout, et ce qui permet de piloter les deux domaines depuis un seul jeu
+de nombres.</p>
+
+<table>
+<tr><th style="width:22%">Paramètre</th><th>Rôle</th></tr>
+<tr><td class="mono">mix</td><td>Du sec au traité.</td></tr>
+<tr><td class="mono">amount</td><td>Le caractère principal de l'effet.</td></tr>
+<tr><td class="mono">time</td><td>Temps de delay, période, taux.</td></tr>
+<tr><td class="mono">feedback</td><td>Contre-réaction.</td></tr>
+<tr><td class="mono">depth</td><td>Profondeur de modulation.</td></tr>
+<tr><td class="mono">tone</td><td>Couleur.</td></tr>
+</table>
+
+<h4>Lier et délier</h4>
+
+<p>Les deux moitiés d'une paire sont <strong>liées par défaut</strong>. Délier une
+unité est le <em>seul</em> état dans lequel les deux domaines disent des choses
+différentes — c'est pourquoi c'est le seul que l'interface signale. Au moment de
+délier, les valeurs partagées sont recopiées dans les deux jeux séparés, pour que le
+son ne fasse pas d'embardée à l'instant où la chaîne est rompue.</p>
+
+<h4>Synchronisation au tempo</h4>
+
+<p>Une unité peut travailler en temps libre ou sur une division de temps. En mode
+synchronisé, <code>time</code> devient un nombre de temps et l'effet suit le BPM
+courant — donc un beat repeat vidéo boucle exactement le même nombre de frames que
+son équivalent audio boucle d'échantillons.</p>
+
+<h3>8.3 &nbsp;Modulateurs et réactivité audio</h3>
+
+<table>
+<tr><th style="width:26%">Source</th><th>Détail</th></tr>
+<tr><td>LFO</td><td>Cinq formes : <span class="mono">Sine · Triangle · RampUp · RampDown · Square</span>. <strong>Un LFO synchronisé suit le plateau, y compris à l'envers</strong> — c'est une conséquence directe du principe n° 1 : sa phase est une fonction de la position, pas un compteur.</td></tr>
+<tr><td>Suiveur d'enveloppe</td><td>Attaque et relâchement sur n'importe quelle entrée.</td></tr>
+<tr><td>Bandes de fréquence</td><td>FFT à fenêtre de Hann, bandes espacées logarithmiquement. Chaque bande est une source de mapping.</td></tr>
+</table>
+
+<p class="footnote">La FFT est écrite et testée, et les bandes s'affichent dans
+l'onglet EFFETS. Elle attend une entrée audio réelle — c'est-à-dire le backend audio
+du mode autonome — pour être alimentée par autre chose que le signal du script.</p>
+
+<h2><span class="n">SECTION 9</span>MIDI learn et mapping</h2>
+
+<h3>9.1 &nbsp;Le mode fantôme</h3>
+
+<p>La carte MIDI de l'Elite n'est pas documentée publiquement, donc <strong>rien
+n'est câblé en dur</strong>. Mais il y a une conséquence plus subtile, et elle a été
+mesurée plutôt que supposée : <strong>l'Elite n'émet pas son état à l'ouverture du
+port</strong>. Un balayage complet a produit 329 messages et 41 contrôles distincts,
+dont seulement 7 dans la première demi-seconde — et c'étaient des encodeurs au
+repos, pas une description de la surface.</p>
+
+<p>Donc un potard absolu n'a <em>aucune valeur connue</em> tant qu'on ne l'a pas
+bougé. La surface tient un drapeau <strong>connu / inconnu</strong> par contrôle, et
+l'interface dessine les inconnus en pointillé plutôt que de mentir avec un zéro. Un
+fader affiché à 0 alors qu'il est physiquement en haut est une information fausse ;
+un fader affiché comme inconnu est une information vraie.</p>
+
+<h3>9.2 &nbsp;Apprendre la surface</h3>
+
+<p>Bouton <strong>apprendre</strong> dans le panneau SURFACE. L'apprentissage
+parcourt la checklist des 63 contrôles (annexe B, ou <code>scratchvj layout</code>)
+et demande de balayer chacun. Deux boutons pendant l'opération :
+<strong>passer</strong> saute le contrôle courant, <strong>arrêter</strong> abandonne
+la série — et <strong>ce qui a déjà été appris est conservé</strong>, parce qu'une
+série abandonnée à mi-parcours vaut toujours ce qu'elle a appris.</p>
+
+<div class="note">
+  <span class="label">Un contrôle n'est lié que s'il bouge vraiment</span>
+  <p>L'apprentissage n'associe pas le premier message venu : il exige que le contrôle
+  prouve qu'il bouge. C'est ce qui empêche un encodeur au repos, un message de
+  horloge ou une LED de rétro-action de capturer une entrée par accident.</p>
+</div>
+
+<p>À la fin de la série, les liaisons sont écrites dans <code>mapping.json</code> :
+une surface apprise survit à la fermeture de l'application, ce qui est tout l'intérêt
+de l'apprendre.</p>
+
+<h3>9.3 &nbsp;Le fichier <span class="mono">mapping.json</span></h3>
+
+<p>Il contient deux choses : les liaisons MIDI découvertes par l'apprentissage, et
+les routes de mapping. Il est écrit <strong>avec des noms plutôt qu'avec des
+numéros</strong> — donc lisible, comparable dans un diff, et réparable à la main.</p>
+
+<h4>Le conditionnement d'un signal</h4>
+
+<p>Entre une source et sa destination, chaque route passe par sa propre
+transformation : <strong>plage</strong>, <strong>zone morte</strong>,
+<strong>courbe</strong>, <strong>inversion</strong> et <strong>lissage</strong>.</p>
+
+<table>
+<tr><th style="width:26%">Courbe</th><th>À quoi elle sert</th></tr>
+<tr><td class="mono">Linear</td><td>Le défaut.</td></tr>
+<tr><td class="mono">Exponential</td><td>Lente au début puis raide — bonne pour une intensité d'effet.</td></tr>
+<tr><td class="mono">Logarithmic</td><td>Raide au début puis lente — bonne pour une fréquence de filtre.</td></tr>
+<tr><td class="mono">SCurve</td><td>Adoucie aux deux bouts — bonne pour un fondu ou un mouvement de caméra.</td></tr>
+</table>
+
+<h3>9.4 &nbsp;Toute source vers toute destination</h3>
+
+<table>
+<tr><th style="width:30%">Source</th><th>Ce qu'elle vaut</th></tr>
+<tr><td class="mono">Control</td><td>Un fader, potard, bouton, encodeur ou pad.</td></tr>
+<tr><td class="mono">DeckPosition</td><td>Position en secondes sur le disque de contrôle.</td></tr>
+<tr><td class="mono">DeckVelocity</td><td>Vitesse signée.</td></tr>
+<tr><td class="mono">DeckAcceleration</td><td>Accélération lissée.</td></tr>
+<tr><td class="mono">DeckScratchRate</td><td>Inversions de sens par seconde.</td></tr>
+<tr><td class="mono">DeckConfidence</td><td>Qualité du verrou timecode.</td></tr>
+<tr><td class="mono">Gesture</td><td>Un bit de geste (scratch, backspin, holding, transform) comme 0 ou 1.</td></tr>
+<tr><td class="mono">Modulator</td><td>Un LFO ou un suiveur d'enveloppe, par index.</td></tr>
+<tr><td class="mono">AudioBand</td><td>Une bande de fréquence de la FFT, par index.</td></tr>
+</table>
+
+<p>Les destinations sont soit <strong>locales</strong> — <code>fx.a.0.mix</code>,
+<code>deck.a.yaw</code>, <code>mix.transition</code> — soit <strong>OSC</strong>,
+c'est-à-dire réémises vers la machine Unreal ou vers TouchDesigner et Resolume :
+<code>/ue/shake</code>.</p>
+
+<h2><span class="n">SECTION 10</span>Sorties</h2>
+
+<h3>10.1 &nbsp;Géométrie de projection</h3>
+
+<table>
+<tr><th style="width:26%">Outil</th><th>Usage</th></tr>
+<tr><td>Corner pin</td><td>Homographie à quatre coins : redresser une projection en biais.</td></tr>
+<tr><td>Maillage bézier</td><td>Warp sur une grille dont on ajoute et retire des lignes — pour une surface qui n'est pas plane.</td></tr>
+<tr><td>Masque</td><td>Contour polygonal, y compris concave, pour découper ce qui sort.</td></tr>
+<tr><td>Presets</td><td>Sauvegardés dans le dossier <code>mappings/</code> à côté du répertoire de travail — <strong>délibérément pas dans un dossier de données applicatives</strong> : la géométrie d'une salle doit voyager avec le projet, pas se cacher là où personne ne pense à la copier.</td></tr>
+</table>
+
+<h3>10.2 &nbsp;Partage de texture</h3>
+
+<p><strong>Spout</strong> (Windows) est ouvert sans condition au démarrage, sous le
+nom <code>scratchvj</code> : un récepteur qui n'écoute pas ne coûte rien, et une
+sortie qu'il faut allumer avant de pouvoir la découvrir ne se découvre jamais.
+La sortie est vérifiée par un récepteur indépendant (<code>spout_check</code>).</p>
+
+<p><strong>NDI</strong> n'est pas bloqué par du code mais par une licence : le
+runtime est là, le chargement dynamique est la voie recommandée par NDI lui-même,
+mais les en-têtes du SDK supposent d'accepter l'EULA NDI — ce qui revient à
+l'utilisateur, pas à l'outil. <strong>Syphon</strong> (macOS) suppose le portage
+GPU macOS.</p>
+
+<h3>10.3 &nbsp;Le flux de contrôle vers Unreal</h3>
+
+<p>L'état de la surface et des platines est diffusé en UDP, sur
+<code>127.0.0.1</code> par défaut. Deux types de paquets :</p>
+
+<table>
+<tr><th style="width:22%">Paquet</th><th>Contenu</th></tr>
+<tr><td><strong>Schema</strong><br><span class="footnote">rare</span></td><td>Envoyé au démarrage et à chaque changement de la liste des contrôles. Il <em>nomme</em> les valeurs : identifiant et type de chaque contrôle, dans l'ordre.</td></tr>
+<tr><td><strong>State</strong><br><span class="footnote">à chaque bloc audio, ~375 Hz</span></td><td>Horodatage, hash du schéma, sept flottants par deck (position, vitesse, accélération, scratch rate, confiance, ancrage, dérive), les bits de geste, puis les valeurs de la surface dans l'ordre du schéma, avec un bitset <code>known</code>.</td></tr>
+</table>
+
+<p>Le flux à haut débit ne transporte <strong>que des valeurs, jamais de
+chaînes</strong>. Le <code>schema_hash</code> est ce qui relie les deux : quand il ne
+correspond plus, le récepteur sait que son cache est périmé et attend le nouveau
+schéma au lieu d'interpréter des valeurs de travers.</p>
+
+<p>Tout est en petit-boutien, écrit octet par octet — pas de <code>struct</code>
+transtypée, donc pas de surprise d'alignement entre compilateurs. Le décodeur rejette
+un magic ou une version inconnus, un paquet tronqué à n'importe quelle longueur, et
+un champ <code>count</code> que le datagramme ne peut pas satisfaire — cette dernière
+vérification a lieu <strong>avant toute allocation</strong>, pour qu'un paquet
+corrompu ne provoque pas une réservation démesurée.</p>
+
+<h4>Le plugin ScratchLink</h4>
+
+<p>Côté Unreal, un subsystem lit le socket sur un thread dédié et expose
+<code>GetStateAtTime(double)</code>. Unreal tourne à 60–120 fps, le flux arrive vers
+375 Hz : le plugin garde les derniers paquets et échantillonne à
+<code>now − offset</code> avec une interpolation d'Hermite sur la position — on
+dispose de la vitesse, autant s'en servir. C'est le modèle Live Link, sans le coût
+d'en écrire une source.</p>
+
+<p class="footnote">Le plugin OSC natif d'UE n'est pas utilisé pour ce flux : il
+alloue des UObjects par message et dispatche sur le game thread ; à 375 Hz c'est de
+la garbage pour rien. Le miroir OSC reste disponible pour TouchDesigner et Resolume,
+qui n'ont pas ce problème d'échelle.</p>
+
+<p>Deux composants sont prévus côté scène : une <strong>machine à remonter le
+temps</strong> (ring buffer à 120 Hz, mode enregistrement et mode scrub avec physique
+désactivée) et un <strong>rig de caméra</strong> (position du plateau → distance sur
+une spline, orbite ou dolly-zoom ; crossfader → fondu ou cut entre deux caméras ;
+accélération → camera shake).</p>
+
+<div class="note">
+  <span class="label">Le détail qui fait tout, à la sortie d'un scrub</span>
+  <p>Il faut réinjecter les vitesses <em>dérivées du buffer</em>, pas zéro. Sinon la
+  scène s'effondre au lieu de repartir quand on relâche le plateau.</p>
+</div>
+
+<h2><span class="n">SECTION 11</span>Vérification et dépannage</h2>
+
+<h3>11.1 &nbsp;Les outils</h3>
+
+<table class="long">
+<tr><th style="width:26%">Outil</th><th>Ce qu'il établit</th></tr>
+<tr><td class="mono">gpu_check</td><td>Le compositeur GPU est conforme à sa référence CPU (écart max 1/255).</td></tr>
+<tr><td class="mono">sphere_check</td><td>La reprojection 360 l'est aussi.</td></tr>
+<tr><td class="mono">eye_check</td><td>La vue par œil du casque l'est aussi.</td></tr>
+<tr><td class="mono">fx_check</td><td>Les effets une-frame le sont, canal par canal.</td></tr>
+<tr><td class="mono">taps_check</td><td>Les effets multi-taps le sont.</td></tr>
+<tr><td class="mono">spout_check</td><td>Un récepteur indépendant voit bien la sortie Spout. Demande une instance en cours d'exécution.</td></tr>
+<tr><td class="mono">net_check</td><td>Le flux UDP part et se décode. Demande une instance en cours d'exécution.</td></tr>
+<tr><td class="mono">xr_check</td><td>Ce que la machine offre en OpenXR — runtime, extensions, form factor.</td></tr>
+<tr><td class="mono">midi_probe</td><td>Quels ports MIDI existent, lesquels sont libres, et ce qu'ils envoient.</td></tr>
+<tr><td class="mono">audio_probe</td><td>Quelles entrées audio existent, lesquelles s'ouvrent, et laquelle porte un timecode.</td></tr>
+<tr><td class="mono">quad_check</td><td>La porteuse réelle : fréquence, sens, échelle. C'est lui qui donne <code>carrier_hz</code>.</td></tr>
+<tr><td class="mono">dvs_check</td><td>Quelle définition de timecode verrouille sur un vrai disque de contrôle (option DVS).</td></tr>
+</table>
+
+<pre><code>midi_probe                  <span class="c"># énumère les ports</span>
+midi_probe all 45           <span class="c"># écoute tout pendant 45 s, en balayant la table</span>
+audio_probe all 3           <span class="c"># balaye toutes les paires, plateau en rotation</span>
+audio_probe selftest        <span class="c"># éprouve le détecteur, sans matériel</span></code></pre>
+
+<div class="note">
+  <span class="label">Pourquoi le détecteur de timecode ne se fie pas au niveau</span>
+  <p>« L'entrée n'est pas silencieuse » est vrai d'un micro dans une pièce. La
+  première version cherchait la <em>quadrature</em> entre les deux voies, et a déclaré
+  « TIMECODE » sur le micro d'une webcam captant une pièce calme : sur du bruit, la
+  fréquence et la phase estimées sont aléatoires, donc environ une paire sur quatre
+  tombe près de ±90°. Ce qui discrimine réellement est la <strong>tonalité</strong> —
+  le rapport entre la magnitude à la porteuse et l'énergie totale, qui vaut ~0,71 pour
+  une sinusoïde pure et ~1/√N pour du bruit. <code>audio_probe selftest</code>
+  construit les six cas (timecode fort, faible, dans les deux sens, bruit, musique,
+  silence) et les juge sans matériel.</p>
+</div>
+
+<h3>11.2 &nbsp;Symptômes courants</h3>
+
+<table class="long">
+<tr><th style="width:34%">Symptôme</th><th>Cause la plus probable</th></tr>
+<tr><td>Toutes les entrées audio sont silencieuses, plateau en rotation</td><td>Le Phase est en <strong>mode HID</strong> : aucun signal analogique n'existe nulle part. Repasser en DVS/RCA (5.1).</td></tr>
+<tr><td>Un signal existe mais les vitesses sont fausses d'un facteur constant</td><td><code>carrier_hz</code> ne correspond pas à la famille de timecode. Le mesurer avec <code>quad_check</code>.</td></tr>
+<tr><td>Le sens est inversé</td><td>Le signe du déphasage dépend de la convention du dock et du câblage L/R. Un tour de plateau dans un sens connu le tranche ; ne pas le deviner.</td></tr>
+<tr><td>L'application ne voit rien alors que Serato joue</td><td>Le pilote tient le périphérique en exclusif. Voir le tableau des quatre voies (5.4) — essayer le second port USB de l'Elite en premier.</td></tr>
+<tr><td>La surface affiche des contrôles en pointillé</td><td>Ce n'est pas une panne : ils n'ont jamais bougé, donc leur valeur est inconnue (9.1). Bougez-les.</td></tr>
+<tr><td>L'image saute au lieu de geler quand la liaison coupe</td><td>Un client externe ignore le bit <code>Holding</code> du flux UDP (10.3).</td></tr>
+<tr><td>L'image hoquette pendant un scratch</td><td>La fenêtre VRAM est trop courte pour le clip. Réduire <code>--max-width</code> à l'analyse, ou augmenter le budget.</td></tr>
+<tr><td>Un <code>*_check</code> passe alors que le code a changé</td><td>Le binaire est périmé. Les lancer par <code>ctest</code>, jamais à la main.</td></tr>
+<tr><td>Rien dans <code>stderr</code> de l'interface</td><td>C'est une application WIN32 sans console. Lire <code>platter.log</code>.</td></tr>
+</table>
+
+<h3>11.3 &nbsp;Le protocole de vérification, une fois le matériel branché</h3>
+
+<ol>
+<li>Apprendre la surface et parcourir la table : le crossfader doit aller de −1 à +1.</li>
+<li><strong>Avant toute vidéo</strong> : la position doit monter linéairement à
+vitesse nominale, le sens s'inverser proprement, la confiance être haute. Puis, Serato
+lancé en parallèle, vérifier que l'application lit toujours le timecode.</li>
+<li><strong>Ancrage</strong> : le poser, laisser tourner deux minutes, lire la
+fraîcheur. Provoquer un needle drop dans Serato et vérifier qu'un seul appui remet
+tout en place.</li>
+<li><strong>Analyse vidéo</strong> : un jeu de clips variés en non-régression
+(codecs, cadences, définitions), et mesurer le temps de recentrage de la fenêtre VRAM
+après un needle drop hors fenêtre.</li>
+<li><strong>Effets appairés</strong> : test <em>perceptif</em>, pas seulement
+fonctionnel — un tiers qui n'a pas écrit le code doit reconnaître l'effet audio en ne
+regardant que l'image. C'est le seul critère qui compte.</li>
+<li><strong>Décrochage</strong> : forcer la confiance à zéro doit geler proprement,
+jamais téléporter.</li>
+<li><strong>Latence de bout en bout</strong> : filmer main et écran au ralenti,
+compter les frames d'écart. Cible sous 30 ms, idéalement sous 20.</li>
+</ol>
+
+<h2><span class="n">ANNEXE A</span>Référence des commandes</h2>
+
+<table class="long">
+<tr><th style="width:40%">Commande</th><th>Effet</th></tr>
+<tr><td class="mono">scratchvj demo [--seconds N] [--fps N]<br>&nbsp;&nbsp;[--plain] [--record F]</td><td>Performance scriptée à travers tout le moteur, avec tableau de bord.</td></tr>
+<tr><td class="mono">scratchvj play F [--fps N] [--plain]</td><td>Rejoue une prise enregistrée.</td></tr>
+<tr><td class="mono">scratchvj analyze E [--out S]<br>&nbsp;&nbsp;[--max-width N]</td><td>Analyse un clip et écrit son <code>.svcache</code>.</td></tr>
+<tr><td class="mono">scratchvj info F.svcache</td><td>Ce que contient un cache analysé.</td></tr>
+<tr><td class="mono">scratchvj effects</td><td>Le catalogue d'effets et les correspondances audio↔vidéo.</td></tr>
+<tr><td class="mono">scratchvj layout</td><td>La checklist des contrôles à apprendre.</td></tr>
+<tr><td class="mono">scratchvj version</td><td>La version.</td></tr>
+<tr><td class="mono">scratchvj_ui [--live]</td><td>L'interface. <code>--live</code> démarre le deck A sur le vrai plateau.</td></tr>
+</table>
+
+<h2><span class="n">ANNEXE B</span>Les 63 contrôles de la surface</h2>
+
+<p class="footnote" style="margin-bottom:4mm">La checklist que l'apprentissage MIDI
+parcourt. Aucun de ces identifiants n'est associé à un numéro de contrôle en dur :
+ils décrivent une <em>intention</em>, et l'apprentissage y attache ce que votre
+matériel envoie réellement. Imprimable par <code>scratchvj layout</code>.</p>
+
+<!--GEN:LAYOUT-->
+<div class="cols2" style="font-size:8.6pt;line-height:1.75">
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">ch1.trim</span><span style="float:right;color:#6c6862;font-size:7.6pt">potard</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">ch1.eq.hi</span><span style="float:right;color:#6c6862;font-size:7.6pt">potard</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">ch1.eq.mid</span><span style="float:right;color:#6c6862;font-size:7.6pt">potard</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">ch1.eq.low</span><span style="float:right;color:#6c6862;font-size:7.6pt">potard</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">ch1.filter</span><span style="float:right;color:#6c6862;font-size:7.6pt">potard</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">ch1.fader</span><span style="float:right;color:#6c6862;font-size:7.6pt">fader</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">ch1.cue</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">ch1.fx.on</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">ch2.trim</span><span style="float:right;color:#6c6862;font-size:7.6pt">potard</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">ch2.eq.hi</span><span style="float:right;color:#6c6862;font-size:7.6pt">potard</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">ch2.eq.mid</span><span style="float:right;color:#6c6862;font-size:7.6pt">potard</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">ch2.eq.low</span><span style="float:right;color:#6c6862;font-size:7.6pt">potard</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">ch2.filter</span><span style="float:right;color:#6c6862;font-size:7.6pt">potard</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">ch2.fader</span><span style="float:right;color:#6c6862;font-size:7.6pt">fader</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">ch2.cue</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">ch2.fx.on</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">xfader</span><span style="float:right;color:#6c6862;font-size:7.6pt">fader</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">fx.time</span><span style="float:right;color:#6c6862;font-size:7.6pt">potard</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">fx.mix</span><span style="float:right;color:#6c6862;font-size:7.6pt">potard</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">fx.beats</span><span style="float:right;color:#6c6862;font-size:7.6pt">encodeur</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">fx.paddle.a</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">fx.paddle.b</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.elite.a.1</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.elite.a.2</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.elite.a.3</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.elite.a.4</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.elite.a.5</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.elite.a.6</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.elite.a.7</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.elite.a.8</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.elite.b.1</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.elite.b.2</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.elite.b.3</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.elite.b.4</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.elite.b.5</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.elite.b.6</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.elite.b.7</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.elite.b.8</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.elite.a.mode</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.elite.b.mode</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">browse.encoder</span><span style="float:right;color:#6c6862;font-size:7.6pt">encodeur</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">browse.load.a</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">browse.load.b</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">master.level</span><span style="float:right;color:#6c6862;font-size:7.6pt">potard</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">booth.level</span><span style="float:right;color:#6c6862;font-size:7.6pt">potard</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">cue.mix</span><span style="float:right;color:#6c6862;font-size:7.6pt">potard</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">cue.level</span><span style="float:right;color:#6c6862;font-size:7.6pt">potard</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.a.l1.1</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.a.l1.2</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.a.l1.3</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.a.l1.4</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.a.l1.5</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.a.l1.6</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.a.l1.7</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.a.l1.8</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.b.l1.1</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.b.l1.2</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.b.l1.3</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.b.l1.4</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.b.l1.5</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.b.l1.6</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.b.l1.7</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.b.l1.8</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+</div>
+<!--/GEN:LAYOUT-->
+
+<h2><span class="n">ANNEXE C</span>Le catalogue des 32 effets</h2>
+
+<!--GEN:EFFECTS-->
+<p class="eyebrow" style="margin-top:0">Seize paires audio / vidéo</p>
+<table class="long"><tr><th style="width:15%">Effet</th><th style="width:12%">Relation</th><th style="width:36%">Audio</th><th>Vidéo</th></tr>
+<tr><td class="mono">lowpass</td><td><span class="tag ok">identique</span></td><td>passe-bas : retire les hautes fréquences temporelles</td><td>flou gaussien : retire les hautes fréquences spatiales</td></tr>
+<tr><td class="mono">highpass</td><td><span class="tag ok">identique</span></td><td>passe-haut : retire les basses fréquences</td><td>rehaussement de contours, gris médian</td></tr>
+<tr><td class="mono">djfilter</td><td><span class="tag ok">identique</span></td><td>filtre DJ : passe-bas ← neutre → passe-haut</td><td>flou ← neutre → netteté</td></tr>
+<tr><td class="mono">bitcrush</td><td><span class="tag ok">identique</span></td><td>réduction de profondeur de bits</td><td>postérisation et réduction de palette</td></tr>
+<tr><td class="mono">decimate</td><td><span class="tag ok">identique</span></td><td>baisse de fréquence d&#x27;échantillonnage</td><td>gel et décimation de frames</td></tr>
+<tr><td class="mono">delay</td><td><span class="tag ok">identique</span></td><td>delay à contre-réaction</td><td>traînées d&#x27;images à contre-réaction, même équation</td></tr>
+<tr><td class="mono">distortion</td><td><span class="tag ok">identique</span></td><td>écrêtage d&#x27;amplitude</td><td>écrêtage des couleurs, saturation dure</td></tr>
+<tr><td class="mono">ringmod</td><td><span class="tag ok">identique</span></td><td>multiplication par une porteuse</td><td>multiplication par un motif spatial</td></tr>
+<tr><td class="mono">gate</td><td><span class="tag ok">identique</span></td><td>modulation d&#x27;amplitude</td><td>strobe et gate de luminosité, au même taux</td></tr>
+<tr><td class="mono">reverse</td><td><span class="tag ok">identique</span></td><td>lecture inversée</td><td>frames à l&#x27;envers</td></tr>
+<tr><td class="mono">beatrepeat</td><td><span class="tag ok">identique</span></td><td>boucle de N temps</td><td>boucle de frames de même durée</td></tr>
+<tr><td class="mono">noise</td><td><span class="tag ok">identique</span></td><td>bruit additif</td><td>grain et neige</td></tr>
+<tr><td class="mono">reverb</td><td><span class="tag part">analogue</span></td><td>diffusion et décroissance</td><td>smear diffus, bloom persistant</td></tr>
+<tr><td class="mono">flanger</td><td><span class="tag part">analogue</span></td><td>filtre en peigne balayé</td><td>déplacement UV ondulant, moiré chroma</td></tr>
+<tr><td class="mono">pitch</td><td><span class="tag part">analogue</span></td><td>transposition</td><td>zoom, échelle spatiale</td></tr>
+<tr><td class="mono">pan</td><td><span class="tag part">analogue</span></td><td>position stéréo</td><td>translation horizontale — et en 360, le yaw</td></tr>
+</table>
+<p class="eyebrow">Seize effets vidéo sans équivalent sonore</p>
+<table class="long"><tr><th style="width:15%">Effet</th><th>Ce qu'il fait</th></tr>
+<tr><td class="mono">slitscan</td><td>chaque colonne lit une frame différente de la fenêtre</td></tr>
+<tr><td class="mono">datamosh</td><td>déplacement par le mouvement entre frames voisines</td></tr>
+<tr><td class="mono">feedback</td><td>rebouclage avec zoom et rotation</td></tr>
+<tr><td class="mono">kaleidoscope</td><td>segments miroir en rotation</td></tr>
+<tr><td class="mono">mirror</td><td>miroir horizontal, vertical ou quadruple</td></tr>
+<tr><td class="mono">displace</td><td>déformation par un bruit ou une texture</td></tr>
+<tr><td class="mono">chromakey</td><td>incrustation par couleur</td></tr>
+<tr><td class="mono">lumakey</td><td>incrustation par luminance</td></tr>
+<tr><td class="mono">pixelsort</td><td>tri de pixels par seuil</td></tr>
+<tr><td class="mono">tile</td><td>répétition en damier</td></tr>
+<tr><td class="mono">polar</td><td>coordonnées polaires, dont la petite planète</td></tr>
+<tr><td class="mono">halftone</td><td>trame d&#x27;imprimerie, angle et pas</td></tr>
+<tr><td class="mono">vhs</td><td>scanlines, tracking, décalage chroma</td></tr>
+<tr><td class="mono">bloom</td><td>diffusion des hautes lumières</td></tr>
+<tr><td class="mono">hueisolate</td><td>garder une teinte, désaturer le reste</td></tr>
+<tr><td class="mono">invert</td><td>négatif</td></tr>
+</table>
+<!--/GEN:EFFECTS-->
+
+<h2><span class="n">ANNEXE D</span>Fichiers et formats</h2>
+
+<table class="long">
+<tr><th style="width:28%">Fichier</th><th>Rôle</th></tr>
+<tr><td class="mono">settings.json</td><td>Les faits sur votre bureau : entrée, paire de canaux, porteuse, port MIDI. Jamais partagé entre machines.</td></tr>
+<tr><td class="mono">mapping.json</td><td>Les liaisons MIDI apprises et les routes de mapping. Écrit avec des noms, pas des numéros.</td></tr>
+<tr><td class="mono">mappings/</td><td>Les presets de géométrie de sortie, propres à une salle.</td></tr>
+<tr><td class="mono">clips/*.svcache</td><td>Les clips analysés. Chargés automatiquement au démarrage de l'interface.</td></tr>
+<tr><td class="mono">*.scratchtake</td><td>Une prise : le flux de contrôle horodaté d'une performance.</td></tr>
+<tr><td class="mono">platter.log</td><td>L'état du plateau, écrit chaque seconde en mode <code>--live</code>.</td></tr>
+</table>
+
+<h4>En-tête d'un <span class="mono">.svcache</span></h4>
+
+<pre><code>[ en-tête, 64 octets ]
+[ métadonnées : u32 longueur + autant d'octets ]   vignette, beatgrid, source
+[ données : frame_count × frame_bytes ]</code></pre>
+
+<p>Magic <code>SVC1</code>, version rejetée si inconnue, drapeaux (bit 0 alpha,
+bit 1 équirectangulaire), définition, nombre de frames réécrit à la fermeture quand
+il est enfin connu, cadence en rationnel, format de bloc, longueur des métadonnées.
+Tout en petit-boutien, octet par octet.</p>
+
+<h2><span class="n">ANNEXE E</span>Licences</h2>
+
+<p>scratchvj est construit de sorte que sa <strong>frontière de licence soit une
+option de compilation</strong>, visible plutôt qu'implicite. Trois configurations
+existent, et elles n'ont pas les mêmes conséquences.</p>
+
+<table class="long">
+<tr><th style="width:26%">Configuration</th><th style="width:30%">Ce qu'elle contient</th><th>Conséquence</th></tr>
+<tr><td><strong>Noyau seul</strong><br><span class="footnote">défaut</span></td><td>Aucune dépendance externe.</td><td>Aucune contrainte de licence externe.</td></tr>
+<tr><td><strong>+ interface</strong><br><span class="mono">SCRATCHVJ_BUILD_UI</span></td><td>SDL3 (zlib), Dear ImGui (MIT), bgfx (BSD-2). FFmpeg <em>appelé comme exécutable</em>, jamais lié.</td><td>Dépendances permissives uniquement. L'appel de FFmpeg par processus séparé est une frontière, architecturale et juridique en même temps.</td></tr>
+<tr><td><strong>+ décodeur DVS</strong><br><span class="mono">SCRATCHVJ_BUILD_DVS</span></td><td>Ajoute <code>timecoder.c</code> d'xwax.</td><td><strong>GPL-3.</strong> Le binaire produit est GPL-3 et doit être distribué comme tel.</td></tr>
+</table>
+
+<p>Le <strong>plugin Unreal</strong> reste sous la licence de son auteur, quelle
+qu'elle soit : il ne fait que lire un socket UDP et une texture partagée. La
+frontière entre les deux processus n'est pas seulement architecturale, elle est aussi
+juridique.</p>
+
+<p>Le <strong>SDK ASIO</strong> se compile contre, mais ne se redistribue pas. Le
+<strong>SDK NDI</strong> suppose l'acceptation de son EULA par l'utilisateur, et n'est
+pas versionné dans le dépôt : le motif à suivre est celui d'<code>obs-ndi</code> —
+une option CMake pointant vers un SDK installé localement, et la sortie NDI compilée
+hors du binaire quand il est absent.</p>
+
+<p class="footnote" style="margin-top:8mm">Les polices utilisées dans ce document —
+DM Mono, et Archivo dans l'application — sont sous SIL Open Font License.</p>
+
+</body>
+</html>

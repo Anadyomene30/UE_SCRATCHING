@@ -11,6 +11,17 @@ std::size_t MappingEngine::add(Mapping mapping) {
     return mappings_.size() - 1;
 }
 
+bool MappingEngine::remove(std::size_t index) {
+    if (index >= mappings_.size()) return false;
+    const auto at = static_cast<std::ptrdiff_t>(index);
+    mappings_.erase(mappings_.begin() + at);
+    if (resolved_.size() > index) resolved_.erase(resolved_.begin() + at);
+    if (states_.size() > index) states_.erase(states_.begin() + at);
+    if (values_.size() > index) values_.erase(values_.begin() + at);
+    if (active_.size() > index) active_.erase(active_.begin() + at);
+    return true;
+}
+
 void MappingEngine::clear() {
     mappings_.clear();
     resolved_.clear();

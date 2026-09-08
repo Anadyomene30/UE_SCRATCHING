@@ -16,8 +16,21 @@
 
 #include <string>
 #include <string_view>
+#include <vector>
+
+#include "core/mixer.h"
 
 namespace svj {
+
+// One MIDI device of the rig: which profile describes it, which port it is
+// on, and -- for two identical devices, the pair of RP-8000s -- which of the
+// matching ports. `deck` is the letter a turntable's pads are named after.
+struct DeviceSetting {
+    std::string profile = "reloop_elite";
+    std::string port = "ELITE";  // a fragment of the port's name
+    int ordinal = 0;             // the n-th port containing the fragment
+    char deck = 'a';             // for profiles whose ids carry a deck letter
+};
 
 struct DeskSettings {
     // A fragment of the capture endpoint's name, matched case-insensitively:
@@ -33,7 +46,52 @@ struct DeskSettings {
 
     // A fragment of the MIDI input port's name. "ELITE" on this desk; the
     // mixer's control map is never hard-coded, only which port to listen to.
+    // Kept for files written before `devices` existed: when `devices` is
+    // empty, the rig is this one port with the Elite's profile.
     std::string midi_port = "ELITE";
+
+    // The rig: every MIDI device, in the order their indices are numbered.
+    // The default is the measured desk -- the mixer and the two turntables,
+    // which Windows lists as "RP8000mk2" and "2 - RP8000mk2".
+    std::vector<DeviceSetting> devices{
+        DeviceSetting{"reloop_elite", "ELITE", 0, 'a'},
+        DeviceSetting{"rp8000", "RP8000", 0, 'a'},
+        DeviceSetting{"rp8000", "RP8000", 1, 'b'},
+    };
+
+    // The mixer's switches, as the performer set them.
+    MixSettings mix;
+
+    // The screen the program goes to, by NAME rather than by index: display
+    // indices are renumbered whenever something is plugged in, and a set that
+    // opens on the wrong screen because a hub enumerated differently is worse
+    // than one that opens on none. Empty means no output screen.
+    std::string output_display;
+    // Whether it was open when the application last closed, so a rig that is
+    // always the same rig comes back the way it was left.
+    bool output_open = false;
+
+    // Where the rushes are. Walked recursively at startup and on request;
+    // `clips/` next to the working directory is where the analysis pass used
+    // to leave things, so it stays the default rather than orphaning them.
+    std::vector<std::string> library_folders{"clips"};
+    // Where caches go. Empty means next to their source, which is right for a
+    // folder the performer owns and wrong for a read-only drive.
+    std::string cache_dir;
+    // The cadence a numbered image sequence is given: the files do not carry
+    // one, and a pass has to pick something.
+    double sequence_fps = 30.0;
+    // Frames are downscaled to at most this wide when analysed.
+    unsigned analysis_max_width = 1024;
+
+    // Video memory each deck may hold, in MiB. 256 shows the window slide on
+    // a short clip; a card with room can take a gigabyte and hold a whole
+    // 4K equirect.
+    unsigned vram_budget_mb = 256;
+
+    // Where the control stream goes: the Unreal machine, or this one.
+    std::string control_host = "127.0.0.1";
+    unsigned control_port = 7331;
 };
 
 std::string settings_to_json(const DeskSettings& settings);

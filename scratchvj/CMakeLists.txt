@@ -18,8 +18,11 @@ endif()
 add_library(scratchvj_core STATIC
   src/core/anchor.cpp
   src/core/bc1.cpp
+  src/core/bc3.cpp
+  src/core/cachemeta.cpp
   src/core/compose.cpp
   src/core/curve.cpp
+  src/core/destinations.cpp
   src/core/effect.cpp
   src/core/framewindow.cpp
   src/core/gestures.cpp
@@ -29,11 +32,14 @@ add_library(scratchvj_core STATIC
   src/core/library.cpp
   src/core/livering.cpp
   src/core/mapping.cpp
+  src/core/matrix.cpp
   src/core/mesh.cpp
   src/core/midi.cpp
   src/core/mixer.cpp
   src/core/modulator.cpp
   src/core/playback.cpp
+  src/core/profile.cpp
+  src/core/profiles_builtin.cpp
   src/core/protocol.cpp
   src/core/quadrature.cpp
   src/core/spectrum.cpp
@@ -54,7 +60,9 @@ target_include_directories(scratchvj_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src
 # Split out so the JSON library, which is a large header, is compiled exactly
 # once instead of by every translation unit that happens to touch a mapping.
 add_library(scratchvj_config STATIC
+  src/config/library_io.cpp
   src/config/mapping_io.cpp
+  src/config/profile_io.cpp
   src/config/settings_io.cpp
   src/config/warp_io.cpp
 )
@@ -127,8 +135,10 @@ endif()
 # executable, so the demo's behaviour is covered by tests instead of only ever
 # being eyeballed.
 add_library(scratchvj_app STATIC
+  src/app/analysis_queue.cpp
   src/app/analyze.cpp
   src/app/dashboard.cpp
+  src/app/library_scan.cpp
   src/app/engine.cpp
   src/app/simulation.cpp
 )
@@ -136,7 +146,7 @@ target_include_directories(scratchvj_app PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_link_libraries(scratchvj_app PUBLIC scratchvj_core)
 
 add_executable(scratchvj src/app/main.cpp)
-target_link_libraries(scratchvj PRIVATE scratchvj_app)
+target_link_libraries(scratchvj PRIVATE scratchvj_app scratchvj_config)
 
 if(MSVC)
   target_compile_options(scratchvj_app PRIVATE /W4 /permissive-)
@@ -165,8 +175,12 @@ if(SCRATCHVJ_BUILD_TESTS)
   enable_testing()
   add_executable(scratchvj_tests
     tests/harness.cpp
+    tests/test_analysis_queue.cpp
+    tests/test_analyze.cpp
     tests/test_anchor.cpp
     tests/test_bc1.cpp
+    tests/test_bc3.cpp
+    tests/test_cachemeta.cpp
     tests/test_compose.cpp
     tests/test_app.cpp
     tests/test_config.cpp
@@ -179,13 +193,18 @@ if(SCRATCHVJ_BUILD_TESTS)
     tests/test_layout.cpp
     tests/test_learn.cpp
     tests/test_library.cpp
+    tests/test_library_io.cpp
+    tests/test_library_scan.cpp
     tests/test_livering.cpp
     tests/test_mapping.cpp
+    tests/test_matrix.cpp
     tests/test_mesh.cpp
     tests/test_midi.cpp
     tests/test_mixer.cpp
     tests/test_modulator.cpp
     tests/test_playback.cpp
+    tests/test_profile.cpp
+    tests/test_profile_io.cpp
     tests/test_protocol.cpp
     tests/test_quadrature.cpp
     tests/test_spectrum.cpp
@@ -201,6 +220,10 @@ if(SCRATCHVJ_BUILD_TESTS)
     tests/test_warp_io.cpp
   )
   target_include_directories(scratchvj_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+  # The shipped controller profiles are part of the suite: every file in
+  # profiles/ must load and validate, or a controller silently does not exist.
+  target_compile_definitions(scratchvj_tests PRIVATE
+    SCRATCHVJ_PROFILE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../profiles")
   target_link_libraries(scratchvj_tests PRIVATE scratchvj_app scratchvj_config)
 
   # The DVS tests join the same binary when the decoder is built, so they run

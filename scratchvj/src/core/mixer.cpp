@@ -52,11 +52,65 @@ MixWeights crossfader_weights(float position, FaderCurve curve) {
     return w;
 }
 
+FaderCurve curve_from_unit(float value01) {
+    const float x = std::clamp(value01, 0.0f, 1.0f);
+    if (x < 0.25f) return FaderCurve::Smooth;
+    if (x < 0.5f) return FaderCurve::Linear;
+    if (x < 0.75f) return FaderCurve::Sharp;
+    return FaderCurve::Cut;
+}
+
+const char* curve_name(FaderCurve curve) {
+    switch (curve) {
+        case FaderCurve::Smooth: return "douce";
+        case FaderCurve::Linear: return "lin\xC3\xA9" "aire";
+        case FaderCurve::Sharp: return "sharp";
+        case FaderCurve::Cut: return "cut";
+    }
+    return "?";
+}
+
+float channel_gain(float fader, FaderCurve curve) {
+    const float x = std::clamp(fader, 0.0f, 1.0f);
+    switch (curve) {
+        case FaderCurve::Smooth:
+            // A gentle law: most of the travel does something, the top eases.
+            return static_cast<float>(std::sin(x * kHalfPi));
+        case FaderCurve::Sharp: return ramp(x, kSharpKnee);
+        case FaderCurve::Cut: return x < 0.5f ? 0.0f : 1.0f;
+        case FaderCurve::Linear:
+        default: return x;
+    }
+}
+
 MixWeights mix_weights(float crossfader, float fader_a, float fader_b, FaderCurve curve) {
     MixWeights w = crossfader_weights(crossfader, curve);
     w.a *= std::clamp(fader_a, 0.0f, 1.0f);
     w.b *= std::clamp(fader_b, 0.0f, 1.0f);
     return w;
+}
+
+MixWeights mix_weights(float crossfader, float fader_a, float fader_b,
+                       const MixSettings& settings) {
+    const float x = settings.xfader_reverse ? 1.0f - std::clamp(crossfader, 0.0f, 1.0f)
+                                            : crossfader;
+    const float fa = settings.channel_reverse ? 1.0f - std::clamp(fader_a, 0.0f, 1.0f) : fader_a;
+    const float fb = settings.channel_b_reverse ? 1.0f - std::clamp(fader_b, 0.0f, 1.0f) : fader_b;
+    MixWeights w = crossfader_weights(x, settings.xfader);
+    w.a *= channel_gain(fa, settings.channel);
+    w.b *= channel_gain(fb, settings.channel_b);
+    return w;
+}
+
+StackWeights stack_weights(float crossfader, float fader_a, float fader_b,
+                           const MixSettings& settings, const Layer& overlay) {
+    const MixWeights below = mix_weights(crossfader, fader_a, fader_b, settings);
+    StackWeights stack;
+    stack.a = below.a;
+    stack.b = below.b;
+    // The crossfader is absent from this line on purpose; see the header.
+    stack.overlay = overlay.enabled ? std::clamp(overlay.opacity, 0.0f, 1.0f) : 0.0f;
+    return stack;
 }
 
 StackWeights stack_weights(float crossfader, float fader_a, float fader_b,

@@ -85,6 +85,8 @@ class MappingEngine {
 public:
     // Returns the index of the new mapping.
     std::size_t add(Mapping mapping);
+    // Drops one row; the rows after it move down by one. False out of range.
+    bool remove(std::size_t index);
     void clear();
 
     std::size_t size() const { return mappings_.size(); }

@@ -142,6 +142,30 @@ bool CacheWriter::write_frame(const std::uint8_t* data, std::size_t size, std::s
     return true;
 }
 
+bool CacheWriter::rewrite_metadata(const std::vector<std::uint8_t>& metadata,
+                                   std::string& error) {
+    if (!impl_ || !impl_->file) {
+        error = "no cache file is open";
+        return false;
+    }
+    if (metadata.size() != impl_->metadata_length) {
+        error = "metadata must keep its length: the frames sit right behind it";
+        return false;
+    }
+    if (metadata.empty()) return true;
+    // The blob follows the 64-byte header directly: its length lives INSIDE
+    // the header, not in front of the blob.
+    impl_->file.seekp(static_cast<std::streamoff>(kCacheHeaderBytes), std::ios::beg);
+    impl_->file.write(reinterpret_cast<const char*>(metadata.data()),
+                      static_cast<std::streamsize>(metadata.size()));
+    impl_->file.seekp(0, std::ios::end);
+    if (!impl_->file) {
+        error = "failed while rewriting the metadata block";
+        return false;
+    }
+    return true;
+}
+
 bool CacheWriter::close(std::string& error) {
     if (!impl_) return true;
     if (!impl_->file) {

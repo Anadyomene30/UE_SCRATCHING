@@ -199,3 +199,25 @@ SVJ_TEST("mapping: clearing empties the engine") {
     engine.clear();
     CHECK_EQ(engine.size(), std::size_t{0});
 }
+
+SVJ_TEST("mapping: removing a row keeps the others' values and indices in step") {
+    Surface surface;
+    const ControlIndex a = surface.declare("ch1.eq.hi", ControlKind::Knob);
+    const ControlIndex b = surface.declare("ch1.eq.low", ControlKind::Knob);
+
+    MappingEngine engine;
+    engine.add(control_mapping("ch1.eq.hi", "deck.a.yaw"));
+    engine.add(control_mapping("ch1.eq.low", "deck.a.pitch"));
+    CHECK(engine.resolve(surface).empty());
+    surface.set(a, 0.2f, 1);
+    surface.set(b, 0.9f, 1);
+    engine.evaluate(surface, EngineInputs{}, 0.016f);
+
+    CHECK(engine.remove(0));
+    CHECK_EQ(engine.size(), std::size_t{1});
+    CHECK_EQ(engine.at(0).destination.target, std::string("deck.a.pitch"));
+    engine.evaluate(surface, EngineInputs{}, 0.016f);
+    CHECK(engine.active(0));
+    CHECK_NEAR(engine.value(0), 0.9, 1e-4);
+    CHECK(!engine.remove(5));
+}

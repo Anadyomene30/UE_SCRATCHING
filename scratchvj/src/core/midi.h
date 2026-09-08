@@ -24,6 +24,11 @@ struct MidiEvent {
     std::uint8_t number = 0;   // note number, or CC number (ignored for pitch bend)
     std::uint16_t value = 0;   // 0-127, or 0-16383 for pitch bend and 14-bit CC
     bool high_resolution = false;
+    // Which device of the rig sent it: an index into the configured devices,
+    // NOT the driver's port index, which changes with the order things were
+    // plugged in. Two devices send the same CC 7 on channel 1; without this
+    // the mixer's fader and the turntable's pad would be one address.
+    std::uint8_t device = 0;
 
     // Value scaled to 0..1 regardless of 7-bit or 14-bit resolution.
     float normalised() const;

@@ -22,10 +22,12 @@
 #include <vector>
 
 #include "core/anchor.h"
+#include "core/destinations.h"
 #include "core/effect.h"
 #include "core/framewindow.h"
 #include "core/gestures.h"
 #include "core/library.h"
+#include "core/matrix.h"
 #include "core/mapping.h"
 #include "core/mesh.h"
 #include "core/mixer.h"
@@ -76,7 +78,41 @@ struct Deck {
     // fabricated. Everything that depends on the clip's duration or frame count
     // -- transport, clock, VRAM window -- is rebuilt; the timecode tracker is
     // not, because the platter does not change when the record does.
-    void load(const CacheHeader& header, std::string label, double bpm);
+    //
+    // `time_s` is the clock the deck will be advanced with. It matters: the
+    // free-running clock is a closed form of absolute time, so a clip rebuilt
+    // at time zero and first advanced at t = 300 s would open three hundred
+    // seconds in. `keep_position` holds the played position across the load,
+    // for the case where the SAME clip comes back with a different projection.
+    void load(const CacheHeader& header, std::string label, double bpm, double time_s = 0.0,
+              bool keep_position = false);
+
+    // --- the deck as a player ------------------------------------------------
+    // A deck is a video player first and a turntable second. These three are
+    // what a transport row does: they leave the platter (the free clock takes
+    // over from where the picture is) and they never move the picture except
+    // where the word says so. Play restores the rate pause put away, so a deck
+    // paused at -2x resumes at -2x; a deck never played runs at 1x.
+    void play(double time_s);
+    void pause(double time_s);
+    void stop(double time_s);   // pause, and back to the head
+    // Running on its own clock at a non-zero rate. A platter deck is not
+    // "playing" in this sense: the record decides, not a button.
+    bool playing() const;
+
+    // A hand on the picture: the position bar being dragged. Grab remembers
+    // where the deck was taking its position from, so that letting go returns
+    // THERE -- a playing deck resumes, a platter deck is handed back through the
+    // takeover policy. The clock alone forgets, which handed every released
+    // scrub to the turntable, whether or not one was driving.
+    void grab(double position_s, double time_s);
+    void scrub(double position_s, double time_s);
+    void release(double time_s);
+
+    double resume_rate = 1.0;
+    DeckSource source_before_hand = DeckSource::FreeRun;
+    // The frame window's budget, set by the engine from the desk's settings.
+    std::uint64_t window_budget_bytes = 256ull << 20;
 };
 
 // What a front end asks a deck to do on a given frame. Buttons arrive as edges
@@ -85,11 +121,24 @@ struct Deck {
 struct DeckCommands {
     bool loop_in = false;
     double loop_seconds = 2.0;
+    bool loop_out = false;   // closes the loop here, for a mapped "loop out" button
     bool loop_exit = false;
     bool slip_on = false;
     bool slip_off = false;
     bool cue_jump = false;
+    bool cue_set = false;    // set cue_index where the deck is now
+    bool cue_clear = false;
     int cue_index = 0;
+    // A loop of that many beats from the (quantised) position; zero asks
+    // nothing. What a pad in "loops" mode and the Elite's loop encoder send.
+    double auto_loop_beats = 0.0;
+    // A jump of that many beats, negative backwards; zero asks nothing.
+    double beat_jump_beats = 0.0;
+
+    bool any() const {
+        return loop_in || loop_out || loop_exit || slip_on || slip_off || cue_jump ||
+               cue_set || cue_clear || auto_loop_beats != 0.0 || beat_jump_beats != 0.0;
+    }
 };
 
 // One frame's worth of input.
@@ -100,6 +149,26 @@ struct EngineFrame {
     DecoderSample deck_a;
     DecoderSample deck_b;
     DeckCommands commands_a;
+    DeckCommands commands_b;
+};
+
+// What a mapping asked of the FRONT END this step: loads and library moves are
+// file I/O and list navigation the engine has no business doing itself, so it
+// records the ask and whoever owns the window serves it at the frame boundary
+// -- the same door a click on the library goes through.
+struct EngineRequests {
+    bool load_next_a = false;
+    bool load_next_b = false;
+    bool load_next_overlay = false;
+    int library_step = 0;  // +1 next row, -1 previous, summed over the step
+    bool library_load_a = false;
+    bool library_load_b = false;
+    bool library_load_overlay = false;
+
+    bool any() const {
+        return load_next_a || load_next_b || load_next_overlay || library_step != 0 ||
+               library_load_a || library_load_b || library_load_overlay;
+    }
 };
 
 // What downstream mappings see for a deck whose link has dropped.
@@ -134,12 +203,37 @@ public:
     // Builds the decks, the rack, the modulators and the default mappings. The
     // surface is left empty: whoever owns the controls declares them, then calls
     // bind().
-    void configure(double bpm);
+    // Whether configure() fabricates the demo's clips and library.
+    //
+    // The demo was the scaffolding that let the whole instrument be built
+    // before there was any hardware or any analysed video: two decks with
+    // invented names, one of them 360, and a library of clips that do not
+    // exist. That scaffolding must not be what a performer sees on launch --
+    // an instrument whose decks are full of files you do not own, one of them
+    // spherical, reads as a simulation and hides what the software actually
+    // does. So it is a choice now, and the front end says no.
+    enum class DemoContent : std::uint8_t { No, Yes };
+
+    void configure(double bpm, DemoContent demo = DemoContent::Yes);
 
     // Resolves every mapping's control id against the surface as it now stands.
-    // Returns the ids that matched nothing, which is a stale mapping file rather
-    // than an error worth stopping for.
+    // Returns the ids that matched nothing -- control ids AND destination
+    // names -- which is a stale mapping file rather than an error worth
+    // stopping for. A mapping to an unknown destination used to be silently
+    // decoration; now it is a line in this list.
     std::vector<std::string> bind();
+
+    // Replaces the mappings wholesale (a mapping.json, a preset) and binds.
+    std::vector<std::string> install_mappings(std::vector<Mapping> mappings);
+
+    // What the mixer's switches say: curves and reverse, for the crossfader
+    // and for the channel faders separately. Written by the interface, by a
+    // mapping (the Elite's own curve buttons, once measured), and by settings.
+    MixSettings& mix_settings() { return mix_; }
+    const MixSettings& mix_settings() const { return mix_; }
+
+    // Asks the last step() raised for the front end, and clears them.
+    EngineRequests take_requests();
 
     void step(const EngineFrame& frame);
 
@@ -164,6 +258,10 @@ public:
     const Library& library() const { return library_; }
     Queue& queue() { return queue_; }
     const Queue& queue() const { return queue_; }
+    // The pad banks: what a pad in "clips" mode loads. Here for the reason
+    // the library is: a hardware pad and a click on screen reach one table.
+    Matrix& matrix() { return matrix_; }
+    const Matrix& matrix() const { return matrix_; }
 
     // Deck A's gaze into a 360 clip. Yaw and pitch arrive through the mapping
     // engine every step (the EQ knobs in the demo rig); projection, field of
@@ -208,9 +306,22 @@ public:
     // bands decay to zero and every AudioBand mapping simply reads 0.
     void analyse_audio(const float* samples, std::size_t count);
     const SpectrumAnalyser& spectrum() const { return spectrum_; }
+    // Editable: EFFETS loads, clears, links and turns the slots. The rack is
+    // the performer's, like the overlay layer.
+    EffectRack& rack() { return rack_; }
     const EffectRack& rack() const { return rack_; }
     const CutDetector& cuts() const { return cuts_; }
     const Anchor& anchor() const { return anchor_; }
+    // Places the anchor NOW: this position on deck A's control record means
+    // this position in its clip. The button the roadmap's verification step 3
+    // needs, which used to exist only as a configure-time call with zeros.
+    void anchor_now(double now_s);
+
+    // Video memory each deck may hold (the frame window's budget). A setting:
+    // 4K equirect on a modest card needs a smaller window. Applied to the
+    // decks now and to every later load.
+    void set_window_budget(std::uint64_t bytes);
+    std::uint64_t window_budget() const { return window_budget_; }
     MixWeights weights() const { return weights_; }
     double bpm() const { return bpm_; }
 
@@ -235,6 +346,8 @@ private:
     Mask mask_;
     Library library_;
     Queue queue_;
+    Matrix matrix_;
+    std::uint64_t window_budget_ = 256ull << 20;
     MappingEngine mapping_;
     ModulatorBank modulators_;
     // 1024 at 48 kHz: 21 ms of resolution and of latency together, inside the
@@ -248,6 +361,16 @@ private:
     ControlIndex xfader_ = kNoControl;
     ControlIndex fader_a_ = kNoControl;
     ControlIndex fader_b_ = kNoControl;
+    MixSettings mix_;
+
+    // Per mapping, resolved once at bind(): where it goes, and whether its
+    // trigger was already above the threshold last step (an edge fires once).
+    std::vector<Dest> resolved_dest_;
+    std::vector<bool> trigger_high_;
+    EngineRequests requests_;
+
+    void dispatch(std::size_t index, Dest dest, float value, DeckCommands& a, DeckCommands& b);
+    void configure_rack_and_mappings();
 
     DeckMotion motion_a_;
     DeckMotion motion_b_;

@@ -19,16 +19,53 @@ enum class AnalysisState : std::uint8_t {
     Failed,
 };
 
+// Whether a clip is shown as a sphere or as a flat picture. The cache header
+// carries what the analysis pass GUESSED (2:1 footage is taken for equirect);
+// this is what the performer SAID, and it wins. It lives on the library entry
+// rather than in the header because a preference must survive a re-analysis --
+// rewriting sixty-four bytes would be cheap, but it would mix what the file is
+// with what someone decided about it.
+enum class ProjectionOverride : std::uint8_t {
+    Auto,      // follow the header's flag
+    Flat,
+    Equirect,
+};
+
+// The one place the decision is made. Every deck, every badge and every render
+// pass asks this rather than re-deriving "is it 360" from the aspect ratio --
+// which the interface once did in five places, each a separate rule.
+bool effective_equirect(bool header_flag, ProjectionOverride override);
+
 struct ClipEntry {
+    // The playable file: the .svcache. What the deck opens.
     std::string path;
+    // The video it was analysed from, when known. Empty for an orphan cache
+    // whose source has gone: still playable, so still listed.
+    std::string source_path;
     std::string name;
     double duration_s = 0.0;
     std::uint32_t width = 0;
     std::uint32_t height = 0;
     double fps = 0.0;
-    bool equirect = false;
+    bool equirect = false;  // the header's flag, as analysed
+    ProjectionOverride projection = ProjectionOverride::Auto;
     bool has_alpha = false;
     double bpm = 0.0;
+
+    // A source that is a numbered image sequence, or a single still. Both go
+    // through the same analysis pass with different ffmpeg arguments; the
+    // library only needs to remember which, so the pass can be re-run.
+    bool is_sequence = false;
+    bool is_still = false;
+
+    bool shown_equirect() const { return effective_equirect(equirect, projection); }
+
+    // The cache's thumbnail, BC1, read back with its header. Empty for a
+    // cache written before thumbnails existed; the front end shows a blank
+    // well rather than re-analysing anything.
+    std::uint32_t thumb_w = 0;
+    std::uint32_t thumb_h = 0;
+    std::vector<std::uint8_t> thumbnail;
 
     AnalysisState state = AnalysisState::Unanalysed;
     float progress = 0.0f;
@@ -49,6 +86,7 @@ public:
     ClipEntry* mutable_at(ClipId id);
 
     ClipId find_by_path(const std::string& path) const;
+    ClipId find_by_source(const std::string& source_path) const;
 
     // Case-insensitive substring match on the name. Empty matches everything.
     std::vector<ClipId> search(const std::string& text) const;
@@ -76,12 +114,20 @@ private:
     std::vector<Crate> crates_;
 };
 
-enum class DeckTarget : std::uint8_t { None, A, B };
+// Where a clip can be put. The overlay is a target like the decks: a logo or
+// a mask is chosen from the same library, by the same button.
+enum class DeckTarget : std::uint8_t { None, A, B, Overlay };
 
 struct QueueItem {
     ClipId clip = kNoClip;
     DeckTarget target = DeckTarget::None;
 };
+
+// The deck a queued clip goes to when nobody said. A: the queue is a running
+// order, and a "next" button that refused to act because no deck was named
+// would be a riddle at the wrong moment. Here rather than in the interface so
+// a pad and a click cannot disagree about it.
+DeckTarget default_target(const QueueItem& item);
 
 class Queue {
 public:

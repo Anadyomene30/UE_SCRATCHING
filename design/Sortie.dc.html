@@ -7,154 +7,125 @@
 <body>
 <x-dc>
 <helmet>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=DM+Mono:wght@300;400;500&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap">
   <style>
-    body { margin: 0; background: #141412; color: #E9E6DF;
+    body { margin: 0; background: #141412; color: #E9E6DF; font-size: 15px;
            font-family: Archivo, "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased; }
-    a { color: #C9762F; } a:hover { color: #E08B3E; }
-    .lbl { font-size: 9px; letter-spacing: .2em; text-transform: uppercase; color: #605D56; font-weight: 500; }
+    .lbl { font-size: 11.5px; letter-spacing: .14em; text-transform: uppercase; color: #605D56; font-weight: 500; }
     .mono { font-family: "DM Mono", ui-monospace, Consolas, monospace; font-variant-numeric: tabular-nums; }
-    .handle { position: absolute; width: 9px; height: 9px; background: #C9762F; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 28px; padding: 0 10px; background: #0E0E0C; border: 1px solid #2E2D28; border-radius: 1px; color: #E9E6DF; font-size: 12.5px; white-space: nowrap; }
+    .btn.primary { background: #C9762F; border-color: #C9762F; color: #141412; font-weight: 600; }
+    .btn.sm { height: 24px; font-size: 11px; padding: 0 8px; }
+    .seg { display: inline-flex; border: 1px solid #2E2D28; border-radius: 1px; overflow: hidden; }
+    .seg span { height: 28px; padding: 0 10px; display: inline-flex; align-items: center; font-size: 12.5px; color: #8A867C; background: #0E0E0C; border-right: 1px solid #2E2D28; white-space: nowrap; }
+    .seg span:last-child { border-right: 0; }
+    .seg span.on { background: #C9762F; color: #141412; font-weight: 600; }
+    .tog { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; color: #8A867C; white-space: nowrap; }
+    .tog .dot { width: 10px; height: 10px; border-radius: 5px; background: #2E2D28; border: 1px solid #605D56; }
+    .tog.on { color: #E9E6DF; } .tog.on .dot { background: #7E946B; border-color: #7E946B; }
+    .tab { font-size: 12.5px; letter-spacing: .1em; text-transform: uppercase; color: #605D56; padding: 9px 14px; border-bottom: 2px solid transparent; }
+    .tab.on { color: #E9E6DF; border-bottom-color: #C9762F; }
+    .screen { border: 1px solid #2E2D28; padding: 12px 14px; display: flex; align-items: center; gap: 14px; }
+    .screen.on { border-color: #7E946B; background: rgba(126,148,107,.06); }
+    .light { width: 8px; height: 8px; border-radius: 4px; }
+    svg { display: block; }
   </style>
 </helmet>
 
-<div style="width: 720px; min-height: 800px; background: #141412; display: flex; flex-direction: column;">
-
-  <div style="display: flex; align-items: baseline; gap: 12px; padding: 16px 20px; border-bottom: 1px solid #2E2D28;">
-    <span style="font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: #97938A; font-weight: 600;">Sortie</span>
-    <span class="mono" style="font-size: 11px; color: #605D56;">programme</span>
+<div style="width: 1440px; height: 1040px; display: flex; flex-direction: column; background: #141412; overflow: hidden;">
+  <div style="display: flex; align-items: center; gap: 18px; height: 40px; padding: 0 18px; border-bottom: 1px solid #2E2D28; flex: none;">
+    <span style="font-size: 13px; font-weight: 600; color: #C9762F;">scratchvj</span>
+    <div style="width: 1px; height: 16px; background: #2E2D28;"></div>
+    <span class="mono" style="font-size: 11.5px; color: #8A867C;">programme 640&#215;360 &#183; 60 i/s</span>
+    <div style="margin-left: auto; display: flex; align-items: center; gap: 14px;">
+      <span class="mono" style="font-size: 11.5px; color: #7E946B;">Spout scratchvj</span>
+      <span class="mono" style="font-size: 11.5px; color: #7E946B;">&#8594; DELL U2720Q</span>
+    </div>
+  </div>
+  <div style="display: flex; align-items: center; padding: 0 8px; border-bottom: 1px solid #2E2D28; flex: none;">
+    <span class="tab">Jouer</span><span class="tab">Biblioth&#232;que</span><span class="tab">Effets</span><span class="tab">Table</span><span class="tab on">Sortie</span><span class="tab">R&#233;glages</span>
   </div>
 
-  <div style="padding: 20px; display: flex; flex-direction: column; gap: 22px;">
-
-    <!-- screen picker -->
-    <div style="display: flex; flex-direction: column; gap: 11px;">
-      <span class="lbl">&#201;cran</span>
-      <div style="display: flex; flex-direction: column; gap: 7px;">
-        <div style="display: flex; align-items: center; gap: 11px;">
-          <div style="width: 2px; height: 13px; background: #C9762F;"></div>
-          <span style="flex: 1; font-size: 13px; color: #E9E6DF;">DELL U2720Q</span>
-          <span class="mono" style="font-size: 11px; color: #605D56;">3840&#215;2160 &#183; 60 Hz</span>
-          <span style="font-size: 9px; letter-spacing: .16em; text-transform: uppercase; color: #C9762F;">Plein &#233;cran</span>
-        </div>
-        <div style="display: flex; align-items: center; gap: 11px; padding-left: 13px;">
-          <span style="flex: 1; font-size: 13px; color: #97938A;">Epson EB-2250U</span>
-          <span class="mono" style="font-size: 11px; color: #605D56;">1920&#215;1200 &#183; 60 Hz</span>
-        </div>
-        <div style="display: flex; align-items: center; gap: 11px; padding-left: 13px;">
-          <span style="flex: 1; font-size: 13px; color: #97938A;">&#201;cran interne</span>
-          <span class="mono" style="font-size: 11px; color: #605D56;">2560&#215;1600 &#183; 120 Hz</span>
-          <span style="font-size: 9px; letter-spacing: .16em; text-transform: uppercase; color: #605D56;">Interface</span>
-        </div>
+  <div style="display: grid; grid-template-columns: 400px minmax(0, 1fr); flex: 1; min-height: 0;">
+    <!-- écrans et sorties réseau -->
+    <div style="padding: 18px; display: flex; flex-direction: column; gap: 12px; border-right: 1px solid #2E2D28;">
+      <span class="lbl">&#201;cran de sortie</span>
+      <span class="mono" style="font-size: 11px; color: #605D56;">plein &#233;cran sans bordure, m&#234;me image que l'aper&#231;u et que Spout, bandes noires plut&#244;t qu'&#233;tirement</span>
+      <div class="screen">
+        <svg width="28" height="20" viewBox="0 0 28 20"><rect x="1" y="1" width="26" height="16" fill="none" stroke="#8A867C" stroke-width="1.4"></rect><path d="M10 19h8" stroke="#8A867C" stroke-width="1.4"></path></svg>
+        <div style="display: flex; flex-direction: column; gap: 2px; flex: 1;"><span style="font-size: 13px;">LG ULTRAGEAR</span><span class="mono" style="font-size: 10.5px; color: #605D56;">2560&#215;1440 &#183; 144 Hz &#183; principal, l'interface est ici</span></div>
+        <span class="btn sm">Envoyer ici</span>
       </div>
-      <span style="font-size: 12.5px; color: #605D56; line-height: 1.5;">Choix m&#233;moris&#233; et rappel&#233; au d&#233;marrage &#8212; on ne refait pas ce r&#233;glage sous pression en arrivant.</span>
+      <div class="screen on">
+        <svg width="28" height="20" viewBox="0 0 28 20"><rect x="1" y="1" width="26" height="16" fill="none" stroke="#7E946B" stroke-width="1.4"></rect><path d="M10 19h8" stroke="#7E946B" stroke-width="1.4"></path></svg>
+        <div style="display: flex; flex-direction: column; gap: 2px; flex: 1;"><span style="font-size: 13px; color: #7E946B;">DELL U2720Q</span><span class="mono" style="font-size: 10.5px; color: #605D56;">2560&#215;1440 &#183; 60 Hz &#183; la salle voit &#231;a</span></div>
+        <span class="btn sm" style="border-color: #7E946B; color: #7E946B;">Sortie ici &#183; fermer</span>
+      </div>
+      <span class="mono" style="font-size: 10.5px; color: #605D56;">&#201;chap ferme la sortie avant de quitter l'instrument.</span>
+
+      <div style="height: 1px; background: #2E2D28; margin: 8px 0;"></div>
+      <span class="lbl">Sorties r&#233;seau</span>
+      <div style="display: grid; grid-template-columns: 1fr auto; gap: 10px 12px; align-items: center; font-size: 13px;">
+        <div style="display: flex; flex-direction: column; gap: 2px;"><span>Spout</span><span class="mono" style="font-size: 10.5px; color: #605D56;">« scratchvj » &#183; Resolume, MadMapper, OBS, Unreal</span></div><span class="tog on"><span class="dot"></span>Actif</span>
+        <div style="display: flex; flex-direction: column; gap: 2px;"><span>NDI</span><span class="mono" style="font-size: 10.5px; color: #605D56;">pas encore &#233;crit</span></div><span class="tog" style="opacity: .5;"><span class="dot"></span>Indisponible</span>
+        <div style="display: flex; flex-direction: column; gap: 2px;"><span>Unreal &#183; ScratchLink</span><span class="mono" style="font-size: 10.5px; color: #605D56;">UDP position + vitesse + regard</span></div><span class="tog on"><span class="dot"></span>Actif</span>
+        <span></span><div style="display: flex; gap: 6px; align-items: center;"><span class="mono" style="height: 24px; padding: 0 8px; display: inline-flex; align-items: center; background: #0E0E0C; border: 1px solid #2E2D28; font-size: 11.5px;">127.0.0.1</span><span class="mono" style="height: 24px; padding: 0 8px; display: inline-flex; align-items: center; background: #0E0E0C; border: 1px solid #2E2D28; font-size: 11.5px;">7331</span></div>
+      </div>
+
+      <div style="height: 1px; background: #2E2D28; margin: 8px 0;"></div>
+      <span class="lbl">Pr&#233;r&#233;glages de projection</span>
+      <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+        <span class="btn sm primary">Salle 12 sept.</span><span class="btn sm">Mur de droite</span><span class="btn sm">Plat</span><span class="btn sm">+ enregistrer</span>
+      </div>
+      <span class="mono" style="font-size: 10.5px; color: #605D56;">pin + grille + masque, ensemble &#183; presets/*.json</span>
     </div>
 
-    <!-- corner pin -->
-    <div style="display: flex; flex-direction: column; gap: 11px;">
-      <div style="display: flex; align-items: baseline; gap: 12px;">
-        <span class="lbl">Corner pin</span>
-        <span class="mono" style="font-size: 11px; color: #7D8F6E;">actif</span>
-        <span style="margin-left: auto; font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: #605D56;">R&#233;initialiser</span>
+    <!-- géométrie appliquée à la sortie -->
+    <div style="padding: 18px; display: flex; flex-direction: column; gap: 12px; min-width: 0;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span class="lbl">G&#233;om&#233;trie de projection</span>
+        <div class="seg"><span class="on">Coins</span><span>Grille 4&#215;4</span><span>Masque</span></div>
+        <span class="tog on" style="margin-left: 6px;"><span class="dot"></span>Appliqu&#233;e sur l'&#233;cran de sortie</span>
+        <span class="tog on"><span class="dot"></span>Mire</span>
+        <div style="margin-left: auto; display: flex; gap: 8px;"><span class="btn">Remettre &#224; plat</span></div>
       </div>
-
-      <div style="position: relative; height: 260px; background: #0A0A09; border: 1px solid #232220; overflow: hidden;">
-        <!-- alignment grid -->
-        <div style="position: absolute; inset: 0; background:
-              repeating-linear-gradient(90deg, rgba(233,230,223,.05) 0 1px, transparent 1px 40px),
-              repeating-linear-gradient(0deg, rgba(233,230,223,.05) 0 1px, transparent 1px 40px);"></div>
-
-        <!-- the warped output quad -->
-        <div style="position: absolute; left: 60px; top: 30px; width: 560px; height: 200px;
-                    clip-path: polygon(6% 0%, 100% 9%, 94% 100%, 0% 88%);
-                    background:
-                      radial-gradient(ellipse 58% 92% at 27% 64%, rgba(201,118,47,.30), transparent 64%),
-                      radial-gradient(ellipse 50% 84% at 76% 38%, rgba(124,139,145,.22), transparent 66%),
-                      linear-gradient(148deg,#1B1E22,#211B17 62%,#0D0D0C);"></div>
-
-        <!-- quad outline -->
-        <svg width="720" height="260" viewBox="0 0 720 260" style="position: absolute; left: 0; top: 0;">
-          <polygon points="93.6,30 620,48 586.4,230 60,206" fill="none" stroke="#C9762F" stroke-width="1"></polygon>
+      <!-- la toile -->
+      <div style="flex: 1; background: #0E0E0C; border: 1px solid #2E2D28; position: relative; min-height: 0;">
+        <svg width="100%" height="100%" viewBox="0 0 980 700" preserveAspectRatio="xMidYMid meet" style="position: absolute; inset: 0;">
+          <!-- écran -->
+          <rect x="60" y="50" width="860" height="600" fill="#141412" stroke="#2E2D28"></rect>
+          <text x="66" y="42" font-size="10" fill="#605D56" font-family="DM Mono">DELL U2720Q &#183; 16:9</text>
+          <!-- image déformée (corner pin) -->
+          <defs>
+            <pattern id="grid" width="53.75" height="60" patternUnits="userSpaceOnUse"><path d="M53.75 0H0V60" fill="none" stroke="#2E2D28" stroke-width="1"></path></pattern>
+          </defs>
+          <polygon points="120,90 840,130 800,610 160,580" fill="url(#grid)" stroke="#C9762F" stroke-width="1.5"></polygon>
+          <polygon points="120,90 840,130 800,610 160,580" fill="rgba(201,118,47,.05)"></polygon>
+          <!-- mire -->
+          <line x1="120" y1="90" x2="800" y2="610" stroke="#3a2f22" stroke-width="1"></line>
+          <line x1="840" y1="130" x2="160" y2="580" stroke="#3a2f22" stroke-width="1"></line>
+          <ellipse cx="480" cy="352" rx="240" ry="200" fill="none" stroke="#3a2f22"></ellipse>
+          <!-- masque -->
+          <polygon points="60,50 60,650 200,650 175,50" fill="rgba(14,14,12,.85)" stroke="#6E8696" stroke-dasharray="4 3"></polygon>
+          <text x="80" y="360" font-size="10" fill="#6E8696" font-family="DM Mono">masque</text>
+          <!-- coins -->
+          <g><circle cx="120" cy="90" r="9" fill="#141412" stroke="#C9762F" stroke-width="2"></circle><text x="136" y="86" font-size="10" fill="#C9762F" font-family="DM Mono">HG 0.07 &#183; 0.07</text></g>
+          <g><circle cx="840" cy="130" r="9" fill="#141412" stroke="#C9762F" stroke-width="2"></circle><text x="736" y="118" font-size="10" fill="#C9762F" font-family="DM Mono">HD 0.91 &#183; 0.13</text></g>
+          <g><circle cx="800" cy="610" r="9" fill="#C9762F" stroke="#C9762F" stroke-width="2"></circle><text x="700" y="640" font-size="10" fill="#E9E6DF" font-family="DM Mono">BD 0.86 &#183; 0.93 &#8592; glisser</text></g>
+          <g><circle cx="160" cy="580" r="9" fill="#141412" stroke="#C9762F" stroke-width="2"></circle><text x="176" y="606" font-size="10" fill="#C9762F" font-family="DM Mono">BG 0.12 &#183; 0.88</text></g>
         </svg>
-
-        <div class="handle" style="left: 89px; top: 25px;"></div>
-        <div class="handle" style="left: 616px; top: 43px;"></div>
-        <div class="handle" style="left: 582px; top: 225px;"></div>
-        <div class="handle" style="left: 56px; top: 201px;"></div>
-
-        <span class="mono" style="position: absolute; right: 10px; bottom: 8px; font-size: 10px; color: #605D56;">grille 40 px &#183; G pour masquer</span>
       </div>
-
-      <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px;">
-        <div>
-          <span class="lbl">Haut gauche</span>
-          <div class="mono" style="font-size: 12px; color: #E9E6DF; margin-top: 4px;">+34, &#8722;12</div>
-        </div>
-        <div>
-          <span class="lbl">Haut droit</span>
-          <div class="mono" style="font-size: 12px; color: #E9E6DF; margin-top: 4px;">&#8722;8, +6</div>
-        </div>
-        <div>
-          <span class="lbl">Bas droit</span>
-          <div class="mono" style="font-size: 12px; color: #E9E6DF; margin-top: 4px;">&#8722;22, &#8722;4</div>
-        </div>
-        <div>
-          <span class="lbl">Bas gauche</span>
-          <div class="mono" style="font-size: 12px; color: #E9E6DF; margin-top: 4px;">+2, +18</div>
-        </div>
+      <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+        <span class="lbl">Coin s&#233;lectionn&#233;</span>
+        <span class="mono" style="font-size: 12px;">Bas droit</span>
+        <span class="mono" style="height: 28px; padding: 0 8px; display: inline-flex; align-items: center; background: #0E0E0C; border: 1px solid #2E2D28; font-size: 12px;">x 0.860</span>
+        <span class="mono" style="height: 28px; padding: 0 8px; display: inline-flex; align-items: center; background: #0E0E0C; border: 1px solid #2E2D28; font-size: 12px;">y 0.930</span>
+        <span class="mono" style="font-size: 10.5px; color: #605D56;">fl&#232;ches : 1 px &#183; Maj + fl&#232;ches : 10 px</span>
+        <span class="lbl" style="margin-left: auto;">Masque</span>
+        <span class="btn sm">+ point</span><span class="btn sm">Inverser</span><span class="btn sm">Adoucir 12 px</span>
       </div>
+      <span class="mono" style="font-size: 10.5px; color: #605D56;">Ce que vous voyez ici est exactement ce que l'&#233;cran de sortie affiche : la d&#233;formation est rendue dans la fen&#234;tre de sortie (grille 32&#215;32, homographie ou maillage), pas seulement dessin&#233;e par-dessus l'aper&#231;u. Spout re&#231;oit l'image <em>avant</em> d&#233;formation, pour que Resolume ou MadMapper fassent la leur.</span>
     </div>
-
-    <!-- geometry + mask -->
-    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; padding-top: 4px; border-top: 1px solid #232220;">
-      <div style="display: flex; flex-direction: column; gap: 10px; padding-top: 16px;">
-        <span class="lbl">G&#233;om&#233;trie</span>
-        <div style="display: flex; justify-content: space-between;">
-          <span style="font-size: 13px; color: #97938A;">&#201;chelle</span>
-          <span class="mono" style="font-size: 12px; color: #E9E6DF;">100.0 %</span>
-        </div>
-        <div style="display: flex; justify-content: space-between;">
-          <span style="font-size: 13px; color: #97938A;">Rotation</span>
-          <span class="mono" style="font-size: 12px; color: #E9E6DF;">0.0&#176;</span>
-        </div>
-        <div style="display: flex; justify-content: space-between;">
-          <span style="font-size: 13px; color: #97938A;">Retournement</span>
-          <span class="mono" style="font-size: 12px; color: #605D56;">aucun</span>
-        </div>
-      </div>
-      <div style="display: flex; flex-direction: column; gap: 10px; padding-top: 16px;">
-        <span class="lbl">Masque</span>
-        <div style="display: flex; justify-content: space-between;">
-          <span style="font-size: 13px; color: #97938A;">Points</span>
-          <span class="mono" style="font-size: 12px; color: #E9E6DF;">6</span>
-        </div>
-        <div style="display: flex; justify-content: space-between;">
-          <span style="font-size: 13px; color: #97938A;">Adoucissement</span>
-          <span class="mono" style="font-size: 12px; color: #E9E6DF;">12 px</span>
-        </div>
-        <div style="display: flex; justify-content: space-between;">
-          <span style="font-size: 13px; color: #97938A;">Warp maill&#233;</span>
-          <span class="mono" style="font-size: 12px; color: #605D56;">via Spout</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- shares -->
-    <div style="display: flex; align-items: center; gap: 22px; padding-top: 16px; border-top: 1px solid #232220;">
-      <div style="display: flex; flex-direction: column; gap: 5px;">
-        <span class="lbl">Spout</span>
-        <span class="mono" style="font-size: 12px; color: #7D8F6E;">scratchvj/program</span>
-      </div>
-      <div style="display: flex; flex-direction: column; gap: 5px;">
-        <span class="lbl">NDI</span>
-        <span class="mono" style="font-size: 12px; color: #7D8F6E;">actif</span>
-      </div>
-      <div style="display: flex; flex-direction: column; gap: 5px;">
-        <span class="lbl">Enregistrement</span>
-        <span class="mono" style="font-size: 12px; color: #A8564E;">04:12 &#183; 1.4 Go</span>
-      </div>
-    </div>
-
   </div>
 </div>
 </x-dc>

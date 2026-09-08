@@ -5,6 +5,16 @@
 #include "imgui_impl_bgfx.h"
 
 namespace svj::ui {
+namespace {
+
+// The sampler format matching the cache: the bytes go up exactly as stored,
+// which is the whole point, so the texture has to be told what they are.
+bgfx::TextureFormat::Enum format_of(const CacheHeader& header) {
+    return header.format == BlockFormat::BC3 ? bgfx::TextureFormat::BC3
+                                             : bgfx::TextureFormat::BC1;
+}
+
+}  // namespace
 
 DeckMedia::~DeckMedia() { close(); }
 
@@ -30,10 +40,12 @@ void DeckMedia::close() {
 bool DeckMedia::open(const std::string& path, std::string& error) {
     close();
     if (!reader_.open(path, error)) return false;
-    if (reader_.header().format != BlockFormat::BC1) {
-        // The texture below is created as BC1; feeding it BC3/BC7 blocks would
-        // display convincing garbage. Refusing names the real problem instead.
-        error = "seul BC1 est géré par l'affichage pour l'instant";
+    if (reader_.header().format != BlockFormat::BC1 &&
+        reader_.header().format != BlockFormat::BC3) {
+        // The textures below are created in the cache's own format; a format
+        // with no encoder yet (BC7) would display convincing garbage. Refusing
+        // names the real problem instead.
+        error = "seuls BC1 et BC3 sont gérés par l'affichage pour l'instant";
         reader_.close();
         return false;
     }
@@ -64,7 +76,7 @@ void* DeckMedia::frame_at(double position_s) {
         const bgfx::TextureHandle handle = bgfx::createTexture2D(
             static_cast<std::uint16_t>(header.width),
             static_cast<std::uint16_t>(header.height), false, 1,
-            bgfx::TextureFormat::BC1, BGFX_SAMPLER_NONE);
+            format_of(header), BGFX_SAMPLER_NONE);
         if (!bgfx::isValid(handle)) return nullptr;
         texture_ = handle.idx;
     }
@@ -88,7 +100,7 @@ std::uint16_t DeckMedia::taps_texture(const TapPlan& plan) {
         const bgfx::TextureHandle handle = bgfx::createTexture2D(
             static_cast<std::uint16_t>(header.width),
             static_cast<std::uint16_t>(header.height), false,
-            static_cast<std::uint16_t>(kTapCount), bgfx::TextureFormat::BC1,
+            static_cast<std::uint16_t>(kTapCount), format_of(header),
             BGFX_SAMPLER_UVW_CLAMP);
         if (!bgfx::isValid(handle)) return 0xFFFF;
         taps_ = handle.idx;

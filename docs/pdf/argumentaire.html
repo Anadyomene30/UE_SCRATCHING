@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>scratchvj — Dossier de positionnement</title>
+<link rel="stylesheet" href="_style.css">
+</head>
+<body>
+
+<section class="cover">
+  <div>
+    <p class="mark">scratchvj</p>
+    <h1>Ce que fait cet instrument<br>que rien d'autre ne fait</h1>
+    <p class="sub">Dossier de positionnement : les particularités techniques, ce
+    qu'elles valent pour qui, pourquoi elles sont difficiles à copier, et ce qui reste
+    à faire avant de vendre.</p>
+  </div>
+  <div class="meta">
+    <b>Document</b> &nbsp; interne — base de travail pour le discours commercial<br>
+    <b>Produit</b> &nbsp; scratchvj 0.1.0 — instrument DJ vidéo scratchable au timecode DVS<br>
+    <b>Preuve d'ingénierie</b> &nbsp; 441 tests, 5 shaders tenus à une référence CPU, 3 OS en CI<br>
+    <b>Septembre 2026</b>
+  </div>
+</section>
+
+<h2 class="cont"><span class="n">01</span>Le produit en une phrase</h2>
+
+<p class="lead">scratchvj joue de la vidéo comme une platine joue un disque : l'image
+n'est pas lue, elle est indexée par la position du plateau — donc elle se scratche,
+se recule et se rejoue à l'identique, exactement comme du son.</p>
+
+<h3>Trois longueurs, selon l'interlocuteur</h3>
+
+<div class="note">
+  <span class="label">Dix secondes — à un DJ</span>
+  <p>« C'est Serato, mais l'image est le disque. Tu scratches la vidéo avec tes
+  platines, et chaque effet audio a son jumeau visuel sur le même bouton. »</p>
+</div>
+
+<div class="note">
+  <span class="label">Trente secondes — à un programmateur, un intégrateur</span>
+  <p>« Un instrument vidéo piloté au timecode DVS. Deux decks, un crossfader, des
+  boucles et des hot cues, mais l'objet manipulé est une image — y compris de la vidéo
+  360 dont on dirige le regard pendant qu'on scratche le temps. Il sort en Spout et
+  diffuse l'état des platines en UDP à 375 Hz, donc il pilote aussi une scène Unreal
+  ou TouchDesigner. »</p>
+</div>
+
+<div class="note">
+  <span class="label">Deux minutes — à quelqu'un qui décide</span>
+  <p>« Tous les logiciels vidéo de DJ font suivre l'image au morceau. Aucun ne traite
+  la position comme la grandeur primaire, parce que ça se décide à la première ligne
+  de code et pas après. scratchvj est construit sur ce choix : le moteur vidéo indexe
+  des frames pré-compressées au lieu de chercher dans un flux, donc reculer coûte
+  exactement le même prix qu'avancer. C'est ce qui rend le scratch vidéo réellement
+  jouable au lieu d'approximativement suivi. À partir de là, tout le reste devient
+  possible : des effets audio et vidéo qui sont littéralement le même calcul dans deux
+  domaines, de la 360 scratchable, et un pont vers un moteur 3D qui reçoit le geste,
+  pas juste le son. »</p>
+</div>
+
+<h2><span class="n">02</span>Le trou dans le marché</h2>
+
+<p>Trois familles d'outils occupent le terrain, et aucune ne le couvre.</p>
+
+<table class="long">
+<tr><th style="width:24%">Famille</th><th style="width:38%">Ce qu'elle fait bien</th><th>Ce qu'elle ne peut pas faire</th></tr>
+<tr><td><strong>Vidéo dans un logiciel DJ</strong><br><span class="footnote">modules et plugins vidéo des suites DJ</span></td><td>Faire suivre une image au morceau joué, avec des transitions au crossfader. Intégré, familier, sans installation à penser.</td><td>Le moteur reste un lecteur : l'image <em>suit</em>. Le rack d'effets est court et n'a aucun rapport structurel avec le rack audio. Pas de 360, pas de sortie vers un moteur 3D.</td></tr>
+<tr><td><strong>Compositeurs VJ</strong><br><span class="footnote">Resolume, VDMX, MadMapper</span></td><td>Composer N couches, mapper des projecteurs, tout moduler. Écosystème mûr, catalogue d'effets énorme.</td><td>L'horloge est un intégrateur : un clip avance. Le scrub existe mais n'est pas le geste de premier ordre. Pas de DVS, donc pas de plateau comme source de position.</td></tr>
+<tr><td><strong>Environnements nodaux</strong><br><span class="footnote">TouchDesigner et assimilés</span></td><td>Tout est possible.</td><td>Rien n'est prêt. Ce n'est pas un instrument : c'est un atelier où fabriquer un instrument, en quelques semaines, à refaire pour chaque set.</td></tr>
+</table>
+
+<div class="note">
+  <span class="label">Le trou, formulé précisément</span>
+  <p>Personne ne traite <strong>la position</strong> comme la grandeur primaire du
+  moteur vidéo. C'est ce qui sépare « la vidéo suit le morceau » de « la vidéo
+  <em>est</em> l'instrument », et ça ne se rattrape pas par une mise à jour : un
+  moteur qui accumule le temps ne devient pas scratchable par un correctif.</p>
+</div>
+
+<h2><span class="n">03</span>Les quatre particularités, et leur preuve</h2>
+
+<p>Un argument commercial sans preuve technique est une promesse. Chacun des quatre
+qui suivent est adossé à quelque chose de vérifiable aujourd'hui.</p>
+
+<h3>3.1 &nbsp;La vidéo est indexée, pas lue</h3>
+
+<p>Le clip est décodé <strong>une seule fois</strong>, hors ligne, et écrit en frames
+compressées par blocs de taille constante. La frame <em>n</em> se trouve par une
+multiplication : pas d'index à consulter, pas de recherche à rater, et
+<strong>aucune différence de coût entre lire en avant, en arrière, ou sauter
+n'importe où</strong>.</p>
+
+<p><em>Ce que ça vaut pour l'utilisateur</em> : un backspin est une opération
+ordinaire. Une boucle se scratche à l'intérieur. Un needle drop ne fait pas ramer
+l'image. C'est la différence entre un instrument et une démonstration.</p>
+
+<p class="footnote"><strong>Preuve</strong> : le format <code>.svcache</code>, la
+fenêtre VRAM dimensionnée par un budget (le même gigaoctet contient ~36 s de 720p ou
+~4 s de 4K équirect, sans cas particulier), et une règle anti-battement qui ne
+recentre la fenêtre que sur approche d'un bord — jamais sur un changement de sens,
+parce que le scratch est précisément le cas qui martèlerait le disque.</p>
+
+<h3>3.2 &nbsp;Chaque effet audio a son jumeau visuel, sur le même bouton</h3>
+
+<p>L'audio agit sur les fréquences temporelles d'un signal 1D, la vidéo sur les
+fréquences spatiales d'un signal 2D. Quand la correspondance est exacte, c'est
+<strong>le même calcul</strong> : un passe-bas est un flou gaussien, un bitcrusher est
+une postérisation, un delay à contre-réaction et des traînées d'image obéissent à la
+même équation. <strong>32 effets, dont 16 paires.</strong></p>
+
+<p><em>Ce que ça vaut</em> : le rack cesse d'être un tas d'effets arbitraires. Un DJ
+qui connaît son filtre sait déjà ce que fera l'image. Et le critère d'acceptation est
+perceptif, pas fonctionnel : <em>un tiers doit reconnaître l'effet audio en ne
+regardant que l'image.</em></p>
+
+<div class="note">
+  <span class="label">L'honnêteté est un argument, pas une faiblesse</span>
+  <p>Là où la correspondance n'est pas exacte — une reverb n'est pas un smear — le
+  catalogue le déclare : <strong>identique</strong> ou <strong>analogue</strong>, en
+  toutes lettres, dans le code comme dans l'interface. Un concurrent qui vendrait
+  « les effets audio appliqués à l'image » sans cette distinction dit quelque chose de
+  faux ; le dire proprement est un signe de sérieux que les praticiens repèrent
+  immédiatement.</p>
+</div>
+
+<h3>3.3 &nbsp;La 360 dont on dirige le regard pendant qu'on scratche le temps</h3>
+
+<p>Un clip équirectangulaire est un clip comme un autre — donc scratchable de la même
+façon. Ce qui s'ajoute, c'est un second degré de liberté : la direction du regard,
+pilotable par n'importe quel potard, LFO ou grandeur de geste, pendant que la main
+travaille le temps. Trois projections : perspective, petite planète, fisheye.</p>
+
+<p><em>Ce que ça vaut</em> : deux mains sur deux axes indépendants d'une même image.
+C'est une figure qui n'existe nulle part ailleurs, et elle est immédiatement lisible
+pour un public — c'est le plan à filmer en premier pour une démo.</p>
+
+<p class="footnote"><strong>Preuve</strong> : la reprojection GPU est tenue à sa
+référence CPU par <code>sphere_check</code>, écart maximal 1/255. La voie casque
+(vue par œil, champ asymétrique, orientation par œil) est écrite et vérifiée par
+<code>eye_check</code> ; il manque la session OpenXR, qui attend un casque réveillé.</p>
+
+<h3>3.4 &nbsp;Le geste est une donnée de première classe — y compris hors du logiciel</h3>
+
+<p>Vitesse, accélération, <strong>taux de scratch</strong> (inversions de sens par
+seconde), backspin, transform : ces grandeurs sont calculées une fois et deviennent
+des sources de modulation ordinaires, au même titre qu'un potard. Elles sont aussi
+diffusées en UDP à ~375 Hz, avec un schéma qui nomme les valeurs et un hash qui
+garantit qu'un client ne les interprétera jamais de travers.</p>
+
+<p><em>Ce que ça vaut</em> : Unreal, TouchDesigner ou Resolume reçoivent
+<strong>le geste</strong>, pas seulement le son. Un plugin Unreal existe et compile
+contre UE 5.7 ; il échantillonne le flux par interpolation d'Hermite pour combler
+l'écart entre 375 Hz et 60–120 fps. De là : rewind physique réel, scratch d'un Level
+Sequence, dolly sur spline au plateau, cut multi-caméra au crossfader.</p>
+
+<div class="note">
+  <span class="label">Le détail qui prouve que quelqu'un a réfléchi</span>
+  <p>Quand le timecode décroche, la sortie <strong>gèle</strong> — elle ne décroît
+  même pas vers zéro, parce que décroître bougerait encore l'image. Un bit dédié le
+  signale aux clients. C'est invisible tant que tout va bien, et c'est exactement ce
+  qui sépare une démo d'un outil de scène.</p>
+</div>
+
+<h2><span class="n">04</span>Pourquoi c'est difficile à copier</h2>
+
+<table class="long">
+<tr><th style="width:32%">Barrière</th><th>Pourquoi elle tient</th></tr>
+<tr><td><strong>Le principe se prend à la première ligne</strong></td><td>« Tout ce qui est scratchable est une fonction de la position, jamais un intégrateur. » Un moteur existant qui accumule le temps ne se convertit pas : il faut rouvrir le transport, la lecture, les modulateurs et les effets multi-frames. C'est une réécriture, pas une fonctionnalité.</td></tr>
+<tr><td><strong>La passe d'analyse et la fenêtre VRAM</strong></td><td>Sortir du décodage temps réel demande un format, une passe hors ligne, une fenêtre roulante budgétée en mémoire et une politique de recentrage qui ne bat pas pendant un scratch. Chacune de ces pièces est simple ; leur combinaison correcte est le travail.</td></tr>
+<tr><td><strong>La discipline de vérification</strong></td><td>Cinq shaders — compositeur, 360, vue casque, effets une-frame, multi-taps — sont comparés canal par canal à un calcul CPU de référence. Un shader qui dérive échoue bruyamment au lieu de simplement <em>paraître plausible</em> sur une image qui bouge. Peu de projets de cette taille tiennent ça.</td></tr>
+<tr><td><strong>L'agnosticisme matériel, mesuré</strong></td><td>Rien de la table n'est câblé en dur : tout est appris. Et le « mode fantôme » — un contrôle sans valeur connue tant qu'il n'a pas bougé — n'est pas une précaution théorique : il a été <em>mesuré</em> que la table n'émet pas son état à l'ouverture du port (7 messages au démarrage, tous des encodeurs au repos).</td></tr>
+<tr><td><strong>Les décisions négatives</strong></td><td>Pas de mapping multi-projecteurs, pas de compositing à N couches, pas de sync ni de beatmatch. Un concurrent généraliste qui voudrait rattraper le scratch devrait renoncer à son propre positionnement ; celui qui ajoute des fonctions ne devient pas un instrument.</td></tr>
+</table>
+
+<h2><span class="n">05</span>Ce qui est démontrable aujourd'hui</h2>
+
+<p>Distinguer ce qui se montre de ce qui se raconte est la meilleure protection
+contre une promesse qu'une démo ne tiendra pas.</p>
+
+<table class="long">
+<tr><th style="width:44%">Démonstration</th><th style="width:16%">État</th><th>Ce qu'elle prouve</th></tr>
+<tr><td>Scratcher un clip et le passer en arrière, à la main, sans hoquet</td><td><span class="tag ok">montrable</span></td><td>Le cœur de la proposition.</td></tr>
+<tr><td>Le plateau réel qui pilote l'image en direct</td><td><span class="tag ok">montrable</span></td><td>La chaîne matérielle fonctionne : porteuse lue, verrou, suivi de la main.</td></tr>
+<tr><td>Un potard qui ouvre un filtre et floute l'image ensemble</td><td><span class="tag ok">montrable</span></td><td>Les effets appairés, l'argument le plus lisible du produit.</td></tr>
+<tr><td>Scratcher une 360 en dirigeant le regard</td><td><span class="tag ok">montrable</span></td><td>La figure la plus spectaculaire, et la plus difficile à imiter.</td></tr>
+<tr><td>La sortie Spout reçue par un autre logiciel</td><td><span class="tag ok">montrable</span></td><td>L'insertion dans une chaîne de production existante.</td></tr>
+<tr><td>Le geste qui pilote une scène Unreal</td><td><span class="tag part">le flux, oui ; la scène, pas encore</span></td><td>Le flux est vérifié et le plugin compile ; personne n'a encore scratché une scène.</td></tr>
+<tr><td>Le mode autonome (l'app joue le son)</td><td><span class="tag no">pas écrit</span></td><td>À ne pas promettre. Le mode suiveur suffit à la démonstration.</td></tr>
+<tr><td>La 360 dans un casque</td><td><span class="tag part">géométrie prête</span></td><td>À présenter comme une direction crédible, pas comme une fonction.</td></tr>
+</table>
+
+<h2><span class="n">06</span>À qui le vendre</h2>
+
+<table class="long">
+<tr><th style="width:24%">Segment</th><th style="width:36%">Ce qu'ils achètent vraiment</th><th>L'accroche</th></tr>
+<tr><td><strong>Turntablistes vidéo</strong><br><span class="footnote">scène battle, DMC, routines</span></td><td>Une figure que personne d'autre ne peut faire, et un moteur qui ne les trahira pas en scène.</td><td>« Ta routine, mais l'image est le disque. »</td></tr>
+<tr><td><strong>DJ / VJ de club</strong></td><td>Du geste visible. Le public voit la main faire l'image, ce qu'aucun set de VJ ne montre.</td><td>« Le public voit d'où vient l'image. »</td></tr>
+<tr><td><strong>Immersif et 360</strong><br><span class="footnote">dômes, installations, VR</span></td><td>Le seul outil qui traite un équirect comme un instrument plutôt que comme une source à lire.</td><td>« Scratcher le temps d'une main, le regard de l'autre. »</td></tr>
+<tr><td><strong>Production virtuelle et événementiel</strong><br><span class="footnote">Unreal, régies, scénographie</span></td><td>Une source de contrôle temps réel à haut débit, avec un schéma auto-décrit et un comportement défini quand la liaison casse.</td><td>« Le geste du DJ, dans ta scène, à 375 Hz. »</td></tr>
+<tr><td><strong>Écoles de DJ, ateliers</strong></td><td>Un support visuel qui rend le geste lisible pour l'apprenant : la vitesse et le taux de scratch deviennent une image.</td><td>« Voir ce qu'on fait avec sa main. »</td></tr>
+</table>
+
+<h2><span class="n">07</span>La licence : une décision commerciale, pas une contrainte subie</h2>
+
+<p class="lead">C'est le point le plus important de ce dossier, et il est bon : la
+frontière de licence du projet est une <strong>option de compilation</strong>, pas
+une fatalité architecturale.</p>
+
+<table class="long">
+<tr><th style="width:24%">Configuration</th><th style="width:32%">Contenu</th><th>Ce qu'on a le droit de faire</th></tr>
+<tr><td><strong>Noyau seul</strong></td><td>Aucune dépendance externe.</td><td>Tout. Aucune contrainte externe.</td></tr>
+<tr><td><strong>+ interface</strong></td><td>SDL3 (zlib), Dear ImGui (MIT), bgfx (BSD-2). FFmpeg <em>appelé comme exécutable</em>, jamais lié.</td><td><strong>Distribution propriétaire possible</strong> : toutes les dépendances sont permissives, et l'appel de FFmpeg par processus séparé évite la contamination du lien.</td></tr>
+<tr><td><strong>+ décodeur xwax</strong></td><td>Ajoute <code>timecoder.c</code>.</td><td><strong>GPL-3.</strong> Le binaire distribué doit l'être avec son code source et les droits qui vont avec — y compris celui de le redistribuer.</td></tr>
+</table>
+
+<div class="note">
+  <span class="label">Ce que ça implique concrètement</span>
+  <p>Vendre un logiciel GPL-3 est <em>légal</em>, mais tout client qui reçoit le
+  binaire reçoit aussi le droit d'obtenir la source et de la redistribuer — ce qui
+  rend le modèle « licence perpétuelle par poste » difficile à tenir. La bonne
+  nouvelle est que <strong>le matériel visé en premier n'a pas besoin d'xwax</strong> :
+  le MWM Phase émet une porteuse nue, lue par du code écrit pour ce projet
+  (<code>core/quadrature</code>), pas par le décodeur GPL. xwax ne sert qu'aux
+  <em>vrais disques de contrôle</em> gravés.</p>
+  <p>Trois voies, par ordre de coût croissant : <strong>(a)</strong> livrer la
+  configuration sans xwax et couvrir le disque de contrôle plus tard ;
+  <strong>(b)</strong> écrire un décodeur de disque de contrôle propre au projet — un
+  travail réel mais borné, et le décodeur de porteuse existe déjà comme point de
+  départ ; <strong>(c)</strong> assumer le GPL-3 et vendre autre chose que le droit
+  d'usage — support, presets, contenu, matériel, prestations.</p>
+</div>
+
+<div class="note warn">
+  <span class="label">À faire avant toute mise en vente</span>
+  <p>Faire relire cette section par quelqu'un dont c'est le métier. Ce dossier décrit
+  l'architecture telle qu'elle est et les conséquences telles qu'on les comprend ;
+  ce n'est pas un avis juridique, et la question du lien avec FFmpeg comme celle de la
+  frontière de processus méritent une confirmation externe.</p>
+</div>
+
+<h3>Modèles envisageables, une fois la licence tranchée</h3>
+
+<table>
+<tr><th style="width:26%">Modèle</th><th>Conditions de viabilité</th></tr>
+<tr><td>Licence perpétuelle + mises à jour</td><td>Suppose la configuration sans code GPL. Le modèle le plus familier à ce public.</td></tr>
+<tr><td>Abonnement</td><td>Justifiable si le catalogue d'effets et les presets s'enrichissent réellement dans le temps.</td></tr>
+<tr><td>Édition libre + édition Pro</td><td>Le noyau et la démo ouverts, l'interface et les sorties professionnelles payantes. Cohérent avec la structure actuelle du dépôt.</td></tr>
+<tr><td>Vente liée au matériel</td><td>Bundle avec un fabricant de contrôleurs ou de docks. La compatibilité par apprentissage MIDI le rend possible avec n'importe qui.</td></tr>
+<tr><td>Prestations et intégration</td><td>Le segment production virtuelle achète du sur-mesure plus volontiers qu'une licence.</td></tr>
+</table>
+
+<h2><span class="n">08</span>Ce qui reste avant une mise en vente</h2>
+
+<p>Cette liste est le vrai calendrier commercial. Rien n'y est bloqué par une
+difficulté conceptuelle ; tout y est borné.</p>
+
+<table class="long">
+<tr><th style="width:34%">Chantier</th><th style="width:16%">Nature</th><th>Pourquoi ça compte pour la vente</th></tr>
+<tr><td>Backend MIDI réel (RtMidi)</td><td>Dépendance</td><td>Sans lui, la surface ne se pilote pas sur toutes les machines.</td></tr>
+<tr><td>Sortie audio du mode autonome</td><td>Dépendance</td><td>Débloque l'usage sans Serato, qui double le marché adressable.</td></tr>
+<tr><td>Test en scène du plugin Unreal</td><td>Matériel</td><td>C'est l'argument production virtuelle : il doit être filmé, pas raconté.</td></tr>
+<tr><td>Session OpenXR</td><td>Matériel</td><td>Transforme la 360 casque de direction crédible en fonction vendable.</td></tr>
+<tr><td>NDI</td><td>Licence (EULA)</td><td>Attendu par toute régie professionnelle. Pas un travail de code.</td></tr>
+<tr><td>Portage macOS complet</td><td>Portage</td><td>Une grande part du public DJ est sur Mac. La CI y est verte depuis le début, l'architecture est prête.</td></tr>
+<tr><td>Installateur, signature, mises à jour</td><td>Industrialisation</td><td>Un utilisateur ne compile pas avec CMake.</td></tr>
+<tr><td>Contenu de démonstration</td><td>Production</td><td>Des clips libres de droits, analysés, prêts à scratcher dès le premier lancement.</td></tr>
+<tr><td>Support et documentation</td><td>Opérations</td><td>Le manuel existe ; il faut le canal qui répond quand ça ne marche pas en salle.</td></tr>
+</table>
+
+<h2><span class="n">09</span>Kit de messages et plan de démonstration</h2>
+
+<h3>Les cinq plans à filmer, dans cet ordre</h3>
+
+<ol>
+<li><strong>La main et l'image, en un seul plan.</strong> Pas de coupe : la main sur
+le plateau et l'écran dans le même cadre, un scratch, un backspin. C'est la preuve
+que rien n'est monté.</li>
+<li><strong>Le potard qui fait les deux.</strong> Un filtre qui s'ouvre pendant que
+l'image se floute, son coupé puis remis pour montrer que c'est le même geste.</li>
+<li><strong>La 360 à deux mains.</strong> Le temps d'une main, le regard de l'autre.
+Le plan qui n'existe nulle part ailleurs.</li>
+<li><strong>Le décrochage.</strong> Débrancher, montrer que l'image gèle proprement
+au lieu de sauter. C'est le plan qui convainc un régisseur.</li>
+<li><strong>La scène Unreal qui recule.</strong> Dès que le test en scène est fait.</li>
+</ol>
+
+<h3>Formules à réutiliser</h3>
+
+<div class="cols2">
+<p>« L'image n'est pas lue, elle est indexée. »</p>
+<p>« Reculer coûte exactement le même prix qu'avancer. »</p>
+<p>« Un passe-bas <em>est</em> un flou. C'est le même calcul dans l'autre domaine. »</p>
+<p>« Scratcher le temps d'une main, le regard de l'autre. »</p>
+<p>« Quand la liaison casse, l'image gèle. Elle ne saute jamais. »</p>
+<p>« Rien n'est câblé en dur : l'instrument apprend ta table. »</p>
+<p>« Le geste du DJ, dans ta scène 3D, à 375 Hz. »</p>
+<p>« Là où la correspondance n'est pas exacte, on l'écrit. »</p>
+</div>
+
+<h3>Ce qu'il ne faut pas dire</h3>
+
+<table>
+<tr><th style="width:44%">À éviter</th><th>Pourquoi</th></tr>
+<tr><td>« Il joue et scratche aussi le son »</td><td>Le mode autonome n'est pas écrit. Dire « il travaille avec Serato » est vrai et suffisant.</td></tr>
+<tr><td>« Compatible casque VR »</td><td>La géométrie est faite, la session ne l'est pas. Dire « la vue casque est démontrée, la session arrive ».</td></tr>
+<tr><td>« Sortie NDI »</td><td>Bloquée sur un EULA. Dire « Spout aujourd'hui, NDI prévu ».</td></tr>
+<tr><td>« Le seul logiciel à… »</td><td>Une affirmation d'unicité doit être vérifiable. Préférer « construit sur un principe que les autres n'ont pas pris ».</td></tr>
+</table>
+
+<h2><span class="n">10</span>Risques, et la réponse à donner</h2>
+
+<table class="long">
+<tr><th style="width:34%">Objection probable</th><th>Réponse</th></tr>
+<tr><td>« Il faut analyser les clips avant, c'est contraignant. »</td><td>C'est exactement ce que fait Serato avec les morceaux, et personne ne s'en plaint : c'est le prix d'un moteur qui ne rame jamais. L'analyse tourne en tâche de fond avec une file de jobs.</td></tr>
+<tr><td>« Je fais déjà de la vidéo dans mon logiciel DJ. »</td><td>Oui — l'image y <em>suit</em>. La question à poser : est-ce que ta routine de scratch se voit à l'image ? Puis montrer le plan 1.</td></tr>
+<tr><td>« C'est un projet d'une personne. »</td><td>441 tests, trois systèmes en intégration continue, cinq shaders tenus à une référence CPU, et une documentation de conception qui explique <em>pourquoi</em> chaque décision. C'est plus de discipline que beaucoup de produits établis.</td></tr>
+<tr><td>« Et si le timecode décroche en plein set ? »</td><td>L'image gèle, définitivement et par construction, et le comportement est diffusé aux clients pour qu'ils fassent pareil. C'est un des rares cas testés en priorité.</td></tr>
+<tr><td>« Mon matériel n'est pas celui-là. »</td><td>Rien n'est câblé en dur. L'apprentissage MIDI couvre 63 contrôles, et le timecode se lit sur n'importe quelle entrée ligne — la table n'est même pas obligatoire.</td></tr>
+<tr><td>« Combien de latence ? »</td><td>Budget documenté par étage. Cible sous 30 ms pour être bon visuellement, sous 20 ms pour « coller » à la main — et la méthode de mesure est écrite : filmer main et écran au ralenti, compter les frames.</td></tr>
+</table>
+
+<h2><span class="n">11</span>À vérifier avant de publier quoi que ce soit</h2>
+
+<div class="note warn">
+  <span class="label">Affirmations qui engagent, et qui n'ont pas été vérifiées ici</span>
+  <p><strong>Les comparaisons concurrentielles de la section 02</strong> décrivent des
+  familles d'outils, pas des versions précises. Avant toute publication, vérifier
+  l'état actuel de chaque produit cité ou implicite — les capacités bougent, et une
+  affirmation fausse sur un concurrent coûte plus cher que l'argument qu'elle
+  sert.</p>
+  <p><strong>L'unicité.</strong> L'absence d'un projet équivalent a été constatée au
+  moment du cadrage, pas surveillée depuis. À re-vérifier avant d'écrire « le seul ».</p>
+  <p><strong>Les questions de licence</strong> — configuration sans GPL, frontière de
+  processus avec FFmpeg, redistribution — méritent une relecture par un juriste avant
+  la première vente.</p>
+  <p><strong>Les marques citées</strong> (MWM Phase, Reloop, Serato, Unreal, Spout,
+  NDI, Resolume, TouchDesigner) appartiennent à leurs propriétaires. Vérifier les
+  règles d'usage de chacune avant de les faire figurer sur un support commercial, et
+  ne revendiquer aucun partenariat ni certification qui n'existe pas.</p>
+</div>
+
+<p class="footnote" style="margin-top:10mm">Document de travail interne. Les
+étiquettes d'état — <span class="tag ok">montrable</span>,
+<span class="tag part">partiel</span>, <span class="tag no">pas écrit</span> — sont
+la même échelle que celle du manuel utilisateur, et elles doivent être remises à jour
+en même temps que lui.</p>
+
+</body>
+</html>

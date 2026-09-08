@@ -111,6 +111,7 @@ set(BGFX_SHADER_INCLUDE_PATH ${bgfx_SOURCE_DIR}/bgfx/src)
 bgfx_compile_shaders(
   TYPE VERTEX
   SHADERS ${CMAKE_CURRENT_SOURCE_DIR}/shaders/vs_program.sc
+          ${CMAKE_CURRENT_SOURCE_DIR}/shaders/vs_warp.sc
   VARYING_DEF ${CMAKE_CURRENT_SOURCE_DIR}/shaders/varying.def.sc
   OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/generated_shaders
   AS_HEADERS
@@ -119,6 +120,8 @@ bgfx_compile_shaders(
 bgfx_compile_shaders(
   TYPE FRAGMENT
   SHADERS ${CMAKE_CURRENT_SOURCE_DIR}/shaders/fs_program.sc
+          ${CMAKE_CURRENT_SOURCE_DIR}/shaders/fs_blit.sc
+          ${CMAKE_CURRENT_SOURCE_DIR}/shaders/fs_warp.sc
           ${CMAKE_CURRENT_SOURCE_DIR}/shaders/fs_view360.sc
           ${CMAKE_CURRENT_SOURCE_DIR}/shaders/fs_view360_eye.sc
           ${CMAKE_CURRENT_SOURCE_DIR}/shaders/fs_effects.sc
@@ -158,7 +161,8 @@ target_include_directories(scratchvj_gpu PUBLIC
 target_link_libraries(scratchvj_gpu PUBLIC bgfx bx bimg scratchvj_core)
 
 add_executable(scratchvj_ui WIN32 audio_in.cpp imgui_impl_bgfx.cpp live_in.cpp main_ui.cpp media.cpp
-                                  midi_in.cpp netout.cpp panels.cpp share.cpp
+                                  midi_in.cpp midi_rig.cpp netout.cpp output_window.cpp
+                                  panels.cpp share.cpp thumbnails.cpp
                                   ${SVJ_IMGUI_VS_HEADERS} ${SVJ_IMGUI_FS_HEADERS})
 target_link_libraries(scratchvj_ui PRIVATE scratchvj_app scratchvj_config scratchvj_imgui SDL3::SDL3 bgfx
                                            scratchvj_gpu ole32)
@@ -264,4 +268,8 @@ add_custom_command(TARGET scratchvj_ui POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_if_different
           $<TARGET_FILE:SDL3::SDL3> $<TARGET_FILE_DIR:scratchvj_ui>
   COMMAND ${CMAKE_COMMAND} -E copy_directory
-          ${CMAKE_CURRENT_SOURCE_DIR}/fonts $<TARGET_FILE_DIR:scratchvj_ui>/fonts)
+          ${CMAKE_CURRENT_SOURCE_DIR}/fonts $<TARGET_FILE_DIR:scratchvj_ui>/fonts
+  # The controller profiles travel with the binary too: a device whose file
+  # is not next to the executable is a device that does not exist.
+  COMMAND ${CMAKE_COMMAND} -E copy_directory
+          ${CMAKE_CURRENT_SOURCE_DIR}/../../profiles $<TARGET_FILE_DIR:scratchvj_ui>/profiles)

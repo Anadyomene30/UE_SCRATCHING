@@ -55,6 +55,7 @@ class Mask {
 public:
     void set_polygon(std::vector<Point> points);
     void set_feather(double feather) { feather_ = feather; }
+    double feather() const { return feather_; }
 
     bool empty() const { return points_.size() < 3; }
     const std::vector<Point>& points() const { return points_; }

@@ -11,6 +11,8 @@
 
 #include "app/analyze.h"
 #include "app/dashboard.h"
+#include "app/library_scan.h"
+#include "config/profile_io.h"
 #include "app/engine.h"
 #include "app/simulation.h"
 #include "core/effect.h"
@@ -34,6 +36,15 @@ void usage() {
         "  scratchvj play FILE [--fps N] [--plain]\n"
         "        Replays a recorded take.\n"
         "\n"
+        "  scratchvj analyze VIDEO [--out FILE.svcache] [--max-width N]\n"
+        "        Decodes a video once, through ffmpeg, into a scratchable .svcache.\n"
+        "        Alpha sources become BC3; a 2:1 picture is flagged equirect.\n"
+        "        [--sequence START --fps N] reads a numbered image pattern (frame_%04d.png);\n"
+        "        [--still] holds one picture as a one-frame clip.\n"
+        "\n"
+        "  scratchvj scan FOLDER [--cache-dir DIR]\n"
+        "        Lists what the library would find in a folder, and where each cache goes.\n"
+        "\n"
         "  scratchvj info FILE.svcache\n"
         "        Prints what an analysed clip contains.\n"
         "\n"
@@ -42,6 +53,10 @@ void usage() {
         "\n"
         "  scratchvj layout\n"
         "        Lists the controls --midi-learn will ask you to sweep.\n"
+        "\n"
+        "  scratchvj profile export NAME\n"
+        "        Writes a built-in controller profile (reloop_elite, rp8000) as JSON,\n"
+        "        the template a new profiles/*.json is copied from.\n"
         "\n"
         "  scratchvj version\n";
 }
@@ -253,13 +268,22 @@ int run_analyze(int argc, char** argv) {
     options.output = option(argc, argv, "--out", "");
     options.max_width =
         static_cast<std::uint32_t>(std::stoul(option(argc, argv, "--max-width", "1024")));
+    const std::string sequence = option(argc, argv, "--sequence", "");
+    if (!sequence.empty()) {
+        options.is_sequence = true;
+        options.sequence_start = static_cast<std::uint32_t>(std::stoul(sequence));
+        options.sequence_fps = std::stod(option(argc, argv, "--fps", "30"));
+    }
+    options.is_still = flag(argc, argv, "--still");
 
     AnalyzeResult result;
     std::string error;
     const bool ok = analyze_clip(
         options, result,
-        [](std::uint32_t frames) {
-            std::cout << "\r  " << frames << " frames..." << std::flush;
+        [](std::uint32_t frames, std::uint32_t estimated) {
+            std::cout << "\r  " << frames << " frames";
+            if (estimated > 0) std::cout << " / ~" << estimated;
+            std::cout << "..." << std::flush;
         },
         error);
     if (!ok) {
@@ -268,7 +292,28 @@ int run_analyze(int argc, char** argv) {
     }
     std::cout << "\r  " << result.frames << " frames  " << result.width << "x"
               << result.height << "  " << result.fps << " fps"
+              << (result.has_alpha ? "  alpha (BC3)" : "")
               << (result.equirect ? "  equirect 360" : "") << "\n";
+    return 0;
+}
+
+int run_scan(int argc, char** argv) {
+    if (argc < 3) {
+        usage();
+        return 2;
+    }
+    const std::string cache_dir = option(argc, argv, "--cache-dir", "");
+    const std::vector<ScanItem> items = scan_folders({argv[2]}, cache_dir);
+    std::cout << items.size() << " entrées\n";
+    for (const ScanItem& item : items) {
+        const char* kind = item.source.empty() ? "cache orphelin"
+                           : item.is_sequence  ? "séquence"
+                           : item.is_still     ? "image"
+                                               : "vidéo";
+        std::cout << "  " << (item.source.empty() ? item.cache : item.source) << "\n"
+                  << "      " << kind << (item.cache_exists ? "  · analysé" : "  · à analyser")
+                  << "  -> " << item.cache << "\n";
+    }
     return 0;
 }
 
@@ -327,6 +372,20 @@ int run_effects() {
     return 0;
 }
 
+int run_profile(int argc, char** argv) {
+    if (argc < 4 || std::string(argv[2]) != "export") {
+        usage();
+        return 2;
+    }
+    const DeviceProfile* profile = builtin_profile(argv[3]);
+    if (profile == nullptr) {
+        std::cerr << "profil inconnu : " << argv[3] << " (reloop_elite, rp8000)\n";
+        return 1;
+    }
+    std::cout << profile_to_json(*profile) << "\n";
+    return 0;
+}
+
 int run_layout() {
     const auto targets = default_rig_layout();
     std::cout << targets.size() << " contrôles à apprendre\n\n";
@@ -356,9 +415,11 @@ int main(int argc, char** argv) {
     if (command == "demo") return run_demo(argc, argv);
     if (command == "play") return run_play(argc, argv);
     if (command == "analyze") return run_analyze(argc, argv);
+    if (command == "scan") return run_scan(argc, argv);
     if (command == "info") return run_info(argc, argv);
     if (command == "effects") return run_effects();
     if (command == "layout") return run_layout();
+    if (command == "profile") return run_profile(argc, argv);
     if (command == "version") {
         std::cout << "scratchvj 0.1.0 — socle, sans audio ni vidéo réels\n";
         return 0;

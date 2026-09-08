@@ -16,6 +16,19 @@ std::string lowered(const std::string& text) {
 
 }  // namespace
 
+bool effective_equirect(bool header_flag, ProjectionOverride override) {
+    switch (override) {
+        case ProjectionOverride::Flat: return false;
+        case ProjectionOverride::Equirect: return true;
+        case ProjectionOverride::Auto:
+        default: return header_flag;
+    }
+}
+
+DeckTarget default_target(const QueueItem& item) {
+    return item.target == DeckTarget::None ? DeckTarget::A : item.target;
+}
+
 ClipId Library::add(ClipEntry entry) {
     clips_.push_back(std::move(entry));
     return static_cast<ClipId>(clips_.size() - 1);
@@ -36,6 +49,14 @@ ClipEntry* Library::mutable_at(ClipId id) {
 ClipId Library::find_by_path(const std::string& path) const {
     for (std::size_t i = 0; i < clips_.size(); ++i) {
         if (clips_[i].path == path) return static_cast<ClipId>(i);
+    }
+    return kNoClip;
+}
+
+ClipId Library::find_by_source(const std::string& source_path) const {
+    if (source_path.empty()) return kNoClip;
+    for (std::size_t i = 0; i < clips_.size(); ++i) {
+        if (clips_[i].source_path == source_path) return static_cast<ClipId>(i);
     }
     return kNoClip;
 }

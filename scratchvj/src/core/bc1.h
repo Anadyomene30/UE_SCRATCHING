@@ -36,4 +36,10 @@ void encode_bc1(const std::uint8_t* rgba, std::uint32_t width, std::uint32_t hei
 void decode_bc1(const std::uint8_t* bc1, std::uint32_t width, std::uint32_t height,
                 std::vector<std::uint8_t>& out);
 
+// One 4x4 block, already gathered: 16 RGBA texels in, 8 bytes out, and back.
+// Exposed for BC3, whose colour half IS a BC1 block -- sharing the encoder is
+// what keeps the two formats from drifting apart on the same picture.
+void encode_bc1_block(const std::uint8_t* rgba16, std::uint8_t out[8]);
+void decode_bc1_block(const std::uint8_t in[8], std::uint8_t* rgba16);
+
 }  // namespace svj
