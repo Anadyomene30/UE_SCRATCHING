@@ -34,6 +34,11 @@ ctest --test-dir build --output-on-failure    # 595 tests, doivent tous passer
 ./build/scratchvj/scratchvj scan D:/rushes    # ce que la bibliothèque verrait dans un dossier
 ```
 
+Sur Windows le générateur est multi-configuration : `ctest --test-dir build`
+**sans `-C Debug`** rapporte « Not Run » et sort en échec alors que tout va bien.
+La ligne ci-dessus est celle de la CI (Linux/macOS) ; ici c'est
+`ctest --test-dir build -C Debug --output-on-failure`.
+
 L'analyse pilote l'**exécutable** ffmpeg (jamais lié) : tout ce que ce ffmpeg
 décode passe — H.264, HEVC, ProRes, HAP, DXV, VP9, AV1 vérifiés. Une source avec
 alpha sort en **BC3** (`core/bc3`), le reste en BC1 ; une image fixe donne une
