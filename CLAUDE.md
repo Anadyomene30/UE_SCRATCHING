@@ -25,7 +25,7 @@ Toute nouvelle fonctionnalité doit respecter ces deux règles.
 
 ```sh
 cmake -S . -B build && cmake --build build
-ctest --test-dir build --output-on-failure    # 603 tests, doivent tous passer
+ctest --test-dir build --output-on-failure    # 605 tests, doivent tous passer
 ./build/scratchvj/scratchvj demo              # démo sans matériel
 ./build/scratchvj/scratchvj effects           # catalogue d'effets
 ./build/scratchvj/scratchvj layout            # checklist MIDI learn (tout le rig)
@@ -63,12 +63,18 @@ avec le diagramme du manuel : 290 × 400 mm, chaque section à sa place. L'ongle
 **TABLE** la dessine en grand ; la bande de la cabine ne garde que ce qu'on
 regarde en jouant. Un profil sans géométrie (la RP-8000, l'APC40, le Push) est
 dessiné en rangée — **ne pas inventer de coordonnées** : un panneau faux est
-pire qu'une liste honnête. Ce que la mesure a corrigé au passage : l'Elite n'a
-**pas** de boutons cue par voie (c'est un slider au centre), le sélecteur
-d'entrée est sur le dessus, il y a **un** SHIFT, et la face avant porte
-**trois** paires courbe/reverse (voie 1, crossfader, voie 2). Les destinations de mapping sont un **registre**
-(`core/destinations`) : une cible inconnue est rapportée au `bind()`, jamais
-ignorée en silence.
+pire qu'une liste honnête. Pour la RP-8000 c'est **définitif** (roadmap,
+2026-09-09) : 24 identifiants pour 8 pads réels, et huit pads en une bande
+n'ont rien à gagner à un dessin. Un profil peut porter une `note` — une ligne
+que la liste de contrôles ne peut pas dire, affichée sous l'appareil ; celle de
+la RP-8000 dit que les trois couches sont les mêmes huit pads.
+
+Ce que la mesure de l'Elite a corrigé au passage : elle n'a **pas** de boutons
+cue par voie (c'est un slider au centre), le sélecteur d'entrée est sur le
+dessus, il y a **un** SHIFT, et la face avant porte **trois** paires
+courbe/reverse (voie 1, crossfader, voie 2). Les destinations de mapping sont
+un **registre** (`core/destinations`) : une cible inconnue est rapportée au
+`bind()`, jamais ignorée en silence.
 
 Avec l'interface (nécessite un GPU, donc jamais en CI) :
 

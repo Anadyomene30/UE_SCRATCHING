@@ -3192,12 +3192,22 @@ void draw_table_screen(Engine& engine, Frame& frame) {
 
         if (!first) ImGui::SameLine(0.0f, 20.0f);
 
+        // What the control list cannot say about this device, under it. Only
+        // the profile knows whether there is anything to say.
+        const auto device_note = [&profile]() {
+            if (profile.note.empty()) return;
+            push_small();
+            dim(profile.note.c_str());
+            pop_font();
+        };
+
         if (profile_has_geometry(profile)) {
             // A panel: every section where the hardware has it.
             const float panel_width = body_h * (profile.panel_w / profile.panel_h);
             ImGui::PushID(static_cast<int>(i));
             ImGui::BeginGroup();
             draw_device_panel(profile, engine, frame, i, ImVec2(panel_width, body_h * 0.86f));
+            device_note();
             ImGui::EndGroup();
             ImGui::PopID();
             first = false;
@@ -3205,16 +3215,24 @@ void draw_table_screen(Engine& engine, Frame& frame) {
         }
 
         // No measured geometry: an honest flowing row rather than an invented
-        // panel. A wrong picture of a controller is worse than a list.
+        // panel. A wrong picture of a controller is worse than a list. The
+        // groups of ONE device are wrapped together so its note sits under all
+        // of them rather than under whichever happened to be drawn last.
+        if (!first) ImGui::SameLine(0.0f, 26.0f);
+        first = false;
+        ImGui::PushID(static_cast<int>(i));
+        ImGui::BeginGroup();
+        bool first_group = true;
         for (const ProfileGroup& group : profile.layout) {
-            if (!first) ImGui::SameLine(0.0f, 26.0f);
-            first = false;
-            ImGui::PushID(static_cast<int>(i));
+            if (!first_group) ImGui::SameLine(0.0f, 26.0f);
+            first_group = false;
             ImGui::PushID(group.title.c_str());
             draw_group(profile, group, engine, frame, i);
             ImGui::PopID();
-            ImGui::PopID();
         }
+        device_note();
+        ImGui::EndGroup();
+        ImGui::PopID();
     }
     if (first) {
         push_small();

@@ -75,6 +75,9 @@ std::string profile_to_json(const DeviceProfile& profile) {
     root["display_name"] = profile.display_name;
     root["port_hint"] = profile.port_hint;
     root["verified"] = profile.verified;
+    // Written only when there is one, so a profile without a note round
+    // trips to the same JSON it came from.
+    if (!profile.note.empty()) root["note"] = profile.note;
     if (profile.panel_w > 0.0f) {
         root["panel"] = json{{"width", profile.panel_w}, {"height", profile.panel_h}};
     }
@@ -133,6 +136,7 @@ bool profile_from_json(std::string_view text, DeviceProfile& out, std::string& e
     parsed.display_name = root.value("display_name", parsed.name);
     parsed.port_hint = root.value("port_hint", std::string());
     parsed.verified = root.value("verified", false);
+    parsed.note = root.value("note", std::string{});
     if (root.contains("panel") && root.at("panel").is_object()) {
         parsed.panel_w = root.at("panel").value("width", 0.0f);
         parsed.panel_h = root.at("panel").value("height", 0.0f);

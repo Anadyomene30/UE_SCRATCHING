@@ -250,13 +250,24 @@ DeviceProfile make_rp8000(char deck) {
     p.display_name = "RP-8000 MK2";  // the deck letter is the rig's to add
     p.port_hint = "RP8000";
     p.verified = true;  // eight pads in three layers, per the manual
+    // The layers are the SAME eight pads, switched on the turntable. Saying so
+    // is not decoration: three groups of eight, drawn side by side with nothing
+    // between them, read as twenty-four buttons -- which is how a panel for
+    // this device got planned before anyone counted the pads.
+    p.note = "les 3 couches sont les M\xC3\x8aMES 8 pads, commut\xC3\xA9s sur la platine";
     for (int layer = 1; layer <= 3; ++layer) {
         const std::string prefix =
             std::string("pad.rp8000.") + deck + ".l" + std::to_string(layer) + ".";
         pads(p, prefix, 8);
-        // No geometry: the turntable's own panel has not been measured the way
-        // the Elite's has, and a guessed picture of a controller is worse than
-        // an honest list of it.
+        // No geometry, and this one is a DECISION rather than a gap -- see the
+        // roadmap. Two reasons. The panel model gives one identifier one place,
+        // and a layer is device state the application cannot see, so 24 ids
+        // cannot share 8 places without either overlapping sections or a claim
+        // about which layer is live that nothing measures. And even solved, a
+        // turntable panel would be nine tenths platter: the Elite's picture
+        // earns its keep because a hand hunts one knob among forty in sections,
+        // where these eight sit in a single strip and are already drawn four
+        // across.
         ProfileGroup g;
         g.title = std::string("COUCHE ") + std::to_string(layer);
         g.accent = deck == 'a' ? "amber" : "slate";

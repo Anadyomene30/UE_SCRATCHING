@@ -63,22 +63,39 @@ en un clic.
 > réponse dans l'application ; réimplémenter la recherche n'aurait testé
 > qu'elle-même.
 
-> **La géométrie de la RP-8000 n'est pas qu'une mesure à prendre** (2026-09-09).
-> On la croyait bloquée sur l'absence d'un rendu officiel comparable au
-> `238128_Reloop_TP.jpg` de l'Elite. C'est un vrai blocage, mais ce n'est pas
-> le premier : le modèle de panneau (`ProfileGroup`, un rectangle par section,
-> les contrôles s'écoulant dedans) suppose **un identifiant = une place
-> physique**. Or le profil de la RP-8000 déclare 24 identifiants —
-> `pad.rp8000.<deck>.l<1..3>.<1..8>` — pour **huit** pads réels, parce que les
-> trois couches sont un état de l'appareil, pas trois rangées de boutons. Les
-> placer demanderait soit trois groupes superposés (que le test « aucune
-> section n'en recouvre une autre » refuse, à juste titre), soit une notion de
-> couche active que le profil ne porte pas et que l'onglet TABLE ne sait pas
-> afficher.
+> **Le panneau de la RP-8000 n'aura pas lieu, et c'est une décision**
+> (2026-09-09). Il figurait depuis des semaines comme « reste à faire », bloqué
+> sur l'absence d'un rendu officiel comparable au `238128_Reloop_TP.jpg` de
+> l'Elite. En cherchant à le débloquer, deux choses sont apparues, et aucune
+> n'est l'image manquante.
 >
-> Donc ce qui manque est une **décision de conception** — le panneau montre-t-il
-> la couche active, ou les trois ? — avant toute mesure. La rangée honnête
-> reste correcte en attendant.
+> **Un.** Le modèle de panneau (`ProfileGroup`, un rectangle par section, les
+> contrôles s'écoulant dedans) suppose **un identifiant = une place physique**.
+> Le profil de la RP-8000 déclare 24 identifiants —
+> `pad.rp8000.<deck>.l<1..3>.<1..8>` — pour **huit** pads réels : les trois
+> couches sont un état de la platine, pas trois rangées de boutons. Les placer
+> demanderait soit trois groupes superposés, que le test « aucune section n'en
+> recouvre une autre » refuse à juste titre, soit une notion de couche active
+> que rien ici ne mesure — le profil ne déclare aucun contrôle pour le bouton
+> de couche, et personne ne sait s'il émet du MIDI.
+>
+> **Deux, et c'est celle qui tranche.** Même le problème résolu, le gain serait
+> nul. Le panneau de l'Elite gagne sa place parce qu'on y **cherche un potard
+> parmi quarante**, répartis en sections qu'une main connaît par leur position.
+> La surface MIDI de la RP-8000 est huit pads dans une seule bande, déjà
+> dessinés quatre par rangée. Un panneau de platine serait aux neuf dixièmes un
+> dessin de plateau. Ce n'est donc pas reporté : c'est **écarté**, et la ligne
+> est passée dans « À ne pas faire ».
+>
+> Ce qui restait à réparer était ailleurs, et l'erreur le prouve : trois
+> groupes de huit pads dessinés côte à côte **sans rien qui dise que ce sont
+> les mêmes huit**. La liste est complète et se lit quand même de travers —
+> assez pour qu'on planifie un panneau pour 24 boutons qui n'existent pas.
+> D'où `DeviceProfile::note` : une ligne que la liste de contrôles ne peut pas
+> porter, affichée sous l'appareil dans TABLE, écrite dans le JSON seulement
+> quand il y en a une (sinon un profil écrit à la main serait réécrit à chaque
+> sauvegarde). Celle de la RP-8000 dit que les trois couches sont les mêmes
+> huit pads, commutés sur la platine.
 
 > **La porteuse a une figure, et la figure a trois défauts** (2026-09-09).
 > Le dernier manque de la colonne « Serato » : de quoi régler une cellule à
@@ -243,8 +260,8 @@ en un clic.
 > Le « zoom blur » est un zoom : le flou serait l'affaire des taps du rack, et
 > il est nommé ainsi à l'écran.
 >
-> Ce qui n'est pas fait : la géométrie de la RP-8000 — voir la note du
-> 2026-09-09, qui dit pourquoi ce n'est pas qu'une mesure à prendre. Ni gcc ni
+> Ce qui n'est pas fait : la géométrie de la RP-8000 — et depuis le 2026-09-09
+> ce n'est plus une dette mais une décision, voir la note plus haut. Ni gcc ni
 > clang n'étant installés sur ce bureau, la vérification multi-compilateurs est
 > celle de la CI.
 
@@ -800,6 +817,7 @@ déjà été traité.
 | **Ableton Link, horloge MIDI** | Reporté. Le mapping OSC ouvre déjà une porte. |
 | **DMX / Art-Net** | Reporté. Atteignable plus tard par la couche de mapping. |
 | **Intégration de services de streaming, gestion de bibliothèque avancée** | Hors sujet pour de la vidéo. |
+| **Un panneau dessiné pour la RP-8000** | Écarté le 2026-09-09, deux raisons. Le modèle donne une place par identifiant, et la platine en déclare 24 pour 8 pads réels (les couches sont un état de l'appareil, invisible d'ici). Et surtout : le panneau de l'Elite sert à trouver un potard parmi quarante ; huit pads en une seule bande, déjà dessinés quatre par rangée, n'ont rien à y gagner. La rangée reste, avec une note qui dit que les trois couches sont les mêmes huit pads. |
 
 ### Ce que ni l'un ni l'autre ne fait
 

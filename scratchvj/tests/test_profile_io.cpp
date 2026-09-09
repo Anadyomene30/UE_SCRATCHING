@@ -21,6 +21,24 @@ SVJ_TEST("profile_io: the Elite survives a round trip through JSON") {
     CHECK(profile_control(back, "xfader.curve")->optional);
 }
 
+SVJ_TEST("profile_io: a device's note survives the round trip, and its absence too") {
+    DeviceProfile source = rp8000_profile('a');
+    CHECK(!source.note.empty());
+
+    DeviceProfile back;
+    std::string error;
+    CHECK(profile_from_json(profile_to_json(source), back, error));
+    CHECK_EQ(back.note, source.note);
+
+    // And a profile with nothing to say does not grow an empty field: the
+    // JSON a hand-written profile round trips to has to be the JSON it came
+    // from, or every save would rewrite files nobody edited.
+    source.note.clear();
+    CHECK(profile_to_json(source).find("note") == std::string::npos);
+    CHECK(profile_from_json(profile_to_json(source), back, error));
+    CHECK(back.note.empty());
+}
+
 SVJ_TEST("profile_io: an unknown control kind is named rather than defaulted") {
     DeviceProfile p;
     std::string error;

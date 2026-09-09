@@ -86,10 +86,25 @@ SVJ_TEST("profile: the Elite carries the panel it was measured on") {
 }
 
 SVJ_TEST("profile: a turntable with no measured panel is drawn as a list, not a guess") {
-    // The RP-8000's own panel has not been measured the way the Elite's has.
-    // Inventing it would put controls where they are not, which is worse than
-    // an honest row.
+    // Not a gap waiting to be filled but a decision, and the roadmap says why:
+    // the panel model gives one identifier one place, and a layer is state
+    // inside the turntable that nothing here can see.
     CHECK(!profile_has_geometry(rp8000_profile('a')));
+}
+
+SVJ_TEST("profile: the turntable says its three layers are the same eight pads") {
+    // Twenty-four identifiers for EIGHT physical pads, drawn as three groups
+    // of eight side by side. Complete, and read as twenty-four buttons by the
+    // person who then planned a panel for them. A list can be right and still
+    // mislead, so the device carries the sentence that the list cannot.
+    const DeviceProfile p = rp8000_profile('a');
+
+    int pads = 0;
+    for (const ProfileControl& c : p.controls) {
+        if (c.kind == ControlKind::Pad) ++pads;
+    }
+    CHECK_EQ(pads, 24);
+    CHECK(!p.note.empty());
 }
 
 SVJ_TEST("profile: the Elite's fader-curve controls are optional, because their MIDI is unmeasured") {

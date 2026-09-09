@@ -91,6 +91,14 @@ struct DeviceProfile {
     // confirmed it; the interface says so rather than letting a wrong table
     // look like a broken mixer.
     bool verified = false;
+    // One line about the device that the control list cannot say, shown under
+    // it in TABLE. It exists because a list of identifiers can be complete and
+    // still be read wrong: the RP-8000 declares 24 pad ids for EIGHT physical
+    // pads, because a layer is a state of the turntable rather than eight more
+    // buttons. Nothing in the list says so, and the picture read as 24 buttons
+    // to the person who wrote it. Optional, and empty on a device that needs
+    // no warning.
+    std::string note;
     std::vector<ProfileControl> controls;
     std::vector<ProfileGroup> layout;
     std::vector<ProfileBinding> bindings;
