@@ -1,6 +1,6 @@
 # scratchvj — le talon
 
-Généré le 2026-09-09 par `Suite 360/tools/gen-maison.py`. **Ne pas éditer à la main** : s'il est faux, c'est le script qu'on corrige — sinon la prochaine génération écrase la correction, et personne ne sait pourquoi le défaut est revenu.
+Généré le 2026-09-10 par `Suite 360/tools/gen-maison.py`. **Ne pas éditer à la main** : s'il est faux, c'est le script qu'on corrige — sinon la prochaine génération écrase la correction, et personne ne sait pourquoi le défaut est revenu.
 
 Ce fichier ne porte que ce qui est propre à **scratchvj**. La loi de la maison n'y est pas recopiée : elle se lit à son adresse, et c'est ce qui garantit qu'elle est à jour. Les numéros d'écart renvoient à `design/DIVERGENCES.md`.
 
