@@ -439,6 +439,14 @@ int main(int argc, char** argv) {
     // Everything else in Frame is refilled each pass.
     svj::ui::Frame view;
     view.deck_a_live = start_live;
+    // --live means deck A FOLLOWS THE REAL PLATTER, and opening the audio
+    // input does not say that on its own: the deck still has to be told
+    // where its position comes from. Without this a clip passed on the same
+    // command line played on its own clock while the platter turned unheard,
+    // and the platter drawer -- which opens by itself only when a platter is
+    // driving the deck -- stayed shut over a scope nobody could see.
+    // One shot: afterwards the source is the performer's to choose.
+    bool live_handover_pending = start_live;
     if (!screen_argument.empty()) {
         const char* const names[] = {"jouer", "bibliotheque", "effets", "table", "sortie", "reglages"};
         for (int i = 0; i < 6; ++i) {
@@ -1179,6 +1187,11 @@ int main(int argc, char** argv) {
                     // assumed for a control record at 48 kHz.
                     engine.deck_a().timecode.set_source(false, platter.max_speed_ratio());
                     view.platter_error.clear();
+                    if (live_handover_pending) {
+                        engine.deck_a().clock.hand_over_to_timecode(
+                            engine.deck_a().timecode.state().position_s, wall_s);
+                        live_handover_pending = false;
+                    }
                 }
             } else {
                 // Not stderr: this is a WIN32 subsystem application, and every

@@ -38,3 +38,8 @@ settings.json
 # learned MIDI bindings, and the library (sources, projections, crates).
 mapping.json
 library.json
+
+# Captures de l'interface (tools/shot.ps1) : des artefacts, pas des sources.
+captures/
+capture.png
+spout_diag.log

@@ -128,7 +128,28 @@ ses clips fabriqués, et `Engine::configure` prend un `DemoContent` pour ça.
 Un fichier déposé sur la fenêtre (ou passé en argument) est analysé puis **posé
 sur le premier deck libre** ; un deck déjà chargé n'est jamais volé.
 
-`--live` démarre le deck A sur le Phase réel via `core/quadrature` ; l'état du
+**Voir l'interface sans pouvoir la regarder** : `tools/shot.ps1` lance
+l'application, met sa fenêtre à une taille connue, la passe au premier plan et
+en écrit une capture PNG. Une session qui travaille l'interface sans ça livre
+des mises en page que personne n'a vues.
+
+```sh
+pwsh tools/shot.ps1 -Arguments "--screen table" -Out captures/table.png
+pwsh tools/shot.ps1 -Arguments "--live clips/city_mask.mp4" -Wait 14
+```
+
+Il ne **clique** pas : les clics simulés n'atteignent pas ImGui, qui lit son
+entrée par SDL. Pour voir un écran précis, le demander au lancement
+(`--screen`), pas le chercher à la souris. Trois pièges déjà payés : sans
+`SetProcessDPIAware` la capture est décalée d'un quart sur un écran à 125 % ;
+sans `HWND_TOPMOST` elle montre la fenêtre qui recouvre l'application (Windows
+refuse le premier plan à un processus sans focus) ; et le tiroir « diagnostic
+platine » est sous la ligne de flottaison à 1000 px de haut.
+
+`--live` démarre le deck A sur le Phase réel via `core/quadrature` — **et met
+sa source sur Platine**, y compris quand un clip est passé sur la même ligne de
+commande : ouvrir l'entrée audio ne suffisait pas, le deck lisait son clip sur
+sa propre horloge pendant que le plateau tournait sans être écouté. L'état du
 plateau s'écrit chaque seconde dans `platter.log`. **Lire ce fichier, pas
 stderr** : `scratchvj_ui` est une application WIN32 sans console, son stderr ne
 va nulle part même redirigé — toutes les tentatives de le lire sont revenues
