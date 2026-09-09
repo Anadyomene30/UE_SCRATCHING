@@ -145,3 +145,80 @@ SVJ_TEST("surface: out-of-range indices are rejected") {
     }
     CHECK(threw);
 }
+
+SVJ_TEST("surface: the device is part of the address, so two devices' CC 7 do not collide") {
+    // The mixer's fader and a turntable's pad both send CC 7 on channel 1.
+    // Before the device joined the key they were one address, and the second
+    // binding silently stole the first.
+    Surface surface;
+    const ControlIndex fader = surface.declare("ch1.fader", ControlKind::Fader);
+    const ControlIndex pad = surface.declare("pad.rp8000.a.l1.1", ControlKind::Pad);
+    MidiAddress on_mixer;
+    on_mixer.kind = MidiKind::ControlChange;
+    on_mixer.channel = 0;
+    on_mixer.number = 7;
+    on_mixer.device = 0;
+    MidiAddress on_turntable = on_mixer;
+    on_turntable.device = 1;
+    surface.bind(on_mixer, fader);
+    surface.bind(on_turntable, pad);
+
+    MidiEvent ev = cc(0, 7, 100);
+    ev.device = 1;
+    CHECK_EQ(surface.apply(ev, 1), pad);
+    ev.device = 0;
+    CHECK_EQ(surface.apply(ev, 2), fader);
+    CHECK(surface.bound_to(on_mixer) == fader);
+    CHECK(surface.bound_to(on_turntable) == pad);
+}
+
+SVJ_TEST("surface: a relative encoder walks by its delta instead of jumping to 0.49") {
+    // 65 on a Relative64 encoder is "one detent clockwise", not "position
+    // 65/127". Read as a position, a browse wheel sat at half scale forever.
+    Surface surface;
+    const ControlIndex wheel =
+        surface.declare("browse.encoder", ControlKind::Encoder, EncoderMode::Relative64);
+    MidiAddress address;
+    address.kind = MidiKind::ControlChange;
+    address.number = 20;
+    surface.bind(address, wheel);
+    surface.set(wheel, 0.5f, 0);
+
+    surface.apply(cc(0, 20, 65), 1);
+    CHECK(surface.at(wheel).value > 0.5f);
+    const float after_one = surface.at(wheel).value;
+    surface.apply(cc(0, 20, 63), 2);
+    CHECK_NEAR(surface.at(wheel).value, 0.5, 1e-6);
+    surface.apply(cc(0, 20, 64), 3);  // rest: an idle report on connect moves nothing
+    CHECK_NEAR(surface.at(wheel).value, 0.5, 1e-6);
+    CHECK(after_one - 0.5f > 0.0f);
+}
+
+SVJ_TEST("surface: a signed-7 encoder reads 127 as minus one") {
+    CHECK_EQ(encoder_delta(EncoderMode::Signed7, 1), 1);
+    CHECK_EQ(encoder_delta(EncoderMode::Signed7, 127), -1);
+    CHECK_EQ(encoder_delta(EncoderMode::Signed7, 3), 3);
+    CHECK_EQ(encoder_delta(EncoderMode::Signed7, 125), -3);
+    CHECK_EQ(encoder_delta(EncoderMode::Relative64, 66), 2);
+    CHECK_EQ(encoder_delta(EncoderMode::Relative64, 62), -2);
+    CHECK_EQ(encoder_delta(EncoderMode::Absolute, 100), 0);
+}
+
+SVJ_TEST("surface: detents accumulate until taken, and a pot has none") {
+    Surface surface;
+    const ControlIndex wheel =
+        surface.declare("browse.encoder", ControlKind::Encoder, EncoderMode::Signed7);
+    MidiAddress address;
+    address.kind = MidiKind::ControlChange;
+    address.number = 20;
+    surface.bind(address, wheel);
+    surface.apply(cc(0, 20, 1), 1);
+    surface.apply(cc(0, 20, 1), 2);
+    surface.apply(cc(0, 20, 127), 3);
+    CHECK_EQ(surface.take_ticks(wheel), 1);
+    CHECK_EQ(surface.take_ticks(wheel), 0);  // taken
+
+    const ControlIndex pot = surface.declare("ch1.eq.hi", ControlKind::Knob);
+    surface.set(pot, 0.3f, 4);
+    CHECK_EQ(surface.take_ticks(pot), 0);
+}

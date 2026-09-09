@@ -151,3 +151,28 @@ SVJ_TEST("learn: observing after the session ends is harmless") {
     CHECK(!learn.observe(cc(6, 10)));
     CHECK_EQ(learn.results().size(), std::size_t{1});
 }
+
+SVJ_TEST("learn: the same CC on another device is a different address") {
+    // Learning the mixer, then a turntable that happens to send the same
+    // CC: the second must bind, not be refused as already claimed.
+    MidiLearn learn(2);
+    learn.begin({LearnTarget{"ch1.fader", ControlKind::Fader},
+                 LearnTarget{"pad.rp8000.a.l1.1", ControlKind::Pad}});
+    for (const std::uint16_t v : {10, 20}) {
+        MidiEvent e;
+        e.kind = MidiKind::ControlChange;
+        e.number = 7;
+        e.value = v;
+        e.device = 0;
+        learn.observe(e);
+    }
+    CHECK_EQ(learn.results().size(), std::size_t{1});
+    MidiEvent press;
+    press.kind = MidiKind::ControlChange;
+    press.number = 7;
+    press.value = 127;
+    press.device = 1;
+    CHECK(learn.observe(press));
+    CHECK_EQ(learn.results().size(), std::size_t{2});
+    CHECK_EQ(static_cast<int>(learn.results()[1].address.device), 1);
+}

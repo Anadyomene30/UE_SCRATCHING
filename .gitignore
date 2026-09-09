@@ -1,4 +1,7 @@
 build/
+# Out-of-tree build trees: the UI configuration keeps its own, because it pulls
+# SDL3 and Dear ImGui into _deps and the default build must stay free of them.
+build-*/
 out/
 .cache/
 compile_commands.json
@@ -6,6 +9,7 @@ compile_commands.json
 # Runtime state, not source: written by --midi-learn and by the analysis pass.
 config/mapping.json
 *.svcache
+clips/
 *.scratchtake
 
 .DS_Store
@@ -13,3 +17,29 @@ Thumbs.db
 .vs/
 .vscode/
 .idea/
+
+# Seeded design canvas: a ~2.5 MB generated payload that bundles the editor.
+# Regenerate it from the .dc.html working files with the design skill's helper.
+design/maquette-scratchvj.html
+design/interface-scratchvj.html
+# Presets de mapping crees a l execution (specifiques a une salle)
+mappings/
+
+# Captures brutes des sondes DVS : gros, machine-specifiques, regenerables.
+dvs_capture.wav
+
+# Journal du plateau live, ecrit par scratchvj_ui quand la source est LIVE.
+platter.log
+
+# Reglages propres au bureau (entree, paire de canaux, porteuse) : jamais partages.
+settings.json
+
+# Runtime state written next to the working directory by scratchvj_ui:
+# learned MIDI bindings, and the library (sources, projections, crates).
+mapping.json
+library.json
+
+# Captures de l'interface (tools/shot.ps1) : des artefacts, pas des sources.
+captures/
+capture.png
+spout_diag.log

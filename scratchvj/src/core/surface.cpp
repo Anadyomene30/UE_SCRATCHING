@@ -12,24 +12,40 @@ MidiAddress MidiAddress::from(const MidiEvent& ev) {
     a.kind = ev.kind == MidiKind::NoteOff ? MidiKind::NoteOn : ev.kind;
     a.channel = ev.channel;
     a.number = ev.kind == MidiKind::PitchBend ? 0 : ev.number;
+    a.device = ev.device;
     return a;
 }
 
 std::uint32_t MidiAddress::key() const {
-    return (static_cast<std::uint32_t>(kind) << 16) | (static_cast<std::uint32_t>(channel) << 8) |
-           static_cast<std::uint32_t>(number);
+    // The device in the top byte: the same CC on two devices is two addresses.
+    return (static_cast<std::uint32_t>(device) << 24) | (static_cast<std::uint32_t>(kind) << 16) |
+           (static_cast<std::uint32_t>(channel) << 8) | static_cast<std::uint32_t>(number);
 }
 
 bool MidiAddress::operator==(const MidiAddress& other) const { return key() == other.key(); }
 
-ControlIndex Surface::declare(std::string id, ControlKind kind) {
+int encoder_delta(EncoderMode mode, std::uint16_t value) {
+    const int v = static_cast<int>(value & 0x7F);
+    switch (mode) {
+        case EncoderMode::Relative64: return v - 64;
+        case EncoderMode::Signed7: return v < 64 ? v : v - 128;
+        case EncoderMode::Absolute:
+        default: return 0;
+    }
+}
+
+ControlIndex Surface::declare(std::string id, ControlKind kind, EncoderMode mode) {
     const auto it = by_id_.find(id);
-    if (it != by_id_.end()) return it->second;
+    if (it != by_id_.end()) {
+        controls_[static_cast<std::size_t>(it->second)].mode = mode;
+        return it->second;
+    }
 
     const auto index = static_cast<ControlIndex>(controls_.size());
     Control c;
     c.id = id;
     c.kind = kind;
+    c.mode = mode;
     controls_.push_back(std::move(c));
     by_id_.emplace(std::move(id), index);
     return index;
@@ -65,9 +81,30 @@ void Surface::set(ControlIndex index, float value01, std::uint64_t now_us) {
     last_touched_ = index;
 }
 
+int Surface::take_ticks(ControlIndex index) {
+    if (index < 0 || static_cast<std::size_t>(index) >= controls_.size()) return 0;
+    Control& c = controls_[static_cast<std::size_t>(index)];
+    const int ticks = c.ticks;
+    c.ticks = 0;
+    return ticks;
+}
+
 ControlIndex Surface::apply(const MidiEvent& event, std::uint64_t now_us) {
     const ControlIndex index = bound_to(MidiAddress::from(event));
     if (index == kNoControl) return kNoControl;
+
+    Control& c = controls_[static_cast<std::size_t>(index)];
+    if (c.mode != EncoderMode::Absolute && event.kind == MidiKind::ControlChange) {
+        // A relative encoder: the byte is a distance, not a place. The value
+        // walks by a fixed step per detent -- 32 detents end to end, which is
+        // about what a full turn of a browse wheel covers -- and the detents
+        // are counted for whoever scrolls a list by them.
+        const int delta = encoder_delta(c.mode, event.value);
+        if (delta == 0) return index;  // rest, or an idle report on connect
+        c.ticks += delta;
+        set(index, c.value + static_cast<float>(delta) / 32.0f, now_us);
+        return index;
+    }
 
     // A note off releases the pad; everything else carries its own value.
     const float value = event.kind == MidiKind::NoteOff ? 0.0f : event.normalised();

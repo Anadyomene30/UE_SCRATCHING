@@ -17,7 +17,10 @@ SVJ_TEST("layout: every control id in the default rig is unique") {
     CHECK_EQ(seen.size(), targets.size());
 }
 
-SVJ_TEST("layout: the Elite exposes both channel strips and the crossfader") {
+SVJ_TEST("layout: the Elite exposes both channel strips, the crossfader and both FX units") {
+    // Two strips: the Elite is a two-channel battle mixer. The first draft of
+    // this checklist guessed one FX section with a "mix" knob; the hardware
+    // has two units, each with a level fader and a beats encoder.
     const auto targets = elite_layout();
     const auto has = [&targets](const std::string& id) {
         return std::any_of(targets.begin(), targets.end(),
@@ -27,8 +30,10 @@ SVJ_TEST("layout: the Elite exposes both channel strips and the crossfader") {
     CHECK(has("ch2.filter"));
     CHECK(has("ch1.fader"));
     CHECK(has("xfader"));
-    CHECK(has("fx.mix"));
+    CHECK(has("fx.a.level"));
+    CHECK(has("fx.b.beats"));
     CHECK(has("browse.encoder"));
+    CHECK(!has("ch3.fader"));
 }
 
 SVJ_TEST("layout: the Elite carries sixteen performance pads") {

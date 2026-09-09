@@ -1,0 +1,23 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 1440, "h": 1040, "title": "JOUER — l'écran de set (direction A, retenue)" },
+    { "file": "Montage.dc.html", "x": 1560, "y": 0, "w": 1440, "h": 1040, "title": "JOUER — direction B « montage », basse fidélité, non retenue" },
+    { "file": "Bibliotheque.dc.html", "x": 0, "y": 1200, "w": 1440, "h": 1040, "title": "BIBLIOTHÈQUE — préparation, banques de pads" },
+    { "file": "Effets.dc.html", "x": 1560, "y": 1200, "w": 1440, "h": 1040, "title": "EFFETS — le rack en cartes" },
+    { "file": "Table.dc.html", "x": 0, "y": 2400, "w": 1440, "h": 1040, "title": "TABLE — panneau mesuré + ce que fait la table" },
+    { "file": "Sortie.dc.html", "x": 1560, "y": 2400, "w": 1440, "h": 1040, "title": "SORTIE — écrans, réseau, géométrie appliquée" },
+    { "file": "Composants.dc.html", "x": 0, "y": 3600, "w": 960, "h": 900, "title": "COMPOSANTS — le vocabulaire" }
+  ],
+  "annotations": [
+    { "id": "note-lecteur", "x": 0, "y": -170, "w": 460, "text": "Lecteur d'abord. Chaque deck a ⏮ ▶ ⏸ ⏹ et une barre qu'on glisse. La platine est UNE source parmi trois (Platine · Lecture · Tempo), proposée seulement si elle est branchée. Un clip chargé joue." },
+    { "id": "note-axe", "x": 500, "y": -170, "w": 460, "text": "Un seul axe : six onglets, plus de dispositions CABINE/SCÈNE/PRÉPA/360. « Image seule » (F) pour la scène. Le 360 n'est pas un écran : c'est une rangée qui apparaît sur le deck dont le clip est sphérique (deck B ici)." },
+    { "id": "note-miroir", "x": 1000, "y": -170, "w": 440, "text": "Le miroir du bureau : deck A, mixer, deck B — comme l'Elite entre les deux RP-8000. Le programme en bas avec l'incrustation et le rack en une ligne. Le rail de bibliothèque se replie (B)." },
+    { "id": "note-montage", "x": 1560, "y": -170, "w": 460, "text": "Direction B pour mémoire : programme en haut et en grand, decks en bandes, pads 4×4 par côté. Plus proche d'un pad-controller, plus loin d'une paire de platines. Non retenue mais posée à côté pour trancher en la voyant." },
+    { "id": "note-biblio", "x": 0, "y": 1090, "w": 460, "text": "Trois colonnes : dossiers et caisses · liste avec vignettes (analyse en cours visible, boutons Deck A · Deck B · Incr. · File) · inspecteur. En bas, les banques de pads : glisser un clip dedans, c'est ce que le mode Clips déclenche." },
+    { "id": "note-fx", "x": 1560, "y": 1090, "w": 460, "text": "Une carte par emplacement : sélecteur, lien audio/vidéo (rouge seulement quand délié), Actif, six potards nommés avec « assigner » qui attend le prochain contrôle touché. ≈ dit qu'une correspondance est un analogue, pas le même calcul." },
+    { "id": "note-table", "x": 0, "y": 2290, "w": 460, "text": "Le panneau mesuré (290×400 mm) dessiné depuis le profil, une courbe par voie, et la liste des liaisons rejoint cet écran : « ce que fait la table » est une seule question. Ajouter, éditer, désactiver une liaison, enfin." },
+    { "id": "note-sortie", "x": 1560, "y": 2290, "w": 460, "text": "La géométrie est rendue SUR l'écran de sortie (grille 32×32 tessellée, homographie du pin ou maillage, alpha du masque), pas seulement dessinée sur l'aperçu. Spout reçoit l'image avant déformation." },
+    { "id": "note-compo", "x": 0, "y": 3490, "w": 460, "text": "Trois familles et pas plus : bouton, sélecteur segmenté, basculeur. Fond + bord sur tout ce qui se clique, l'orange plein pour une seule action par panneau. Les fantômes restent : c'est la meilleure idée de l'ancienne interface." }
+  ],
+  "launch": { "view": "canvas" }
+}

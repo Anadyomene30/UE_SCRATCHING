@@ -1,0 +1,19 @@
+{
+  "FileVersion": 3,
+  "Version": 1,
+  "VersionName": "0.1",
+  "FriendlyName": "ScratchLink",
+  "Description": "Receives the scratchvj control stream: platter position, velocity, gestures and the full control surface, sampled with Hermite interpolation. Unreal is a client of the instrument, not its core.",
+  "Category": "Input",
+  "CreatedBy": "scratchvj",
+  "CanContainContent": false,
+  "IsBetaVersion": true,
+  "Installed": false,
+  "Modules": [
+    {
+      "Name": "ScratchLink",
+      "Type": "Runtime",
+      "LoadingPhase": "Default"
+    }
+  ]
+}

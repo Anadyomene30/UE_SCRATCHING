@@ -1,0 +1,133 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap">
+  <style>
+    body { margin: 0; background: #141412; color: #E9E6DF; font-size: 15px;
+           font-family: Archivo, "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+    .lbl { font-size: 11.5px; letter-spacing: .14em; text-transform: uppercase; color: #605D56; font-weight: 500; }
+    .mono { font-family: "DM Mono", ui-monospace, Consolas, monospace; font-variant-numeric: tabular-nums; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 28px; padding: 0 10px; background: #0E0E0C; border: 1px solid #2E2D28; border-radius: 1px; color: #E9E6DF; font-size: 12.5px; white-space: nowrap; }
+    .btn.primary { background: #C9762F; border-color: #C9762F; color: #141412; font-weight: 600; }
+    .btn.sm { height: 24px; font-size: 11px; padding: 0 8px; }
+    .seg { display: inline-flex; border: 1px solid #2E2D28; border-radius: 1px; overflow: hidden; }
+    .seg span { height: 28px; padding: 0 10px; display: inline-flex; align-items: center; font-size: 12.5px; color: #8A867C; background: #0E0E0C; border-right: 1px solid #2E2D28; white-space: nowrap; }
+    .seg span:last-child { border-right: 0; }
+    .seg span.on { background: #C9762F; color: #141412; font-weight: 600; }
+    .tog { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; color: #8A867C; white-space: nowrap; }
+    .tog .dot { width: 10px; height: 10px; border-radius: 5px; background: #2E2D28; border: 1px solid #605D56; }
+    .tog.on { color: #E9E6DF; } .tog.on .dot { background: #7E946B; border-color: #7E946B; }
+    .tab { font-size: 12.5px; letter-spacing: .1em; text-transform: uppercase; color: #605D56; padding: 9px 14px; border-bottom: 2px solid transparent; }
+    .tab.on { color: #E9E6DF; border-bottom-color: #C9762F; }
+    .screen { border: 1px solid #2E2D28; padding: 12px 14px; display: flex; align-items: center; gap: 14px; }
+    .screen.on { border-color: #7E946B; background: rgba(126,148,107,.06); }
+    .light { width: 8px; height: 8px; border-radius: 4px; }
+    svg { display: block; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; height: 1040px; display: flex; flex-direction: column; background: #141412; overflow: hidden;">
+  <div style="display: flex; align-items: center; gap: 18px; height: 40px; padding: 0 18px; border-bottom: 1px solid #2E2D28; flex: none;">
+    <span style="font-size: 13px; font-weight: 600; color: #C9762F;">scratchvj</span>
+    <div style="width: 1px; height: 16px; background: #2E2D28;"></div>
+    <span class="mono" style="font-size: 11.5px; color: #8A867C;">programme 640&#215;360 &#183; 60 i/s</span>
+    <div style="margin-left: auto; display: flex; align-items: center; gap: 14px;">
+      <span class="mono" style="font-size: 11.5px; color: #7E946B;">Spout scratchvj</span>
+      <span class="mono" style="font-size: 11.5px; color: #7E946B;">&#8594; DELL U2720Q</span>
+    </div>
+  </div>
+  <div style="display: flex; align-items: center; padding: 0 8px; border-bottom: 1px solid #2E2D28; flex: none;">
+    <span class="tab">Jouer</span><span class="tab">Biblioth&#232;que</span><span class="tab">Effets</span><span class="tab">Table</span><span class="tab on">Sortie</span><span class="tab">R&#233;glages</span>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 400px minmax(0, 1fr); flex: 1; min-height: 0;">
+    <!-- écrans et sorties réseau -->
+    <div style="padding: 18px; display: flex; flex-direction: column; gap: 12px; border-right: 1px solid #2E2D28;">
+      <span class="lbl">&#201;cran de sortie</span>
+      <span class="mono" style="font-size: 11px; color: #605D56;">plein &#233;cran sans bordure, m&#234;me image que l'aper&#231;u et que Spout, bandes noires plut&#244;t qu'&#233;tirement</span>
+      <div class="screen">
+        <svg width="28" height="20" viewBox="0 0 28 20"><rect x="1" y="1" width="26" height="16" fill="none" stroke="#8A867C" stroke-width="1.4"></rect><path d="M10 19h8" stroke="#8A867C" stroke-width="1.4"></path></svg>
+        <div style="display: flex; flex-direction: column; gap: 2px; flex: 1;"><span style="font-size: 13px;">LG ULTRAGEAR</span><span class="mono" style="font-size: 10.5px; color: #605D56;">2560&#215;1440 &#183; 144 Hz &#183; principal, l'interface est ici</span></div>
+        <span class="btn sm">Envoyer ici</span>
+      </div>
+      <div class="screen on">
+        <svg width="28" height="20" viewBox="0 0 28 20"><rect x="1" y="1" width="26" height="16" fill="none" stroke="#7E946B" stroke-width="1.4"></rect><path d="M10 19h8" stroke="#7E946B" stroke-width="1.4"></path></svg>
+        <div style="display: flex; flex-direction: column; gap: 2px; flex: 1;"><span style="font-size: 13px; color: #7E946B;">DELL U2720Q</span><span class="mono" style="font-size: 10.5px; color: #605D56;">2560&#215;1440 &#183; 60 Hz &#183; la salle voit &#231;a</span></div>
+        <span class="btn sm" style="border-color: #7E946B; color: #7E946B;">Sortie ici &#183; fermer</span>
+      </div>
+      <span class="mono" style="font-size: 10.5px; color: #605D56;">&#201;chap ferme la sortie avant de quitter l'instrument.</span>
+
+      <div style="height: 1px; background: #2E2D28; margin: 8px 0;"></div>
+      <span class="lbl">Sorties r&#233;seau</span>
+      <div style="display: grid; grid-template-columns: 1fr auto; gap: 10px 12px; align-items: center; font-size: 13px;">
+        <div style="display: flex; flex-direction: column; gap: 2px;"><span>Spout</span><span class="mono" style="font-size: 10.5px; color: #605D56;">« scratchvj » &#183; Resolume, MadMapper, OBS, Unreal</span></div><span class="tog on"><span class="dot"></span>Actif</span>
+        <div style="display: flex; flex-direction: column; gap: 2px;"><span>NDI</span><span class="mono" style="font-size: 10.5px; color: #605D56;">pas encore &#233;crit</span></div><span class="tog" style="opacity: .5;"><span class="dot"></span>Indisponible</span>
+        <div style="display: flex; flex-direction: column; gap: 2px;"><span>Unreal &#183; ScratchLink</span><span class="mono" style="font-size: 10.5px; color: #605D56;">UDP position + vitesse + regard</span></div><span class="tog on"><span class="dot"></span>Actif</span>
+        <span></span><div style="display: flex; gap: 6px; align-items: center;"><span class="mono" style="height: 24px; padding: 0 8px; display: inline-flex; align-items: center; background: #0E0E0C; border: 1px solid #2E2D28; font-size: 11.5px;">127.0.0.1</span><span class="mono" style="height: 24px; padding: 0 8px; display: inline-flex; align-items: center; background: #0E0E0C; border: 1px solid #2E2D28; font-size: 11.5px;">7331</span></div>
+      </div>
+
+      <div style="height: 1px; background: #2E2D28; margin: 8px 0;"></div>
+      <span class="lbl">Pr&#233;r&#233;glages de projection</span>
+      <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+        <span class="btn sm primary">Salle 12 sept.</span><span class="btn sm">Mur de droite</span><span class="btn sm">Plat</span><span class="btn sm">+ enregistrer</span>
+      </div>
+      <span class="mono" style="font-size: 10.5px; color: #605D56;">pin + grille + masque, ensemble &#183; presets/*.json</span>
+    </div>
+
+    <!-- géométrie appliquée à la sortie -->
+    <div style="padding: 18px; display: flex; flex-direction: column; gap: 12px; min-width: 0;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span class="lbl">G&#233;om&#233;trie de projection</span>
+        <div class="seg"><span class="on">Coins</span><span>Grille 4&#215;4</span><span>Masque</span></div>
+        <span class="tog on" style="margin-left: 6px;"><span class="dot"></span>Appliqu&#233;e sur l'&#233;cran de sortie</span>
+        <span class="tog on"><span class="dot"></span>Mire</span>
+        <div style="margin-left: auto; display: flex; gap: 8px;"><span class="btn">Remettre &#224; plat</span></div>
+      </div>
+      <!-- la toile -->
+      <div style="flex: 1; background: #0E0E0C; border: 1px solid #2E2D28; position: relative; min-height: 0;">
+        <svg width="100%" height="100%" viewBox="0 0 980 700" preserveAspectRatio="xMidYMid meet" style="position: absolute; inset: 0;">
+          <!-- écran -->
+          <rect x="60" y="50" width="860" height="600" fill="#141412" stroke="#2E2D28"></rect>
+          <text x="66" y="42" font-size="10" fill="#605D56" font-family="DM Mono">DELL U2720Q &#183; 16:9</text>
+          <!-- image déformée (corner pin) -->
+          <defs>
+            <pattern id="grid" width="53.75" height="60" patternUnits="userSpaceOnUse"><path d="M53.75 0H0V60" fill="none" stroke="#2E2D28" stroke-width="1"></path></pattern>
+          </defs>
+          <polygon points="120,90 840,130 800,610 160,580" fill="url(#grid)" stroke="#C9762F" stroke-width="1.5"></polygon>
+          <polygon points="120,90 840,130 800,610 160,580" fill="rgba(201,118,47,.05)"></polygon>
+          <!-- mire -->
+          <line x1="120" y1="90" x2="800" y2="610" stroke="#3a2f22" stroke-width="1"></line>
+          <line x1="840" y1="130" x2="160" y2="580" stroke="#3a2f22" stroke-width="1"></line>
+          <ellipse cx="480" cy="352" rx="240" ry="200" fill="none" stroke="#3a2f22"></ellipse>
+          <!-- masque -->
+          <polygon points="60,50 60,650 200,650 175,50" fill="rgba(14,14,12,.85)" stroke="#6E8696" stroke-dasharray="4 3"></polygon>
+          <text x="80" y="360" font-size="10" fill="#6E8696" font-family="DM Mono">masque</text>
+          <!-- coins -->
+          <g><circle cx="120" cy="90" r="9" fill="#141412" stroke="#C9762F" stroke-width="2"></circle><text x="136" y="86" font-size="10" fill="#C9762F" font-family="DM Mono">HG 0.07 &#183; 0.07</text></g>
+          <g><circle cx="840" cy="130" r="9" fill="#141412" stroke="#C9762F" stroke-width="2"></circle><text x="736" y="118" font-size="10" fill="#C9762F" font-family="DM Mono">HD 0.91 &#183; 0.13</text></g>
+          <g><circle cx="800" cy="610" r="9" fill="#C9762F" stroke="#C9762F" stroke-width="2"></circle><text x="700" y="640" font-size="10" fill="#E9E6DF" font-family="DM Mono">BD 0.86 &#183; 0.93 &#8592; glisser</text></g>
+          <g><circle cx="160" cy="580" r="9" fill="#141412" stroke="#C9762F" stroke-width="2"></circle><text x="176" y="606" font-size="10" fill="#C9762F" font-family="DM Mono">BG 0.12 &#183; 0.88</text></g>
+        </svg>
+      </div>
+      <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+        <span class="lbl">Coin s&#233;lectionn&#233;</span>
+        <span class="mono" style="font-size: 12px;">Bas droit</span>
+        <span class="mono" style="height: 28px; padding: 0 8px; display: inline-flex; align-items: center; background: #0E0E0C; border: 1px solid #2E2D28; font-size: 12px;">x 0.860</span>
+        <span class="mono" style="height: 28px; padding: 0 8px; display: inline-flex; align-items: center; background: #0E0E0C; border: 1px solid #2E2D28; font-size: 12px;">y 0.930</span>
+        <span class="mono" style="font-size: 10.5px; color: #605D56;">fl&#232;ches : 1 px &#183; Maj + fl&#232;ches : 10 px</span>
+        <span class="lbl" style="margin-left: auto;">Masque</span>
+        <span class="btn sm">+ point</span><span class="btn sm">Inverser</span><span class="btn sm">Adoucir 12 px</span>
+      </div>
+      <span class="mono" style="font-size: 10.5px; color: #605D56;">Ce que vous voyez ici est exactement ce que l'&#233;cran de sortie affiche : la d&#233;formation est rendue dans la fen&#234;tre de sortie (grille 32&#215;32, homographie ou maillage), pas seulement dessin&#233;e par-dessus l'aper&#231;u. Spout re&#231;oit l'image <em>avant</em> d&#233;formation, pour que Resolume ou MadMapper fassent la leur.</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

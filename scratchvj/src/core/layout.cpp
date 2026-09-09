@@ -1,80 +1,30 @@
 #include "core/layout.h"
 
+#include "core/profile.h"
+
 namespace svj {
-namespace {
 
-void push(std::vector<LearnTarget>& out, std::string id, ControlKind kind) {
-    out.push_back(LearnTarget{std::move(id), kind});
-}
+// The checklists are the profiles' rosters: one description of a device, used
+// for learning, for the wire schema and for the drawing alike.
 
-// One channel strip. Ids are hierarchical so the UI can group them without a
-// separate table of which control belongs where.
-void push_channel(std::vector<LearnTarget>& out, int channel) {
-    const std::string prefix = "ch" + std::to_string(channel) + ".";
-    push(out, prefix + "trim", ControlKind::Knob);
-    push(out, prefix + "eq.hi", ControlKind::Knob);
-    push(out, prefix + "eq.mid", ControlKind::Knob);
-    push(out, prefix + "eq.low", ControlKind::Knob);
-    push(out, prefix + "filter", ControlKind::Knob);
-    push(out, prefix + "fader", ControlKind::Fader);
-    push(out, prefix + "cue", ControlKind::Button);
-    push(out, prefix + "fx.on", ControlKind::Button);
-}
-
-void push_pads(std::vector<LearnTarget>& out, const std::string& prefix, int count) {
-    for (int i = 1; i <= count; ++i) {
-        push(out, prefix + std::to_string(i), ControlKind::Pad);
-    }
-}
-
-}  // namespace
-
-std::vector<LearnTarget> elite_layout() {
-    std::vector<LearnTarget> targets;
-
-    push_channel(targets, 1);
-    push_channel(targets, 2);
-
-    push(targets, "xfader", ControlKind::Fader);
-
-    // Effect section. These are the controls that will drive the paired
-    // audio/video effect units, so they are worth learning even on day one.
-    push(targets, "fx.time", ControlKind::Knob);
-    push(targets, "fx.mix", ControlKind::Knob);
-    push(targets, "fx.beats", ControlKind::Encoder);
-    push(targets, "fx.paddle.a", ControlKind::Button);
-    push(targets, "fx.paddle.b", ControlKind::Button);
-
-    // Eight performance pads per deck, plus the mode button above each bank.
-    push_pads(targets, "pad.elite.a.", 8);
-    push_pads(targets, "pad.elite.b.", 8);
-    push(targets, "pad.elite.a.mode", ControlKind::Button);
-    push(targets, "pad.elite.b.mode", ControlKind::Button);
-
-    push(targets, "browse.encoder", ControlKind::Encoder);
-    push(targets, "browse.load.a", ControlKind::Button);
-    push(targets, "browse.load.b", ControlKind::Button);
-
-    push(targets, "master.level", ControlKind::Knob);
-    push(targets, "booth.level", ControlKind::Knob);
-    push(targets, "cue.mix", ControlKind::Knob);
-    push(targets, "cue.level", ControlKind::Knob);
-
-    return targets;
-}
+std::vector<LearnTarget> elite_layout() { return profile_targets(builtin_elite()); }
 
 std::vector<LearnTarget> rp8000_layout(char deck, int layer) {
     std::vector<LearnTarget> targets;
     const std::string prefix =
         std::string("pad.rp8000.") + deck + ".l" + std::to_string(layer) + ".";
-    push_pads(targets, prefix, 8);
+    for (const LearnTarget& t : profile_targets(rp8000_profile(deck))) {
+        if (t.id.rfind(prefix, 0) == 0) targets.push_back(t);
+    }
     return targets;
 }
 
 std::vector<LearnTarget> default_rig_layout() {
     std::vector<LearnTarget> targets = elite_layout();
+    // Both turntables, all three pad layers: a layer that is not declared is a
+    // layer whose pads can never be learned.
     for (const char deck : {'a', 'b'}) {
-        const std::vector<LearnTarget> pads = rp8000_layout(deck, 1);
+        const std::vector<LearnTarget> pads = profile_targets(rp8000_profile(deck));
         targets.insert(targets.end(), pads.begin(), pads.end());
     }
     return targets;

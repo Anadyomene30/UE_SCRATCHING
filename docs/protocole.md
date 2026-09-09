@@ -51,6 +51,11 @@ paquet d'état. Le récepteur met le schéma en cache et, quand le hash d'un paq
 d'état ne correspond plus, il sait que son cache est périmé et attend le nouveau
 schéma plutôt que d'interpréter des valeurs de travers.
 
+Le roster dépend du **rig configuré** (`settings.json`, `midi.devices`) et de
+ses profils : ajouter un contrôleur, ou passer une platine sur ses trois
+couches de pads, change le hash. C'est voulu, et c'est exactement le cas que
+le mécanisme ci-dessus existe pour couvrir.
+
 ## Bits de geste
 
 | Bit | Sens |

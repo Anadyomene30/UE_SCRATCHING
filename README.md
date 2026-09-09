@@ -13,9 +13,13 @@ MK2** — though nothing about the Elite is hard-coded (see *MIDI learn* below).
 
 ## Why this works at all
 
-The MWM Phase does not emit proprietary data: its dock generates **standard DVS
-timecode** on RCA. So no vendor SDK is needed — a timecode decoder yields absolute
-position and signed velocity, which is exactly the raw material required.
+The MWM Phase does not emit proprietary data: its dock puts a standard DVS
+**quadrature carrier** on RCA. So no vendor SDK is needed — direction and signed
+velocity fall straight out of the two channels' phase, which is exactly the raw
+material required. (Measured, not assumed: this particular receiver emits the
+carrier without the bitstream a control record carries, so there is no absolute
+position in it — see [docs/cablage.md](docs/cablage.md). It is a relative device
+either way.)
 
 Two design principles run through everything:
 
@@ -30,10 +34,65 @@ Two design principles run through everything:
    posterisation. Where it is not, the nearest perceptual analogue is chosen and
    documented. See [docs/fx-correspondances.md](docs/fx-correspondances.md).
 
+## Try it
+
+There is something to run, and it needs no hardware:
+
+```sh
+cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo && cmake --build build
+./build/scratchvj/scratchvj demo
+```
+
+A scripted performance drives the whole engine while a terminal dashboard shows
+what it is doing — deck readouts, the filmstrip with its VRAM window, the surface
+with untouched controls drawn as unknown, and the mapping engine's live output.
+The script deliberately includes the awkward moments: a backspin, a loop scratched
+inside, and a Phase link dropout, because those are the ones worth watching.
+
+```
+scratchvj demo [--seconds N] [--fps N] [--plain] [--record FILE]
+scratchvj play FILE          replay a recorded take
+scratchvj info FILE.svcache  what an analysed clip contains
+scratchvj effects            the effect battery and how audio maps to video
+scratchvj layout             the controls --midi-learn will ask you to sweep
+```
+
+`--record` writes a `.scratchtake`: the timestamped control stream of a
+performance. That is how the rest of the project gets developed before the
+turntables are plugged in — record once, then exercise every later change against
+a real performance instead of a guess.
+
+### The window
+
+The same engine, in a real window, behind a CMake option:
+
+```sh
+cmake -S . -B build-ui -DSCRATCHVJ_BUILD_UI=ON && cmake --build build-ui --config Release
+./build-ui/scratchvj/ui/scratchvj_ui
+```
+
+It is off by default because turning it on fetches SDL3, Dear ImGui and bgfx, and
+the default build having **no external dependencies at all** is what lets the core
+and its tests run from a bare checkout on three operating systems. The CI job
+builds the default configuration, so that guarantee is enforced rather than
+merely stated.
+
+The window carries five layouts — booth, stage, prep, 360 and full-frame — a
+library you load onto either deck in one click, mouse scrubbing on the timeline,
+faders and a crossfader, and a warp editor with bézier meshes and saveable
+mapping presets.
+
+Everything that runs on the GPU is held to a CPU reference in `core/`: the
+program compositor, the 360 reprojection, the per-eye headset view, the
+single-frame effects and the multi-tap sampler each have a headless `*_check`
+tool that renders the shader and compares it channel-for-channel against the same
+computation done on the CPU. A shader that drifts fails loudly instead of merely
+looking plausible on a moving picture.
+
 ## Current state
 
-Milestone 1 of 10 is under way. What exists today is `scratchvj_core`: the
-**dependency-free** heart of the application, with 99 tests.
+The engine's logic is written and covered by **441 tests**; the parts that touch
+hardware are not.
 
 | Module | What it does |
 |---|---|
@@ -43,38 +102,55 @@ Milestone 1 of 10 is under way. What exists today is `scratchvj_core`: the
 | `core/learn` | MIDI learn: binds a control only after it proves it is really moving |
 | `core/curve` | Range, deadzone, curve, inversion and smoothing |
 | `core/mapping` | Routes any source to any destination through its own transform |
+| `core/modulator` | LFOs and envelope followers; a synced LFO follows the platter backwards |
 | `core/gestures` | Scratch rate, acceleration, backspin — and freezing on lost lock |
+| `core/timecode` | Position tracking, the vinyl/wireless split, ABS/REL/INT transport |
+| `core/anchor` | Follower mode: lining a clip up with Serato, and how stale that is |
+| `core/transport` | Loops, hot cues, beat jump, slip |
+| `core/playback` | Where a deck's position comes from, and what the clip does at its ends |
+| `core/mixer` | Crossfader curves, mix weights, transform detection, the overlay layer |
+| `core/effect` | The paired audio/video effect rack and its catalogue |
+| `core/sphere` | 360 reprojection: perspective, little planet, fisheye |
+| `core/quadrature` | A bare DVS carrier read as direction and speed — what an MWM Phase actually emits |
+| `core/headset` | The same sphere seen through a headset: head pose, per-eye asymmetric field of view |
+| `core/spectrum` | Windowed FFT and log-spaced bands, the source audio-reactive mappings read |
+| `core/videocache` | The `.svcache` clip format: fixed-size block-compressed frames |
+| `core/framewindow` | The budget-driven rolling window of frames in video memory |
+| `core/library` | Clips, crates, and the play queue |
+| `core/warp` | Corner pin homography and the output mask |
+| `core/take` | Recording and replaying a performance's control stream |
 | `core/protocol` | The UDP wire format carrying surface state to Unreal |
 | `config/mapping_io` | `mapping.json`, written with names rather than numbers |
+| `app/engine` | The per-frame composition: two decks, the surface, the mixer, the rack |
+| `app/` | The simulation and the terminal dashboard |
 
-Not yet written: audio, video, 360, the effect racks, the ImGui interface, the
-outputs, and the Unreal plugin.
+Not yet written, and all of it needs hardware or a licence to be worth writing:
+real MIDI and audio devices, the xwax timecode decoder, the OpenXR session (the
+geometry is done and checked; the frame loop needs a headset awake), NDI output
+(the runtime is here, the SDK headers need its EULA accepted), Syphon on macOS,
+and live camera inputs.
 
-## Two details worth knowing up front
+**For the full picture — the original design reasoning, a milestone-by-milestone
+status table, what's left, what's deliberately out of scope, and the two things
+that need to be tested against the real hardware — see
+[`docs/roadmap.md`](docs/roadmap.md).** That document is the durable record of
+everything that has been decided; this README only summarises the current state.
 
-**Knobs are absolute potentiometers.** At launch the application genuinely does
-not know where they are, and it will not invent a value: every control carries a
-`known` flag and unknown controls are drawn as ghosts until first moved. This is
-modelled rather than hidden because pretending otherwise would put wrong values on
-screen and wrong values into Unreal.
+**Picking this up on a different machine, or with a fresh Claude Code session?**
+See [`docs/passation.md`](docs/passation.md) — cloning, installing Claude Code,
+and what loads automatically (`CLAUDE.md`, read on every session start in this
+repo, points straight at the roadmap).
 
-**Nothing is hard-coded to the Elite.** Its CC map is not publicly documented, so
-`--midi-learn` discovers it by asking the user to sweep each control. A knob binds
-only after emitting several *distinct* values, so a neighbouring control brushed in
-passing cannot steal the binding. The useful side effect is that the project works
-with any other mixer.
+## Design notes
 
-## Build
-
-```sh
-cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo
-cmake --build build
-ctest --test-dir build --output-on-failure
-```
-
-Requires a C++20 compiler and CMake 3.20. CI builds and tests on Linux, macOS and
-Windows on every push — the core carries no external dependencies specifically so
-that portability is verified continuously rather than discovered late.
+Longer reasoning lives in `docs/`: the full roadmap and design rationale
+([`roadmap.md`](docs/roadmap.md)), the wiring and the two audio modes
+([`cablage.md`](docs/cablage.md)), the wire format
+([`protocole.md`](docs/protocole.md)), the clip format and the VRAM window
+([`format-cache.md`](docs/format-cache.md)), and the audio-to-video effect
+correspondences ([`fx-correspondances.md`](docs/fx-correspondances.md)). The
+interface is designed as a canvas whose working files are in
+[`design/`](design/).
 
 ## Licence
 

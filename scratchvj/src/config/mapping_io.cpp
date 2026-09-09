@@ -37,7 +37,10 @@ constexpr std::array<std::pair<CurveKind, const char*>, 4> kCurveKinds{{
     {CurveKind::SCurve, "scurve"},
 }};
 
-constexpr std::array<std::pair<SourceKind, const char*>, 7> kSourceKinds{{
+// Every source kind, or a mapping from an LFO or an audio band comes back
+// from the file as a "control" mapping with no control -- which is exactly
+// what happened before Modulator and AudioBand were added here.
+constexpr std::array<std::pair<SourceKind, const char*>, 9> kSourceKinds{{
     {SourceKind::Control, "control"},
     {SourceKind::DeckPosition, "deck.position"},
     {SourceKind::DeckVelocity, "deck.velocity"},
@@ -45,6 +48,8 @@ constexpr std::array<std::pair<SourceKind, const char*>, 7> kSourceKinds{{
     {SourceKind::DeckScratchRate, "deck.scratch_rate"},
     {SourceKind::DeckConfidence, "deck.confidence"},
     {SourceKind::Gesture, "gesture"},
+    {SourceKind::Modulator, "modulator"},
+    {SourceKind::AudioBand, "audio_band"},
 }};
 
 constexpr std::array<std::pair<DestinationKind, const char*>, 2> kDestinationKinds{{
@@ -137,7 +142,8 @@ std::string config_to_json(const SurfaceConfig& config) {
             {"kind", name_of(kControlKinds, b.kind)},
             {"midi", json{{"type", name_of(kMidiKinds, b.address.kind)},
                           {"channel", b.address.channel},
-                          {"number", b.address.number}}},
+                          {"number", b.address.number},
+                          {"device", b.address.device}}},
         });
     }
     root["bindings"] = std::move(bindings);
@@ -149,6 +155,9 @@ std::string config_to_json(const SurfaceConfig& config) {
             source["control"] = m.source.control_id;
         } else if (m.source.kind == SourceKind::Gesture) {
             source["gesture_bit"] = m.source.gesture_bit;
+        } else if (m.source.kind == SourceKind::Modulator ||
+                   m.source.kind == SourceKind::AudioBand) {
+            source["index"] = m.source.index;
         }
         if (m.source.kind != SourceKind::Control && m.source.kind != SourceKind::Gesture) {
             source["deck"] = m.source.deck;
@@ -200,6 +209,9 @@ bool config_from_json(std::string_view text, SurfaceConfig& out, std::string& er
                 if (!read_enum(midi, "type", kMidiKinds, b.address.kind, error)) return false;
                 b.address.channel = static_cast<std::uint8_t>(midi.value("channel", 0));
                 b.address.number = static_cast<std::uint8_t>(midi.value("number", 0));
+                // Absent in files written before the rig had more than one
+                // port: device 0, the mixer, which is what they meant.
+                b.address.device = static_cast<std::uint8_t>(midi.value("device", 0));
             }
             parsed.bindings.push_back(std::move(b));
         }
@@ -223,6 +235,7 @@ bool config_from_json(std::string_view text, SurfaceConfig& out, std::string& er
                 m.source.control_id = source.value("control", std::string());
                 m.source.deck = static_cast<std::uint8_t>(source.value("deck", 0));
                 m.source.gesture_bit = source.value("gesture_bit", 0u);
+                m.source.index = static_cast<std::uint16_t>(source.value("index", 0));
 
                 if (m.source.kind == SourceKind::Control && m.source.control_id.empty()) {
                     error = "mapping '" + m.name + "' has a control source with no 'control' id";

@@ -11,6 +11,17 @@ std::size_t MappingEngine::add(Mapping mapping) {
     return mappings_.size() - 1;
 }
 
+bool MappingEngine::remove(std::size_t index) {
+    if (index >= mappings_.size()) return false;
+    const auto at = static_cast<std::ptrdiff_t>(index);
+    mappings_.erase(mappings_.begin() + at);
+    if (resolved_.size() > index) resolved_.erase(resolved_.begin() + at);
+    if (states_.size() > index) states_.erase(states_.begin() + at);
+    if (values_.size() > index) values_.erase(values_.begin() + at);
+    if (active_.size() > index) active_.erase(active_.begin() + at);
+    return true;
+}
+
 void MappingEngine::clear() {
     mappings_.clear();
     resolved_.clear();
@@ -56,6 +67,14 @@ float MappingEngine::raw_source_value(const Surface& surface, const EngineInputs
             return deck.confidence;
         case SourceKind::Gesture:
             return (inputs.gesture_bits & source.gesture_bit) != 0 ? 1.0f : 0.0f;
+        case SourceKind::Modulator:
+            if (inputs.modulators == nullptr || source.index >= inputs.modulator_count) {
+                return 0.0f;
+            }
+            return inputs.modulators[source.index];
+        case SourceKind::AudioBand:
+            if (inputs.bands == nullptr || source.index >= inputs.band_count) return 0.0f;
+            return inputs.bands[source.index];
     }
     return 0.0f;
 }
