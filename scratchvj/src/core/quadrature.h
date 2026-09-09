@@ -184,6 +184,13 @@ struct QuadratureSignal {
     double dc_left = 0.0;
     double dc_right = 0.0;
     double gain_right = 1.0;
+    // Departure of the right leg from a right angle, in degrees. A different
+    // defect from gain_right and one that has to be told apart from it: gain
+    // squashes the circle along an axis, crosstalk tilts it at 45 degrees.
+    // Without this knob the scope's phase measurement would have nothing to be
+    // tested against, and an untested measurement on a calibration display is
+    // worse than none.
+    double phase_deg = 0.0;
     double noise = 0.0;
     std::uint32_t seed = 1;
     bool swap_channels = false;

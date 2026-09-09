@@ -289,7 +289,8 @@ bool generate_quadrature(const QuadratureSignal& signal,
         const double angle = kTwoPi * signal.carrier_hz * position_at(t);
 
         const double x = signal.amplitude * std::cos(angle) + signal.dc_left + noise();
-        const double y = signal.amplitude * signal.gain_right * std::sin(angle) +
+        const double y = signal.amplitude * signal.gain_right *
+                             std::sin(angle + signal.phase_deg * kPi / 180.0) +
                          signal.dc_right + noise();
 
         out[i * 2] = static_cast<float>(signal.swap_channels ? y : x);

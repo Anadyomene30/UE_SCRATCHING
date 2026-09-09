@@ -1808,6 +1808,100 @@ void draw_sight_frame(const SphereView& view, ImVec2 origin, float width, float 
     }
 }
 
+// The carrier as a figure -- the calibration scope, and the one place the
+// chain's ANALOGUE health is visible. Level, lock and velocity can all read
+// perfectly while the pair is 3 dB out or tilted by crosstalk, and the cost is
+// speed ripple at the carrier rate on every scratch. What is wrong in those
+// cases is the shape, so the shape is what is drawn.
+//
+// Three details that decide whether the picture tells the truth:
+//  - the figure is drawn RAW, about the true zero of the crosshair, never
+//    recentred on its own measured centre. Recentring would draw a beautiful
+//    circle for a DC offset, hiding one of the three faults the scope exists
+//    to show.
+//  - the reference circle is the LEFT leg's measured amplitude. A balanced,
+//    square pair sits on it all the way round, so the eye compares against
+//    something instead of judging a shape in the abstract.
+//  - full scale comes from the trace's own peak, so a quiet carrier still
+//    fills the box. The level itself is a number in the row above; mixing the
+//    two questions into one picture answers neither.
+void draw_platter_scope(const Frame& frame) {
+    const ScopeReading& reading = frame.platter_figure;
+    const float side = 108.0f;
+    const bool measured = reading.verdict == ScopeVerdict::Measured;
+
+    // Amber is for "look at this", and these two are where a good chain sits:
+    // a leg pair within a decibel and within five degrees of square. They
+    // colour the readout and nothing else -- no measurement, no correction and
+    // no lock decision depends on them.
+    const bool balanced = std::fabs(reading.balance_db) <= 1.0f &&
+                          std::fabs(reading.phase_error_deg) <= 5.0f;
+    const ImU32 ink = !measured ? kFaint : (balanced ? kSage : kAmber);
+
+    ImDrawList* draw = ImGui::GetWindowDrawList();
+    const ImVec2 origin = ImGui::GetCursorScreenPos();
+    const ImVec2 middle(origin.x + side * 0.5f, origin.y + side * 0.5f);
+    const float span = side * 0.42f;
+
+    draw->AddRectFilled(origin, ImVec2(origin.x + side, origin.y + side), kWell);
+    draw->AddRect(origin, ImVec2(origin.x + side, origin.y + side), kHair);
+    draw->AddLine(ImVec2(origin.x + 5.0f, middle.y), ImVec2(origin.x + side - 5.0f, middle.y),
+                  kHair);
+    draw->AddLine(ImVec2(middle.x, origin.y + 5.0f), ImVec2(middle.x, origin.y + side - 5.0f),
+                  kHair);
+
+    float peak = 0.0f;
+    for (float value : frame.platter_trace) peak = std::max(peak, std::fabs(value));
+    if (peak > 1e-6f) {
+        const float scale = span / peak;
+        if (measured) {
+            draw->AddCircle(middle, reading.amplitude_x * scale, kHair, 64, 1.0f);
+        }
+        std::vector<ImVec2> points;
+        points.reserve(frame.platter_trace.size() / 2);
+        for (std::size_t i = 0; i + 1 < frame.platter_trace.size(); i += 2) {
+            points.push_back(ImVec2(middle.x + frame.platter_trace[i] * scale,
+                                    middle.y - frame.platter_trace[i + 1] * scale));
+        }
+        if (points.size() > 1) {
+            draw->AddPolyline(points.data(), static_cast<int>(points.size()), ink,
+                              ImDrawFlags_None, 1.0f);
+        }
+    }
+    ImGui::Dummy(ImVec2(side, side));
+
+    ImGui::SameLine(0.0f, 12.0f);
+    ImGui::BeginGroup();
+    if (measured) {
+        char value[16];
+        std::snprintf(value, sizeof(value), "%+.2f", static_cast<double>(reading.balance_db));
+        readout("BALANCE", value, "dB",
+                std::fabs(reading.balance_db) <= 1.0f ? kInk : kAmber);
+        std::snprintf(value, sizeof(value), "%+.1f", static_cast<double>(reading.phase_error_deg));
+        readout("PHASE", value, "\xC2\xB0",
+                std::fabs(reading.phase_error_deg) <= 5.0f ? kInk : kAmber);
+        std::snprintf(value, sizeof(value), "%+.3f %+.3f", static_cast<double>(reading.centre_x),
+                      static_cast<double>(reading.centre_y));
+        readout("CENTRE", value, nullptr, kInk);
+    } else {
+        push_small();
+        // The two ways there is no reading are different problems, and saying
+        // which one saves an operator from hunting a cable when the answer is
+        // to start the platter.
+        dim(reading.verdict == ScopeVerdict::TooSlow
+                ? "figure : plateau trop lent \xE2\x80\x94 laisser tourner \xC3\xA0 vitesse nominale"
+                : "figure : pas de porteuse");
+        pop_font();
+    }
+    ImGui::EndGroup();
+
+    push_small();
+    dim("cercle = les deux voies \xC3\xA0 \xC3\xA9galit\xC3\xA9 et \xC3\xA0 angle droit ; "
+        "ellipse = gain, ellipse pench\xC3\xA9""e = diaphonie, "
+        "figure d\xC3\xA9""cal\xC3\xA9""e = offset");
+    pop_font();
+}
+
 // The platter's diagnostics, folded away. Position, velocity, confidence,
 // scratch rate and link are what a DVS engineer wants and what a performer
 // with no turntable plugged in has no use for: they live in a drawer, opened
@@ -1868,6 +1962,8 @@ void draw_deck_diagnostics(Deck& deck, Engine& engine, Frame& frame, bool is_a) 
                    frame.platter_slews > 0 ? " !" : "");
         }
         pop_font();
+
+        if (frame.platter_connected) draw_platter_scope(frame);
 
         // The anchor against Serato: "this position on the record is this
         // position in the clip, now". Freshness, never drift: what is

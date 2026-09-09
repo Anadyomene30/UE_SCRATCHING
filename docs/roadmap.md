@@ -9,7 +9,7 @@ tout ce qui reste à faire survive à la session qui l'a produit.
 | Jalon du plan initial | État | Modules |
 |---|---|---|
 | 1. Voir la table | **Fait sur le vrai rig** : trois ports ouverts à la fois (Elite + deux RP-8000, `ui/midi_rig`), chaque adresse MIDI porte son appareil, les encodeurs sans fin sont lus en relatif, la surface est **dessinée depuis un profil de données** (`core/profile`, Elite complète : 2 voies, 2 unités FX, boucles, 16 pads + modes, browse, sorties, face avant en `optional`), APC40 mk2 et Push 2 livrés en JSON non vérifié, courbes et reverse du crossfader **et** des faders de voie pilotables (`MixSettings`), destinations de mapping en registre (`core/destinations`) | `core/surface`, `core/learn`, `core/profile`, `core/destinations`, `core/mapping`, `core/protocol`, `ui/midi_rig` |
-| 2. Suivre le timecode | **Fait sur le vrai matériel** : le Phase émet une porteuse nue (direction + vitesse, pas de position), lue par `core/quadrature` depuis la MOTU en WASAPI partagé, verrou et suivi de la main vérifiés dans la fenêtre (`--live`). Le décodeur xwax est vendu et testé (`dvs/`) pour un vrai disque de contrôle | `core/timecode`, `core/quadrature`, `core/anchor`, `core/gestures`, `ui/audio_in`, `dvs/` |
+| 2. Suivre le timecode | **Fait sur le vrai matériel** : le Phase émet une porteuse nue (direction + vitesse, pas de position), lue par `core/quadrature` depuis la MOTU en WASAPI partagé, verrou et suivi de la main vérifiés dans la fenêtre (`--live`). Le décodeur xwax est vendu et testé (`dvs/`) pour un vrai disque de contrôle. Le **scope de calibration** (`core/scope`) mesure la figure de Lissajous et la sépare en centre, balance et erreur de phase, dessinée dans le tiroir de diagnostic | `core/timecode`, `core/quadrature`, `core/scope`, `core/anchor`, `core/gestures`, `ui/audio_in`, `dvs/` |
 | 3. Voir la vidéo | Fait de bout en bout : `scratchvj analyze` décode via l'exécutable ffmpeg, compresse en BC1 (`core/bc1`, testé) — ou en **BC3** quand la source a un canal alpha (`core/bc3`, testé, la moitié couleur est le bloc BC1 lui-même) — et écrit le `.svcache` ; images fixes et séquences numérotées passent par la même passe. L'interface **importe** (glisser-déposer, dialogues SDL3, dossiers surveillés de `settings.json`) et **analyse en arrière-plan** (`app/analysis_queue`, un worker, rapports à la frontière de frame) | `core/videocache`, `core/framewindow`, `core/bc1`, `core/bc3`, `app/analyze`, `app/analysis_queue`, `app/library_scan`, `config/library_io` |
 | 4. Le Mac tourne | CI verte sur macOS depuis le premier commit ; portage audio/GPU réel non fait | `.github/workflows/ci.yml` |
 | 5. Mixer | Courbes, blend modes, détection de transform faits ; le program est composité sur le GPU (`fs_program.sc`), tenu conforme à sa référence `core/compose` par l'outil `gpu_check` (écart max 1/255) | `core/mixer`, `core/compose` |
@@ -30,6 +30,55 @@ SORTIE, RÉGLAGES), le deck comme lecteur, scrub à la souris sur la barre de
 position, mixer entre les decks, pads à l'écran, éditeur de warp et de masque,
 et **chargement d'un clip de la bibliothèque sur un deck ou sur l'incrustation**
 en un clic.
+
+> **La porteuse a une figure, et la figure a trois défauts** (2026-09-09).
+> Le dernier manque de la colonne « Serato » : de quoi régler une cellule à
+> l'œil. `core/quadrature` savait déjà que la paire n'est jamais un cercle
+> parfait — il en fait la correction de Heydemann — mais ne le montrait à
+> personne, et niveau, verrou et vitesse peuvent tous les trois être au vert
+> pendant que la chaîne est à 3 dB près ou penchée par la diaphonie. Ce qui
+> est faux dans ces cas-là est la **forme**, donc c'est la forme qu'on dessine.
+>
+> `core/scope` mesure une fenêtre de 100 ms et en sort les **trois** manières
+> qu'une paire en quadrature a de cesser d'être un cercle centré, parce que
+> chacune est une pièce de matériel différente : un **centre** hors de zéro
+> est un offset continu, une **balance** hors de 0 dB est une voie plus forte
+> que l'autre, une **erreur de phase** hors de l'angle droit est de la
+> diaphonie. Les deux dernières font toutes les deux une ellipse — les
+> rapporter ensemble enverrait tourner le mauvais bouton, et c'est
+> `phase_error_deg` qui les distingue. Le calcul est exact plutôt qu'ajusté :
+> pour `x = A·cos(t)` et `y = B·sin(t + φ)`, la covariance des deux voies
+> normalisées vaut `sin(φ)/2`, donc la phase tombe des sommes déjà tenues.
+>
+> Trois décisions qui font la différence entre un affichage et une mesure :
+>
+> 1. **Le scope mesure avant correction, pas après.** Réutiliser le centre et
+>    le gain que le `QuadratureTracker` tient déjà (en min/max glissant)
+>    montrerait un cercle quelle que soit l'entrée — puisqu'il corrige. Et
+>    min/max, c'est deux échantillons, qu'un seul clic ruine ; une RMS sur une
+>    fenêtre, non.
+> 2. **La figure est tracée brute, jamais recentrée sur son propre centre.**
+>    La recentrer dessinerait un beau cercle pour un offset, c'est-à-dire
+>    cacherait un des trois défauts qu'elle existe pour montrer.
+> 3. **Le tracé n'est pas décimé.** Prendre un échantillon sur N d'un signal
+>    périodique est un stroboscope : un pas qui divise la période de la
+>    porteuse dessine un point — ou un triangle, qui ressemble à une panne
+>    grave — à partir d'un cercle parfait. Garder les 512 derniers
+>    échantillons tels quels coûte quelques kilo-octets et ne peut pas aliaser.
+>
+> Et une propriété propre à ce matériel : sur cette chaîne **la fréquence de
+> la porteuse est la vitesse du plateau**. À l'arrêt la figure dégénère en un
+> point, et sous quatre tours par fenêtre c'est un arc, pas une boucle — une
+> ellipse ajustée sur un arc est une devinette, et une devinette imprimée en
+> degrés à côté d'une vraie mesure ne s'en distingue pas. D'où le troisième
+> verdict, `TooSlow`, qui dit « laisser tourner à vitesse nominale » plutôt
+> que d'inventer trois chiffres. Neuf tests, tous contre
+> `generate_quadrature`, auquel un défaut de phase a été ajouté pour que la
+> mesure de phase ait quelque chose à vérifier.
+>
+> Ce qui n'est pas vérifié : le **dessin**. Le calcul est tenu par les tests,
+> mais la figure elle-même ne s'affiche qu'avec une entrée audio ouverte et un
+> plateau qui tourne — personne ne l'a encore regardée.
 
 > **Le programme a un écran à lui** (2026-09-08). Jusque-là la seule sortie
 > était Spout, ce qui est juste pour nourrir Resolume ou Unreal et inutile
@@ -683,7 +732,7 @@ déjà été traité.
 |---|---|---|
 | ~~**Réactivité audio (FFT)**~~ | Resolume | **Fait** : `core/spectrum` (fenêtre de Hann, FFT radix-2, bandes log) remplit le tableau `bands` que `SourceKind::AudioBand` lisait déjà. Reste à lui donner du vrai son plutôt que celui du script — c'est-à-dire le backend audio. |
 | **Entrées live** | Resolume | Un deck dont la source est une caméra, une entrée NDI ou Spout, au lieu d'un fichier. |
-| **Scope de calibration timecode** | Serato | Un `--monitor` en ligne de commande existe déjà (`core/timecode` exposé par la démo) ; l'UI affiche confiance et vitesse par deck, mais pas encore la figure de Lissajous qui permet de régler une cellule à l'oreille et à l'œil. |
+| ~~**Scope de calibration timecode**~~ | Serato | **Fait** : `core/scope` mesure la figure de Lissajous et la sépare en ses trois défauts (centre, balance en dB, erreur de phase en degrés), `ui/panels` la dessine dans le tiroir « diagnostic platine » du deck A. Voir la note ci-dessous. |
 
 ### À ne pas faire — et pourquoi
 

@@ -40,6 +40,7 @@
 #include "core/learn.h"
 #include "core/profile.h"
 #include "core/quadrature.h"
+#include "core/scope.h"
 #include "imgui.h"
 #include "imgui_impl_sdl3.h"
 #include <bgfx/bgfx.h>
@@ -310,6 +311,12 @@ int main(int argc, char** argv) {
     svj::ui::AudioInput platter_in;
     QuadratureTracker platter;
     std::vector<float> platter_pcm;
+    // The same block, a second time, as a figure: what the tracker corrects
+    // for is exactly what an operator adjusts by hand, and only the scope
+    // shows it. Fed from the SAME drain so the two can never disagree about
+    // which audio they are looking at.
+    LissajousScope platter_scope;
+    std::vector<float> platter_trace;
 
     // The rig: every MIDI device the settings name, each on its own port.
     // Opened once at startup and re-tried while absent: a MIDI port costs
@@ -1156,6 +1163,14 @@ int main(int argc, char** argv) {
                     platter_in.close();
                     view.deck_a_live = false;
                 } else {
+                    // A tenth of a second of THIS device's rate, so the window
+                    // is 100 ms whatever the interface runs at rather than a
+                    // sample count that means different things on 44.1 and 48.
+                    ScopeConfig scope_config;
+                    scope_config.window =
+                        static_cast<std::size_t>(platter_in.sample_rate() * 0.1);
+                    platter_scope.configure(scope_config);
+
                     // Tell the deck what this source can promise: no absolute
                     // position (a re-lock is a jump, so the anchor ages), and a
                     // speed limit that is the tracker's own Nyquist figure --
@@ -1207,6 +1222,7 @@ int main(int argc, char** argv) {
             // that is the seam the whole engine was built on.
             platter_in.drain(platter_pcm);
             if (!platter_pcm.empty()) {
+                platter_scope.submit(platter_pcm.data(), platter_pcm.size() / 2);
                 frame.deck_a = platter.submit(platter_pcm.data(), platter_pcm.size() / 2,
                                               wall_s);
             } else {
@@ -1236,6 +1252,13 @@ int main(int argc, char** argv) {
         view.platter_level = platter.level();
         view.platter_locked = platter.locked();
         view.platter_slews = platter.slew_events();
+        view.platter_figure = platter_scope.reading();
+        if (platter_in.ready()) {
+            platter_scope.trace(platter_trace);
+            view.platter_trace = platter_trace;
+        } else {
+            view.platter_trace.clear();
+        }
 
         // Once a second, the platter's truth in a file next to the working
         // directory. A FILE, not stderr: this is a WIN32-subsystem application

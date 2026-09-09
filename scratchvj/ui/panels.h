@@ -21,6 +21,7 @@ struct ImFont;
 #include "config/settings_io.h"
 #include "core/library.h"
 #include "core/profile.h"
+#include "core/scope.h"
 
 namespace svj::ui {
 
@@ -243,6 +244,11 @@ struct Frame {
     float platter_level = 0.0f;
     bool platter_locked = false;
     std::uint32_t platter_slews = 0;
+    // The carrier as a shape, for the calibration scope in the drawer: the
+    // measurement, and the points to draw it from, interleaved x,y. Copied
+    // rather than pointed at -- a view owns nothing that can outlive a frame.
+    ScopeReading platter_figure;
+    std::vector<float> platter_trace;
 
     // --- the mixer, over MIDI -------------------------------------------------
     // Filled by the front end, which owns the port.

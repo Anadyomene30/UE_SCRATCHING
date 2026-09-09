@@ -25,7 +25,7 @@ Toute nouvelle fonctionnalité doit respecter ces deux règles.
 
 ```sh
 cmake -S . -B build && cmake --build build
-ctest --test-dir build --output-on-failure    # 586 tests, doivent tous passer
+ctest --test-dir build --output-on-failure    # 595 tests, doivent tous passer
 ./build/scratchvj/scratchvj demo              # démo sans matériel
 ./build/scratchvj/scratchvj effects           # catalogue d'effets
 ./build/scratchvj/scratchvj layout            # checklist MIDI learn (tout le rig)
@@ -87,7 +87,10 @@ pause/stop`, la platine est une source parmi trois) ; le mixer est *entre* les
 decks comme l'Elite entre les platines ; les pads sont à l'écran (cues, clips
 depuis les banques de `core/matrix`, boucles) et passent par les mêmes
 `DeckCommands` qu'un pad MIDI. Les diagnostics DVS vivent dans un tiroir par
-deck. Le raisonnement complet est dans la note « L'interface a été refaite »
+deck, avec le **scope de calibration** (`core/scope`) quand une entrée audio
+est ouverte : la figure de Lissajous brute, et les trois défauts qu'elle peut
+avoir séparément — centre (offset), balance (dB), erreur de phase (diaphonie).
+La figure n'est **pas** recentrée ni décimée, pour les raisons dans le roadmap. Le raisonnement complet est dans la note « L'interface a été refaite »
 du roadmap, et la maquette qui la précède dans `design/`.
 
 **L'écran de sortie** se choisit dans l'onglet SORTIE : le programme part en

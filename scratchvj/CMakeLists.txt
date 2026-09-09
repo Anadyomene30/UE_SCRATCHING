@@ -42,6 +42,7 @@ add_library(scratchvj_core STATIC
   src/core/profiles_builtin.cpp
   src/core/protocol.cpp
   src/core/quadrature.cpp
+  src/core/scope.cpp
   src/core/spectrum.cpp
   src/core/sphere.cpp
   src/core/surface.cpp
@@ -207,6 +208,7 @@ if(SCRATCHVJ_BUILD_TESTS)
     tests/test_profile_io.cpp
     tests/test_protocol.cpp
     tests/test_quadrature.cpp
+    tests/test_scope.cpp
     tests/test_spectrum.cpp
     tests/test_sphere.cpp
     tests/test_surface.cpp
