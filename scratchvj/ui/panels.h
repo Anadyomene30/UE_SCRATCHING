@@ -241,6 +241,11 @@ struct Frame {
     // Filled by the front end for display.
     bool platter_connected = false;
     std::string platter_endpoint;
+    // Why the last attempt to open the input failed, if it did. The panel is
+    // the only place this can be read: a WIN32 application has no stderr, so
+    // "the live platter silently did nothing" was the whole of the report
+    // until this existed.
+    std::string platter_error;
     float platter_level = 0.0f;
     bool platter_locked = false;
     std::uint32_t platter_slews = 0;

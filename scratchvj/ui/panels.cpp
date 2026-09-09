@@ -1946,12 +1946,17 @@ void draw_deck_diagnostics(Deck& deck, Engine& engine, Frame& frame, bool is_a) 
     }
 
     if (is_a) {
-        // The audio input the platter is read from, in three states that look
-        // alike from the outside: no device, a device with no carrier, and a
-        // carrier being tracked.
+        // The audio input the platter is read from, in four states that look
+        // alike from the outside: not asked for, asked for and refused (with
+        // the reason, which no stderr could carry), open with no carrier, and
+        // a carrier being tracked.
         push_small();
         if (!frame.deck_a_live) {
-            dim("plateau r\xC3\xA9""el : non lu \xE2\x80\x94 choisir « Platine » pour l'\xC3\xA9""couter");
+            if (!frame.platter_error.empty()) {
+                text_c(kAmber, "plateau r\xC3\xA9""el : %s", frame.platter_error.c_str());
+            } else {
+                dim("plateau r\xC3\xA9""el : non lu \xE2\x80\x94 choisir « Platine » pour l'\xC3\xA9""couter");
+            }
         } else if (!frame.platter_connected) {
             text_c(kAmber, "plateau r\xC3\xA9""el : aucune entr\xC3\xA9""e audio");
         } else if (!frame.platter_locked) {

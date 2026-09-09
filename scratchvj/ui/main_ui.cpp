@@ -1159,7 +1159,8 @@ int main(int argc, char** argv) {
                 config.carrier_hz = desk.carrier_hz;
                 config.sample_rate = platter_in.sample_rate();
                 if (!platter.configure(config)) {
-                    std::fprintf(stderr, "plateau live: configuration refusee\n");
+                    view.platter_error = view.platter_endpoint +
+                                         " : porteuse trop haute pour cette frequence";
                     platter_in.close();
                     view.deck_a_live = false;
                 } else {
@@ -1177,10 +1178,13 @@ int main(int argc, char** argv) {
                     // 22.05x on this 44.1 kHz interface, not the 24x the deck
                     // assumed for a control record at 48 kHz.
                     engine.deck_a().timecode.set_source(false, platter.max_speed_ratio());
+                    view.platter_error.clear();
                 }
             } else {
-                std::fprintf(stderr, "plateau live: entree \"%s\" introuvable\n",
-                             desk.platter_endpoint.c_str());
+                // Not stderr: this is a WIN32 subsystem application, and every
+                // earlier attempt to read that stream came back empty. The
+                // reason goes where a reason can be read.
+                view.platter_error = platter_in.error();
                 view.deck_a_live = false;
             }
         } else if (!view.deck_a_live && platter_in.ready()) {

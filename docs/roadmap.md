@@ -31,6 +31,55 @@ position, mixer entre les decks, pads à l'écran, éditeur de warp et de masque
 et **chargement d'un clip de la bibliothèque sur un deck ou sur l'incrustation**
 en un clic.
 
+> **Le plateau live n'ouvrait rien, et ne le disait à personne** (2026-09-09).
+> Trouvé en lançant `--live` pour regarder le scope ci-dessous : aucun
+> `platter.log`, aucun message, le deck A repassé sur son horloge sans un mot.
+> La cause est dans `AudioInput::open` : le point d'entrée était choisi sur le
+> **nom seul** — le premier dont le nom contient le fragment de `settings.json`
+> — et le nombre de canaux n'était vérifié qu'ensuite, pour refuser l'ouverture.
+> Or « MOTU » désigne ici **deux** entrées de capture, `In 1-2` (2 canaux) et
+> `In 1-24` (24 canaux), et la première est celle que Windows énumère d'abord.
+> La porteuse est sur les voies 5/6, qui n'existent que sur la seconde. Le
+> nombre de canaux n'est pas une validation à faire après coup : **il fait
+> partie de la question posée**.
+>
+> La règle est maintenant dans `core/endpoint`, pure et testée sur les trois
+> OS sans carte son — sept tests, dont celui qui énonce le bug (« un fragment
+> qui désigne deux entrées prend celle qui porte la paire ») et celui qui
+> empêche la sur-correction (« la petite entrée est la bonne quand la paire
+> demandée y tient »). Un huitième est né d'une erreur du fichier de test
+> lui-même : un micro mono correspond au nom et ne peut pas porter deux
+> jambes ; « correspond au nom » n'est pas « peut porter le signal », ce qui
+> est tout le propos du module.
+>
+> Le deuxième défaut est plus grave que le premier : l'échec partait en
+> `fprintf(stderr)`, et `scratchvj_ui` est une application WIN32 **sans
+> console** — CLAUDE.md le documentait déjà comme piège, et le code le
+> commettait quand même. La raison remonte maintenant jusqu'au tiroir de
+> diagnostic, en ambre, avec ses trois cas distincts : entrée absente, entrée
+> trouvée mais trop étroite (avec le nombre de canaux qu'elle a vraiment), et
+> ouverture refusée. Et `input_check` pose la même question depuis une console,
+> avec le même `settings.json` et la même classe — une réponse là-bas *est* la
+> réponse dans l'application ; réimplémenter la recherche n'aurait testé
+> qu'elle-même.
+
+> **La géométrie de la RP-8000 n'est pas qu'une mesure à prendre** (2026-09-09).
+> On la croyait bloquée sur l'absence d'un rendu officiel comparable au
+> `238128_Reloop_TP.jpg` de l'Elite. C'est un vrai blocage, mais ce n'est pas
+> le premier : le modèle de panneau (`ProfileGroup`, un rectangle par section,
+> les contrôles s'écoulant dedans) suppose **un identifiant = une place
+> physique**. Or le profil de la RP-8000 déclare 24 identifiants —
+> `pad.rp8000.<deck>.l<1..3>.<1..8>` — pour **huit** pads réels, parce que les
+> trois couches sont un état de l'appareil, pas trois rangées de boutons. Les
+> placer demanderait soit trois groupes superposés (que le test « aucune
+> section n'en recouvre une autre » refuse, à juste titre), soit une notion de
+> couche active que le profil ne porte pas et que l'onglet TABLE ne sait pas
+> afficher.
+>
+> Donc ce qui manque est une **décision de conception** — le panneau montre-t-il
+> la couche active, ou les trois ? — avant toute mesure. La rangée honnête
+> reste correcte en attendant.
+
 > **La porteuse a une figure, et la figure a trois défauts** (2026-09-09).
 > Le dernier manque de la colonne « Serato » : de quoi régler une cellule à
 > l'œil. `core/quadrature` savait déjà que la paire n'est jamais un cercle
@@ -194,8 +243,10 @@ en un clic.
 > Le « zoom blur » est un zoom : le flou serait l'affaire des taps du rack, et
 > il est nommé ainsi à l'écran.
 >
-> Ce qui n'est pas fait : la géométrie de la RP-8000. Ni gcc ni clang n'étant
-> installés sur ce bureau, la vérification multi-compilateurs est celle de la CI.
+> Ce qui n'est pas fait : la géométrie de la RP-8000 — voir la note du
+> 2026-09-09, qui dit pourquoi ce n'est pas qu'une mesure à prendre. Ni gcc ni
+> clang n'étant installés sur ce bureau, la vérification multi-compilateurs est
+> celle de la CI.
 
 > **La démo a cessé d'être l'état par défaut** (2026-09-08). Elle était
 > l'échafaudage qui a permis de construire tout l'instrument avant qu'il y ait
@@ -252,8 +303,13 @@ Et `core/headset` : la géométrie de la sphère vue à travers un casque, avec 
 passe GPU (`ui/gpu_eye`, `fs_view360_eye.sc`) tenue à sa référence par
 `eye_check`. Voir [Le casque](#le-casque--scratcher-une-sphère-quon-regarde-de-lintérieur).
 
-**Ce qui reste, dans les grandes lignes** : un vrai périphérique MIDI (RtMidi)
-et la sortie audio du mode autonome (miniaudio/ASIO — l'entrée existe),
+**Ce qui reste, dans les grandes lignes** : le MIDI **portable** (RtMidi) — sur
+Windows l'entrée est réelle depuis longtemps, `ui/midi_in.cpp` parle winmm et
+c'est ce que le rig utilise ; ce qui manque est macOS et Linux, où le fichier
+est un stub qui renvoie « aucun port » (vérifié le 2026-09-09 : le `#else` de
+`midi_in.cpp`). Ce n'est donc pas « pas de backend MIDI » mais « pas de backend
+MIDI hors Windows », et ça ne se vérifie pas sans une machine de chaque.
+Restent aussi la sortie audio du mode autonome (miniaudio/ASIO — l'entrée existe),
 Syphon/NDI, la **session** OpenXR (la géométrie est faite, la boucle de frame
 attend le casque), `DeckSource::Live` pour scratcher une entrée vidéo live, et
 le test en scène du plugin Unreal. Le reste du plan initial est fait et vérifié

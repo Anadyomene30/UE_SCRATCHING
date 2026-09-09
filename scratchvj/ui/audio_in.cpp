@@ -1,5 +1,7 @@
 #include "audio_in.h"
 
+#include "core/endpoint.h"
+
 #if defined(_WIN32)
 
 #define NOMINMAX
@@ -16,7 +18,6 @@
 
 #include <algorithm>
 #include <atomic>
-#include <cctype>
 
 namespace svj::ui {
 namespace {
@@ -46,13 +47,6 @@ std::string device_name(IMMDevice* device) {
     return name;
 }
 
-std::string lowered(std::string text) {
-    for (char& c : text) {
-        c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-    }
-    return text;
-}
-
 }  // namespace
 
 struct AudioInput::Impl {
@@ -74,6 +68,7 @@ AudioInput::~AudioInput() { close(); }
 
 bool AudioInput::open(const std::string& endpoint, unsigned first_channel) {
     close();
+    error_.clear();
 
     // COM per thread; the capture thread initialises its own.
     const HRESULT com = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
@@ -91,23 +86,54 @@ bool AudioInput::open(const std::string& endpoint, unsigned first_channel) {
     UINT count = 0;
     if (collection != nullptr) collection->GetCount(&count);
 
-    auto* impl = new Impl();
-    const std::string want = lowered(endpoint);
-    for (UINT i = 0; i < count && impl->device == nullptr; ++i) {
+    // Every capture endpoint with the number of channels it actually has, so
+    // the choice is made on what a device can carry and not on its name alone.
+    // A device that cannot even be asked keeps its slot with zero channels:
+    // the indices have to line up with the collection, because that is how the
+    // chosen one is fetched back.
+    std::vector<AudioEndpoint> available;
+    available.reserve(count);
+    for (UINT i = 0; i < count; ++i) {
+        AudioEndpoint info;
         IMMDevice* candidate = nullptr;
-        collection->Item(i, &candidate);
-        const std::string name = device_name(candidate);
-        if (lowered(name).find(want) != std::string::npos) {
-            impl->device = candidate;
-            endpoint_ = name;
-        } else {
+        if (SUCCEEDED(collection->Item(i, &candidate)) && candidate != nullptr) {
+            info.name = device_name(candidate);
+            IAudioClient* probe = nullptr;
+            if (SUCCEEDED(candidate->Activate(__uuidof(IAudioClient), CLSCTX_ALL, nullptr,
+                                              reinterpret_cast<void**>(&probe))) &&
+                probe != nullptr) {
+                WAVEFORMATEX* format = nullptr;
+                if (SUCCEEDED(probe->GetMixFormat(&format)) && format != nullptr) {
+                    info.channels = format->nChannels;
+                    CoTaskMemFree(format);
+                }
+                probe->Release();
+            }
             candidate->Release();
         }
+        available.push_back(std::move(info));
+    }
+
+    const EndpointChoice choice = choose_endpoint(available, endpoint, first_channel);
+
+    auto* impl = new Impl();
+    if (choice.verdict == EndpointVerdict::Chosen) {
+        collection->Item(static_cast<UINT>(choice.index), &impl->device);
+        endpoint_ = choice.detail;
     }
     if (collection != nullptr) collection->Release();
     enumerator->Release();
 
     if (impl->device == nullptr) {
+        // Three failures that look alike from the outside, and only one of them
+        // is fixed by checking a cable.
+        if (choice.verdict == EndpointVerdict::TooFewChannels) {
+            error_ = choice.detail;
+        } else if (choice.verdict == EndpointVerdict::NoMatch) {
+            error_ = "aucune entree audio dont le nom contient \"" + endpoint + "\"";
+        } else {
+            error_ = choice.detail + " : entree trouvee mais impossible a ouvrir";
+        }
         delete impl;
         if (owns_com) CoUninitialize();
         return false;
@@ -116,6 +142,7 @@ bool AudioInput::open(const std::string& endpoint, unsigned first_channel) {
     if (FAILED(impl->device->Activate(__uuidof(IAudioClient), CLSCTX_ALL, nullptr,
                                       reinterpret_cast<void**>(&impl->client))) ||
         FAILED(impl->client->GetMixFormat(&impl->format)) || impl->format == nullptr) {
+        error_ = endpoint_ + " : format inconnu";
         delete impl;
         if (owns_com) CoUninitialize();
         return false;
@@ -127,13 +154,17 @@ bool AudioInput::open(const std::string& endpoint, unsigned first_channel) {
                                         impl->format, nullptr)) ||
         FAILED(impl->client->GetService(__uuidof(IAudioCaptureClient),
                                         reinterpret_cast<void**>(&impl->capture)))) {
+        error_ = endpoint_ + " : ouverture partagee refusee";
         delete impl;
         if (owns_com) CoUninitialize();
         return false;
     }
 
     channels_ = impl->format->nChannels;
+    // Belt and braces: the choice above was made on this same mix format, so
+    // this cannot fire unless the device changed shape between the two calls.
     if (first_channel + 1 >= channels_) {
+        error_ = endpoint_ + " : la paire demandee n'y est plus";
         delete impl;
         if (owns_com) CoUninitialize();
         return false;

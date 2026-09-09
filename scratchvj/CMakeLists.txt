@@ -24,6 +24,7 @@ add_library(scratchvj_core STATIC
   src/core/curve.cpp
   src/core/destinations.cpp
   src/core/effect.cpp
+  src/core/endpoint.cpp
   src/core/framewindow.cpp
   src/core/gestures.cpp
   src/core/headset.cpp
@@ -187,6 +188,7 @@ if(SCRATCHVJ_BUILD_TESTS)
     tests/test_config.cpp
     tests/test_curve.cpp
     tests/test_effect.cpp
+    tests/test_endpoint.cpp
     tests/test_engine.cpp
     tests/test_framewindow.cpp
     tests/test_gestures.cpp

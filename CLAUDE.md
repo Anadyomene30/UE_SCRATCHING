@@ -25,7 +25,7 @@ Toute nouvelle fonctionnalité doit respecter ces deux règles.
 
 ```sh
 cmake -S . -B build && cmake --build build
-ctest --test-dir build --output-on-failure    # 595 tests, doivent tous passer
+ctest --test-dir build --output-on-failure    # 603 tests, doivent tous passer
 ./build/scratchvj/scratchvj demo              # démo sans matériel
 ./build/scratchvj/scratchvj effects           # catalogue d'effets
 ./build/scratchvj/scratchvj layout            # checklist MIDI learn (tout le rig)
@@ -95,8 +95,9 @@ depuis les banques de `core/matrix`, boucles) et passent par les mêmes
 deck, avec le **scope de calibration** (`core/scope`) quand une entrée audio
 est ouverte : la figure de Lissajous brute, et les trois défauts qu'elle peut
 avoir séparément — centre (offset), balance (dB), erreur de phase (diaphonie).
-La figure n'est **pas** recentrée ni décimée, pour les raisons dans le roadmap. Le raisonnement complet est dans la note « L'interface a été refaite »
-du roadmap, et la maquette qui la précède dans `design/`.
+La figure n'est **pas** recentrée ni décimée, pour les raisons dans le roadmap.
+Le raisonnement complet sur l'interface est dans la note « L'interface a été
+refaite » du roadmap, et la maquette qui la précède dans `design/`.
 
 **L'écran de sortie** se choisit dans l'onglet SORTIE : le programme part en
 plein écran sans bordure sur le moniteur choisi (`ui/output_window`), par une
@@ -186,7 +187,10 @@ Résumé — le détail et l'état module par module sont dans
 ou d'une dépendance lourde pour être vérifiable, donc rien n'a été écrit à
 l'aveugle :
 
-- Un vrai backend MIDI (RtMidi). L'audio d'entrée existe (`ui/audio_in`, WASAPI
+- Le MIDI **portable** (RtMidi) : sur Windows l'entrée est réelle (`ui/midi_in.cpp`
+  parle winmm, c'est ce que le rig utilise) ; le `#else` du même fichier est un
+  stub qui renvoie « aucun port », donc ce qui manque est macOS et Linux.
+  L'audio d'entrée existe (`ui/audio_in`, WASAPI
   partagé, un thread de capture) et le plateau est lu en direct par
   `core/quadrature` — le Phase émet une porteuse nue, pas un timecode, donc le
   décodeur xwax (`dvs/`, vendu et testé) sert un vrai disque de contrôle, pas ce
@@ -208,10 +212,18 @@ Les sondes restent utiles pour re-vérifier après un changement de câblage :
 Le matériel est branché et deux sondes existent :
 
 ```sh
+./build-ui/scratchvj/ui/Release/midi_probe.exe              # les ports vus, sans rien ouvrir
 ./build-ui/scratchvj/ui/Release/midi_probe.exe all 45      # puis balayer tout
 ./build-ui/scratchvj/ui/Release/audio_probe.exe all 3        # en tournant un plateau
 ./build-ui/scratchvj/ui/Release/audio_probe.exe selftest    # le detecteur, sans materiel
+./build-ui/scratchvj/ui/Release/input_check.exe             # l'appli peut-elle ouvrir la porteuse ?
 ```
+
+`input_check` pose exactement la question que pose `--live` (même `settings.json`,
+même classe `AudioInput`) mais **depuis une console** : `scratchvj_ui` n'en a pas,
+donc c'est le seul endroit d'où l'on voit pourquoi une entrée refuse de s'ouvrir.
+Un fragment de nom peut désigner plusieurs entrées — « MOTU » en désigne deux ici —
+et c'est `core/endpoint` qui choisit celle qui porte vraiment la paire de voies.
 
 1. ~~Est-ce que l'Elite émet son état MIDI à l'ouverture du port ?~~ **Non**
    (mesuré : 41 contrôles au balayage, 7 messages au démarrage et ce sont des

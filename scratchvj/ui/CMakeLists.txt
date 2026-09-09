@@ -239,6 +239,13 @@ if(WIN32)
   add_executable(audio_probe tools/audio_probe.cpp)
   target_link_libraries(audio_probe PRIVATE ole32)
 
+  # Whether the application can open the carrier input at all, from a console.
+  # The application itself cannot say: it is a WIN32 subsystem binary with no
+  # stderr, which is how "--live did nothing" stayed unexplained.
+  add_executable(input_check tools/input_check.cpp audio_in.cpp)
+  target_link_libraries(input_check PRIVATE scratchvj_core scratchvj_config ole32)
+  target_include_directories(input_check PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+
   # The quadrature tracker against the real carrier: which channel pair, which
   # sign is forwards, and what the carrier actually is. core/quadrature's tests
   # prove the maths; this proves the wiring.
