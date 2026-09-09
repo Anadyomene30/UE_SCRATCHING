@@ -209,8 +209,12 @@ if(WIN32)
 
   # The proof of the output: a receiver built from the same SDK, so the Spout
   # path is testable end to end with no third-party software installed.
-  add_executable(spout_check tools/spout_check.cpp)
+  # share.cpp comes along so the `send` mode publishes through the SAME class
+  # the application does: a sender that reimplemented it would prove nothing
+  # about the one that matters.
+  add_executable(spout_check tools/spout_check.cpp share.cpp)
   target_link_libraries(spout_check PRIVATE SpoutDX_static d3d11 dxgi)
+  target_include_directories(spout_check PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
   # Same idea for the UDP control stream: a listener decoding with the very
   # core/protocol the packets were encoded with.

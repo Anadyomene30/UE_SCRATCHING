@@ -31,6 +31,30 @@ position, mixer entre les decks, pads à l'écran, éditeur de warp et de masque
 et **chargement d'un clip de la bibliothèque sur un deck ou sur l'incrustation**
 en un clic.
 
+> **Sans clip il n'y a pas de programme, et la sonde Spout crie à la panne**
+> (2026-09-09). `spout_check` lancé contre un `scratchvj_ui --demo` rapporte
+> « aucune frame », ce qui ressemble trait pour trait à une sortie Spout
+> cassée — au point qu'on a commencé à la déboguer. Elle ne l'était pas.
+> `rebuild_passes` ne construit le compositeur GPU que si un deck a du média,
+> puisque les passes sont **dimensionnées sur le clip** ; or les clips de la
+> démo sont fabriqués dans le moteur et ne sont jamais des fichiers. Donc sans
+> clip chargé il n'y a pas de programme du tout — ni aperçu, ni relecture, ni
+> Spout — et la sonde dit la vérité sur un état qui n'est pas une panne.
+>
+> Ce que le détour laisse derrière, parce que c'est ce qui a permis de
+> trancher : `spout_check list` énumère les senders enregistrés, et
+> `spout_check send <nom> <secondes>` publie un dégradé **par la classe
+> `ProgramShare` que l'application utilise**. Les deux causes d'un « aucune
+> frame » — l'application ne publie pas, ou Spout ne marche pas ici — sont
+> indiscernables depuis le receveur, et un émetteur connu bon est le seul
+> moyen de les séparer. Mesuré ensuite avec un vrai clip : sender `scratchvj`
+> en 640 × 360, 359 frames, luminance 93,9. Le partage va bien.
+>
+> La leçon est la même que celle du plateau juste en dessous, dans l'autre
+> sens : un état parfaitement normal peut être **indiscernable d'une panne**
+> tant que la sonde ne dit pas ce qu'elle a trouvé, et pas seulement ce qui
+> lui manque.
+
 > **Le plateau live n'ouvrait rien, et ne le disait à personne** (2026-09-09).
 > Trouvé en lançant `--live` pour regarder le scope ci-dessous : aucun
 > `platter.log`, aucun message, le deck A repassé sur son horloge sans un mot.

@@ -7,13 +7,102 @@
 // of texture sharing, fails the check instead of passing it).
 //
 // Exit codes: 0 frames received and not black, 1 nothing arrived, 2 black.
+//
+// `spout_check send [name] [seconds]` runs the OTHER half: it publishes a
+// gradient under that name through the very ProgramShare the application uses.
+// That exists because "no frame arrived" has two causes that look identical
+// from the receiving end -- the application is not publishing, or Spout does
+// not work on this machine at all -- and only a sender that is known good can
+// tell them apart. Run it in one console and the plain receiver in another.
+#include <chrono>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
+#include <thread>
 #include <vector>
 
 #include "SpoutDX.h"
+#include "share.h"
+
+namespace {
+
+// Every sender the machine currently registers. "No frame arrived" has two
+// causes that look identical from the receiving end: nothing is registered
+// under that name, or something is registered and not publishing. Naming what
+// IS there also catches the third case, which is the one that actually bites
+// -- a sender running under a name nobody is asking for.
+int run_list() {
+    spoutDX receiver;
+    if (!receiver.OpenDirectX11()) {
+        std::fprintf(stderr, "DX11 indisponible\n");
+        return 1;
+    }
+    const int count = receiver.GetSenderCount();
+    std::printf("%d sender%s Spout :\n", count, count == 1 ? "" : "s");
+    for (int i = 0; i < count; ++i) {
+        char name[256] = {0};
+        if (!receiver.GetSender(i, name, sizeof(name))) continue;
+        unsigned int width = 0, height = 0;
+        HANDLE handle = nullptr;
+        DWORD format = 0;
+        if (receiver.GetSenderInfo(name, width, height, handle, format)) {
+            std::printf("  %-32s %ux%u  format %lu\n", name, width, height,
+                        static_cast<unsigned long>(format));
+        } else {
+            std::printf("  %-32s (pas d'info)\n", name);
+        }
+    }
+    receiver.CloseDirectX11();
+    return count > 0 ? 0 : 1;
+}
+
+int run_sender(const char* name, double seconds) {
+    constexpr unsigned int kW = 640;
+    constexpr unsigned int kH = 360;
+
+    svj::ui::ProgramShare sender;
+    if (!sender.open(name)) {
+        std::fprintf(stderr, "ouverture du sender \"%s\" refusee\n", name);
+        return 1;
+    }
+
+    // A gradient, never black: the receiver's black check has to be able to
+    // pass, or this would prove only half of the path.
+    std::vector<std::uint8_t> frame(static_cast<size_t>(kW) * kH * 4, 0);
+    for (unsigned int y = 0; y < kH; ++y) {
+        for (unsigned int x = 0; x < kW; ++x) {
+            std::uint8_t* px = &frame[(static_cast<size_t>(y) * kW + x) * 4];
+            px[0] = static_cast<std::uint8_t>(x * 255 / (kW - 1));
+            px[1] = static_cast<std::uint8_t>(y * 255 / (kH - 1));
+            px[2] = 128;
+            px[3] = 255;
+        }
+    }
+
+    std::printf("sender \"%s\" ouvert, %ux%u, %.0f s\n", name, kW, kH, seconds);
+    const auto until = std::chrono::steady_clock::now() +
+                       std::chrono::milliseconds(static_cast<long long>(seconds * 1000.0));
+    unsigned long long sent = 0;
+    while (std::chrono::steady_clock::now() < until) {
+        sender.send(frame.data(), kW, kH);
+        ++sent;
+        std::this_thread::sleep_for(std::chrono::milliseconds(16));
+    }
+    sender.close();
+    std::printf("%llu frames publiees\n", sent);
+    return 0;
+}
+
+}  // namespace
 
 int main(int argc, char** argv) {
+    if (argc > 1 && std::strcmp(argv[1], "list") == 0) return run_list();
+    if (argc > 1 && std::strcmp(argv[1], "send") == 0) {
+        const char* name = argc > 2 ? argv[2] : "scratchvj";
+        const double seconds = argc > 3 ? std::atof(argv[3]) : 10.0;
+        return run_sender(name, seconds);
+    }
+
     const char* name = argc > 1 ? argv[1] : "scratchvj";
 
     spoutDX receiver;

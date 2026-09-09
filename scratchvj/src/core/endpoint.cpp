@@ -1,6 +1,7 @@
 #include "core/endpoint.h"
 
 #include <cctype>
+#include <cstddef>
 
 namespace svj {
 namespace {

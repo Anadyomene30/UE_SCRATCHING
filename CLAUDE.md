@@ -142,6 +142,27 @@ un binaire périmé alors que leur source ne lisait plus rien. Restent en dehors
 d'exécution, et `xr_check`, qui rapporte ce que la machine offre en OpenXR (son
 verdict dépend du matériel branché, pas du code).
 
+**`spout_check` exige un vrai clip chargé, `--demo` ne suffit pas.** Le
+compositeur GPU n'est initialisé que quand un deck a du média (`rebuild_passes`
+le dimensionne sur le clip), et les clips de la démo sont fabriqués dans le
+moteur, jamais des fichiers. Sans clip il n'y a donc **pas de programme du
+tout** — ni aperçu, ni Spout — et la sonde rapporte « aucune frame », ce qui
+ressemble exactement à une panne de partage. C'est ce piège qui a coûté une
+heure le 2026-09-09. La bonne façon :
+
+```sh
+./build-ui/scratchvj/ui/Release/scratchvj_ui.exe clips/city_mask.mp4   # puis, à côté :
+./build-ui/scratchvj/ui/Release/spout_check.exe          # reçoit le programme
+./build-ui/scratchvj/ui/Release/spout_check.exe list     # les senders enregistrés
+./build-ui/scratchvj/ui/Release/spout_check.exe send nom 10   # publie un dégradé, sans l'appli
+./build-ui/scratchvj/ui/Release/net_check.exe            # décode le flux UDP
+```
+
+`list` et `send` existent pour séparer les deux causes d'un « aucune frame »
+qui se ressemblent : l'application ne publie pas, ou Spout ne marche pas sur
+cette machine. `send` publie par la classe `ProgramShare` que l'application
+utilise, donc un envoi qui marche disculpe le transport.
+
 Compiler avec gcc **et** clang avant de pousser (`-DCMAKE_CXX_COMPILER=clang++`) :
 la CI tourne sur Linux, macOS et Windows à chaque push, mais les deux compilateurs
 locaux attrapent déjà l'essentiel des warnings avant même d'y arriver.
