@@ -1,7 +1,7 @@
 # Les deux PDF
 
-- `scratchvj-manuel.pdf` — le manuel de l'instrument (33 pages).
-- `scratchvj-argumentaire.pdf` — le dossier de positionnement commercial (13 pages).
+- `scratchvj-manuel.pdf` — le manuel de l'instrument.
+- `scratchvj-argumentaire.pdf` — le dossier de positionnement commercial.
 
 Les sources sont les `.html` de ce dossier, plus `_style.css`. Ce sont eux qu'on
 modifie ; les PDF sont des artefacts.
@@ -23,8 +23,12 @@ en Times New Roman sans qu'aucune erreur ne soit émise.
 
 ## Les annexes du manuel sont générées, pas recopiées
 
-Les deux tableaux d'annexe — les 63 contrôles et les 32 effets — sont produits par
-`build.py` depuis la sortie de `scratchvj layout` et `scratchvj effects`. C'est
+Les deux tableaux d'annexe — les contrôles et les effets — sont produits par
+`build.py` depuis la sortie de `scratchvj layout` et `scratchvj effects`. *Leur
+nombre ne s'écrit pas ici : ce sont ces deux commandes qui le donnent, et elles ne se
+périment pas. Le 2026-09-10, la régénération a fait passer l'annexe des contrôles de
+63 lignes à 141 — le catalogue imprimé avait divergé du code, ce que ce mécanisme
+existe pour empêcher.* C'est
 délibéré : le catalogue imprimé ne peut pas diverger du code, pour la même raison que
 `core/effect.h` tient la prose et l'implémentation dans le même fichier.
 

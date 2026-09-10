@@ -154,10 +154,26 @@ interface is designed as a canvas whose working files are in
 
 ## Licence
 
-**GPL-3.0.** The timecode decoder this project will build on (`timecoder.c` from
-[xwax](https://xwax.org/)) is GPL-3, so `scratchvj` is too. The licence is declared
-now rather than at the moment that code lands, because relicensing later would
-require the agreement of every contributor by then.
+**GPL-3.0, and it is a decision rather than an accident.** The timecode decoder
+(`timecoder.c` from [xwax](https://xwax.org/)) is GPL-3; it is vendored and tested
+in `scratchvj/dvs/`, it stays, and so the control record stays with it. The
+alternative — dropping the record, or writing a fresh absolute-position decoder —
+costs real work for a market this instrument sells into at 50–200 € a copy.
+
+**Which means, and this is the half that has to be said out loud: if you have a
+build, you have the right to its source.** You may read it, change it, and pass it
+on. That is not a confession, it is the argument — an instrument you play in front
+of a room should not be able to disappear because its author did. What is sold is
+the build, the updates, and the fact that it works the same evening; never the
+right to run it.
+
+The source is this repository. `LICENSE` is the full GPL-3 text.
+
+The **licence boundary is a compile option, and it is visible in the code rather
+than only in a `LICENSE` file**: `scratchvj/dvs/` is the one directory a
+GPL-carrying dependency lives in, and `dvs/decoder.h` says so at the top of the
+file. This is what answers, in one sentence, whether a proprietary product that
+shares this codebase contains GPL code — no, and here is the layer that proves it.
 
 The Unreal plugin is deliberately a **separate process boundary** — it only reads a
 UDP socket and a shared texture — so it is not a derived work and may carry

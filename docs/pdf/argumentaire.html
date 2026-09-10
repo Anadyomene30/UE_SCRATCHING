@@ -203,9 +203,17 @@ contre une promesse qu'une démo ne tiendra pas.</p>
 
 <h2><span class="n">07</span>La licence : une décision commerciale, pas une contrainte subie</h2>
 
-<p class="lead">C'est le point le plus important de ce dossier, et il est bon : la
-frontière de licence du projet est une <strong>option de compilation</strong>, pas
-une fatalité architecturale.</p>
+<p class="lead">C'est le point le plus important de ce dossier, et il est
+<strong>tranché depuis le 9 septembre 2026</strong> : scratchvj est en
+<strong>GPL-3, assumée comme stratégie</strong>. xwax reste, donc le disque de
+contrôle reste. Ce qui suit dit ce que cela permet et ce que cela interdit, et non
+ce qui resterait à décider.</p>
+
+<p>La frontière de licence est une <strong>option de compilation</strong> plutôt
+qu'une fatalité architecturale, et elle le reste — non pour livrer un binaire sans
+GPL, mais parce qu'elle est ce qui permet de répondre en une phrase à la question
+« est-ce que votre catalogue contient du GPL ? » : non, sauf cet instrument-là, et
+voici la couche qui le prouve.</p>
 
 <table class="long">
 <tr><th style="width:24%">Configuration</th><th style="width:32%">Contenu</th><th>Ce qu'on a le droit de faire</th></tr>
@@ -223,12 +231,17 @@ une fatalité architecturale.</p>
   le MWM Phase émet une porteuse nue, lue par du code écrit pour ce projet
   (<code>core/quadrature</code>), pas par le décodeur GPL. xwax ne sert qu'aux
   <em>vrais disques de contrôle</em> gravés.</p>
-  <p>Trois voies, par ordre de coût croissant : <strong>(a)</strong> livrer la
-  configuration sans xwax et couvrir le disque de contrôle plus tard ;
-  <strong>(b)</strong> écrire un décodeur de disque de contrôle propre au projet — un
-  travail réel mais borné, et le décodeur de porteuse existe déjà comme point de
-  départ ; <strong>(c)</strong> assumer le GPL-3 et vendre autre chose que le droit
-  d'usage — support, presets, contenu, matériel, prestations.</p>
+  <p>Trois voies avaient été posées : livrer sans xwax et couvrir le disque de
+  contrôle plus tard ; écrire un décodeur propre au projet ; ou assumer le GPL-3.
+  <strong>C'est la troisième qui a été retenue</strong>, et la raison est
+  commerciale : le coût des deux autres se paie en travail pour un marché à
+  50–200 € l'unité, alors que la réputation gagnée se dépense sur un marché à
+  500–2 000 €.</p>
+  <p><strong>Ce que cela veut dire pour celui qui achète, et il doit le lire ici
+  plutôt que sur un forum : il a le droit d'avoir la source.</strong> Il peut la
+  lire, la modifier et la redistribuer. Ce n'est pas un aveu, c'est un argument —
+  un instrument qu'on joue devant une salle ne devrait pas pouvoir disparaître
+  parce que son auteur a disparu.</p>
 </div>
 
 <div class="note warn">
@@ -239,16 +252,27 @@ une fatalité architecturale.</p>
   frontière de processus méritent une confirmation externe.</p>
 </div>
 
-<h3>Modèles envisageables, une fois la licence tranchée</h3>
+<h3>Ce qui se vend, la licence étant tranchée</h3>
+
+<p>Trois choses, et pas une quatrième. Le droit d'usage n'en fait pas partie : il
+est donné par la licence, et le vendre serait vendre ce qu'on vient d'accorder.</p>
 
 <table>
-<tr><th style="width:26%">Modèle</th><th>Conditions de viabilité</th></tr>
-<tr><td>Licence perpétuelle + mises à jour</td><td>Suppose la configuration sans code GPL. Le modèle le plus familier à ce public.</td></tr>
-<tr><td>Abonnement</td><td>Justifiable si le catalogue d'effets et les presets s'enrichissent réellement dans le temps.</td></tr>
-<tr><td>Édition libre + édition Pro</td><td>Le noyau et la démo ouverts, l'interface et les sorties professionnelles payantes. Cohérent avec la structure actuelle du dépôt.</td></tr>
-<tr><td>Vente liée au matériel</td><td>Bundle avec un fabricant de contrôleurs ou de docks. La compatibilité par apprentissage MIDI le rend possible avec n'importe qui.</td></tr>
-<tr><td>Prestations et intégration</td><td>Le segment production virtuelle achète du sur-mesure plus volontiers qu'une licence.</td></tr>
+<tr><th style="width:26%">Ce qu'on vend</th><th>Pourquoi ça se paie</th></tr>
+<tr><td><strong>Le binaire</strong></td><td>Compilé, signé, avec ses fontes, ses shaders et ses profils de contrôleurs à la bonne place. Personne n'achète une chaîne de compilation la veille d'un set.</td></tr>
+<tr><td><strong>Les mises à jour</strong></td><td>Un matériel nouveau, un profil de contrôleur, un effet, une correction — livrés sans avoir à recompiler quoi que ce soit.</td></tr>
+<tr><td><strong>Que ça marche le soir même</strong></td><td>C'est la seule promesse qu'un instrument de scène doit tenir, et la seule que la source seule ne donne pas.</td></tr>
 </table>
+
+<div class="note">
+  <span class="label">Ce qui ne se vend pas, et qu'il ne faut pas écrire</span>
+  <p>Une <strong>licence perpétuelle par poste</strong> suppose de pouvoir refuser
+  la redistribution : la GPL-3 l'accorde, le modèle ne tient pas. Une
+  <strong>édition Pro fermée</strong> par-dessus un noyau ouvert non plus, tant que
+  l'interface et le décodeur vivent dans le même binaire. Ce n'est pas une perte
+  sèche : le marché visé achète un instrument qui fonctionne un vendredi soir, pas
+  un contrat.</p>
+</div>
 
 <h2><span class="n">08</span>Ce qui reste avant une mise en vente</h2>
 
@@ -331,9 +355,11 @@ au lieu de sauter. C'est le plan qui convainc un régisseur.</li>
   sert.</p>
   <p><strong>L'unicité.</strong> L'absence d'un projet équivalent a été constatée au
   moment du cadrage, pas surveillée depuis. À re-vérifier avant d'écrire « le seul ».</p>
-  <p><strong>Les questions de licence</strong> — configuration sans GPL, frontière de
-  processus avec FFmpeg, redistribution — méritent une relecture par un juriste avant
-  la première vente.</p>
+  <p><strong>Les questions de licence.</strong> Le choix, lui, est fait : GPL-3,
+  tranchée le 9 septembre 2026. Ce qui reste à faire relire par un juriste est
+  l'<em>analyse</em> qui l'accompagne — la frontière de processus avec FFmpeg, la
+  portée de la redistribution, la position du plugin Unreal. Une décision prise
+  n'est pas une décision vérifiée.</p>
   <p><strong>Les marques citées</strong> (MWM Phase, Reloop, Serato, Unreal, Spout,
   NDI, Resolume, TouchDesigner) appartiennent à leurs propriétaires. Vérifier les
   règles d'usage de chacune avant de les faire figurer sur un support commercial, et

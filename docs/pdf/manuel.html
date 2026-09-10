@@ -18,7 +18,7 @@
     <b>Version du logiciel</b> &nbsp; 0.1.0 — socle vérifié, matériel partiellement branché<br>
     <b>Plateformes</b> &nbsp; Windows (référence) · macOS (CI verte) · Linux (noyau et tests)<br>
     <b>Noyau</b> &nbsp; C++20, aucune dépendance externe, 441 tests<br>
-    <b>Licence</b> &nbsp; voir annexe E — la configuration par défaut n'embarque aucun code GPL<br>
+    <b>Licence</b> &nbsp; <b>GPL-3</b> — vous avez droit à la source ; voir annexe E<br>
     <b>Document</b> &nbsp; septembre 2026
   </div>
 </section>
@@ -139,7 +139,7 @@ différents, et le tableau ci-dessous dit lequel, module par module.</p>
 <tr><td>Le noyau et la démo</td><td>CMake ≥ 3.20 et un compilateur C++20 (MSVC 2022, gcc 12, clang 15). <strong>Rien d'autre</strong> : le noyau n'a aucune dépendance externe.</td></tr>
 <tr><td>L'interface</td><td>La même chose, plus un GPU et une connexion réseau au premier <code>configure</code> : SDL3, Dear ImGui et bgfx sont récupérés automatiquement.</td></tr>
 <tr><td>L'analyse de clips</td><td>L'exécutable <code>ffmpeg</code> accessible dans le <code>PATH</code>. Il est <em>appelé</em>, jamais lié — c'est une frontière de processus, et elle a aussi des conséquences de licence (annexe E).</td></tr>
-<tr><td>Le décodeur DVS</td><td>Rien de plus, mais une option de compilation à activer explicitement — et une licence GPL-3 à accepter.</td></tr>
+<tr><td>Le décodeur DVS</td><td>Rien de plus, mais une option de compilation à activer explicitement. Elle est activée dans le binaire distribué, qui est donc GPL-3 (annexe E).</td></tr>
 </table>
 
 <h3>2.2 &nbsp;Compiler le noyau et la démo</h3>
@@ -193,9 +193,12 @@ par <code>core/quadrature</code>.</p>
 <div class="note">
   <span class="label">Conséquence de licence, à connaître avant de distribuer</span>
   <p>xwax est sous GPL-3. Un binaire compilé avec <code>SCRATCHVJ_BUILD_DVS=ON</code>
-  est donc un binaire GPL-3, avec les obligations qui vont avec. La cible est séparée
-  et éteinte par défaut exactement pour que cette frontière soit visible plutôt
-  qu'implicite. L'annexe E détaille les trois configurations possibles.</p>
+  est donc un binaire GPL-3, avec les obligations qui vont avec — et
+  <strong>c'est la configuration qui est distribuée</strong> : la décision a été
+  prise le 9 septembre 2026, le disque de contrôle reste. La cible est séparée et
+  éteinte par défaut à la compilation pour que la frontière soit visible plutôt
+  qu'implicite, pas pour livrer un binaire sans GPL. L'annexe E détaille les trois
+  configurations et ce que la licence vous donne.</p>
 </div>
 
 <h3>2.5 &nbsp;Vérifier que l'installation est saine</h3>
@@ -1050,23 +1053,40 @@ matériel envoie réellement. Imprimable par <code>scratchvj layout</code>.</p>
 <div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">ch1.eq.mid</span><span style="float:right;color:#6c6862;font-size:7.6pt">potard</span></div>
 <div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">ch1.eq.low</span><span style="float:right;color:#6c6862;font-size:7.6pt">potard</span></div>
 <div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">ch1.filter</span><span style="float:right;color:#6c6862;font-size:7.6pt">potard</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">ch1.tweak.mode</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">ch1.input</span><span style="float:right;color:#6c6862;font-size:7.6pt">potard</span></div>
 <div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">ch1.fader</span><span style="float:right;color:#6c6862;font-size:7.6pt">fader</span></div>
-<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">ch1.cue</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
-<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">ch1.fx.on</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
 <div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">ch2.trim</span><span style="float:right;color:#6c6862;font-size:7.6pt">potard</span></div>
 <div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">ch2.eq.hi</span><span style="float:right;color:#6c6862;font-size:7.6pt">potard</span></div>
 <div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">ch2.eq.mid</span><span style="float:right;color:#6c6862;font-size:7.6pt">potard</span></div>
 <div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">ch2.eq.low</span><span style="float:right;color:#6c6862;font-size:7.6pt">potard</span></div>
 <div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">ch2.filter</span><span style="float:right;color:#6c6862;font-size:7.6pt">potard</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">ch2.tweak.mode</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">ch2.input</span><span style="float:right;color:#6c6862;font-size:7.6pt">potard</span></div>
 <div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">ch2.fader</span><span style="float:right;color:#6c6862;font-size:7.6pt">fader</span></div>
-<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">ch2.cue</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
-<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">ch2.fx.on</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
 <div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">xfader</span><span style="float:right;color:#6c6862;font-size:7.6pt">fader</span></div>
-<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">fx.time</span><span style="float:right;color:#6c6862;font-size:7.6pt">potard</span></div>
-<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">fx.mix</span><span style="float:right;color:#6c6862;font-size:7.6pt">potard</span></div>
-<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">fx.beats</span><span style="float:right;color:#6c6862;font-size:7.6pt">encodeur</span></div>
-<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">fx.paddle.a</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
-<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">fx.paddle.b</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">fx.a.select.1</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">fx.a.select.2</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">fx.a.select.3</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">fx.a.level</span><span style="float:right;color:#6c6862;font-size:7.6pt">fader</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">fx.a.beats</span><span style="float:right;color:#6c6862;font-size:7.6pt">encodeur</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">fx.a.on</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">fx.a.hold</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">fx.a.sampler</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">fx.b.select.1</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">fx.b.select.2</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">fx.b.select.3</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">fx.b.level</span><span style="float:right;color:#6c6862;font-size:7.6pt">fader</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">fx.b.beats</span><span style="float:right;color:#6c6862;font-size:7.6pt">encodeur</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">fx.b.on</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">fx.b.hold</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">fx.b.sampler</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">loop.a.encoder</span><span style="float:right;color:#6c6862;font-size:7.6pt">encodeur</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">loop.a.encoder.push</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">loop.a.inout</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">loop.b.encoder</span><span style="float:right;color:#6c6862;font-size:7.6pt">encodeur</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">loop.b.encoder.push</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">loop.b.inout</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
 <div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.elite.a.1</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
 <div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.elite.a.2</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
 <div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.elite.a.3</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
@@ -1083,15 +1103,44 @@ matériel envoie réellement. Imprimable par <code>scratchvj layout</code>.</p>
 <div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.elite.b.6</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
 <div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.elite.b.7</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
 <div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.elite.b.8</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
-<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.elite.a.mode</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
-<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.elite.b.mode</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.elite.a.mode.1</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.elite.a.mode.2</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.elite.a.mode.3</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.elite.a.mode.4</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.elite.a.param.minus</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.elite.a.param.plus</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.elite.b.mode.1</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.elite.b.mode.2</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.elite.b.mode.3</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.elite.b.mode.4</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.elite.b.param.minus</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.elite.b.param.plus</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">shift</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
 <div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">browse.encoder</span><span style="float:right;color:#6c6862;font-size:7.6pt">encodeur</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">browse.encoder.push</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
 <div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">browse.load.a</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
 <div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">browse.load.b</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">browse.back</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
 <div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">master.level</span><span style="float:right;color:#6c6862;font-size:7.6pt">potard</span></div>
 <div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">booth.level</span><span style="float:right;color:#6c6862;font-size:7.6pt">potard</span></div>
-<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">cue.mix</span><span style="float:right;color:#6c6862;font-size:7.6pt">potard</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">booth.mono</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
 <div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">cue.level</span><span style="float:right;color:#6c6862;font-size:7.6pt">potard</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">cue.mix</span><span style="float:right;color:#6c6862;font-size:7.6pt">potard</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">cue.select</span><span style="float:right;color:#6c6862;font-size:7.6pt">fader</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">mic.level</span><span style="float:right;color:#6c6862;font-size:7.6pt">potard</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">mic.echo</span><span style="float:right;color:#6c6862;font-size:7.6pt">potard</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">mic.eq.hi</span><span style="float:right;color:#6c6862;font-size:7.6pt">potard</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">mic.eq.low</span><span style="float:right;color:#6c6862;font-size:7.6pt">potard</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">mic.mode</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">fader.a.curve</span><span style="float:right;color:#6c6862;font-size:7.6pt">potard</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">fader.a.reverse</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">xfader.curve</span><span style="float:right;color:#6c6862;font-size:7.6pt">potard</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">xfader.reverse</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">fader.b.curve</span><span style="float:right;color:#6c6862;font-size:7.6pt">potard</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">fader.b.reverse</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">sampler.level</span><span style="float:right;color:#6c6862;font-size:7.6pt">potard</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">aux.level</span><span style="float:right;color:#6c6862;font-size:7.6pt">potard</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">cue.split</span><span style="float:right;color:#6c6862;font-size:7.6pt">bouton</span></div>
 <div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.a.l1.1</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
 <div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.a.l1.2</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
 <div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.a.l1.3</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
@@ -1100,6 +1149,22 @@ matériel envoie réellement. Imprimable par <code>scratchvj layout</code>.</p>
 <div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.a.l1.6</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
 <div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.a.l1.7</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
 <div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.a.l1.8</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.a.l2.1</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.a.l2.2</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.a.l2.3</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.a.l2.4</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.a.l2.5</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.a.l2.6</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.a.l2.7</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.a.l2.8</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.a.l3.1</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.a.l3.2</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.a.l3.3</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.a.l3.4</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.a.l3.5</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.a.l3.6</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.a.l3.7</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.a.l3.8</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
 <div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.b.l1.1</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
 <div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.b.l1.2</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
 <div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.b.l1.3</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
@@ -1108,6 +1173,22 @@ matériel envoie réellement. Imprimable par <code>scratchvj layout</code>.</p>
 <div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.b.l1.6</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
 <div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.b.l1.7</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
 <div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.b.l1.8</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.b.l2.1</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.b.l2.2</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.b.l2.3</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.b.l2.4</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.b.l2.5</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.b.l2.6</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.b.l2.7</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.b.l2.8</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.b.l3.1</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.b.l3.2</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.b.l3.3</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.b.l3.4</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.b.l3.5</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.b.l3.6</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.b.l3.7</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
+<div style="break-inside:avoid;border-bottom:1px solid #eae5dd"><span class="mono">pad.rp8000.b.l3.8</span><span style="float:right;color:#6c6862;font-size:7.6pt">pad</span></div>
 </div>
 <!--/GEN:LAYOUT-->
 
@@ -1179,15 +1260,30 @@ Tout en petit-boutien, octet par octet.</p>
 
 <h2><span class="n">ANNEXE E</span>Licences</h2>
 
-<p>scratchvj est construit de sorte que sa <strong>frontière de licence soit une
-option de compilation</strong>, visible plutôt qu'implicite. Trois configurations
-existent, et elles n'ont pas les mêmes conséquences.</p>
+<p><strong>scratchvj est sous GPL-3, et c'est une décision, pas un accident</strong>
+(tranchée le 9 septembre 2026). Le décodeur de disque de contrôle d'xwax reste, donc
+le disque de contrôle reste, et le binaire distribué est GPL-3.</p>
+
+<div class="note">
+  <span class="label">Ce que ça vous donne</span>
+  <p><strong>Si vous avez un binaire, vous avez droit à sa source.</strong> Vous
+  pouvez la lire, la modifier et la redistribuer. Ce n'est pas une réserve écrite en
+  petit : c'est ce qui fait qu'un instrument joué devant une salle ne peut pas
+  disparaître avec son auteur. Ce qui vous est vendu est le binaire, ses mises à
+  jour, et le fait qu'il fonctionne le soir même — jamais le droit de l'utiliser,
+  que la licence vous donne déjà.</p>
+</div>
+
+<p>La <strong>frontière de licence reste une option de compilation</strong>, visible
+plutôt qu'implicite — non pour livrer un binaire sans GPL, mais parce qu'elle est ce
+qui permet de dire en une phrase quelle couche porte l'obligation. Trois
+configurations existent, et elles n'ont pas les mêmes conséquences.</p>
 
 <table class="long">
 <tr><th style="width:26%">Configuration</th><th style="width:30%">Ce qu'elle contient</th><th>Conséquence</th></tr>
-<tr><td><strong>Noyau seul</strong><br><span class="footnote">défaut</span></td><td>Aucune dépendance externe.</td><td>Aucune contrainte de licence externe.</td></tr>
+<tr><td><strong>Noyau seul</strong><br><span class="footnote">défaut de compilation, pas ce qui est distribué</span></td><td>Aucune dépendance externe.</td><td>Aucune contrainte de licence externe.</td></tr>
 <tr><td><strong>+ interface</strong><br><span class="mono">SCRATCHVJ_BUILD_UI</span></td><td>SDL3 (zlib), Dear ImGui (MIT), bgfx (BSD-2). FFmpeg <em>appelé comme exécutable</em>, jamais lié.</td><td>Dépendances permissives uniquement. L'appel de FFmpeg par processus séparé est une frontière, architecturale et juridique en même temps.</td></tr>
-<tr><td><strong>+ décodeur DVS</strong><br><span class="mono">SCRATCHVJ_BUILD_DVS</span></td><td>Ajoute <code>timecoder.c</code> d'xwax.</td><td><strong>GPL-3.</strong> Le binaire produit est GPL-3 et doit être distribué comme tel.</td></tr>
+<tr><td><strong>+ décodeur DVS</strong><br><span class="mono">SCRATCHVJ_BUILD_DVS</span><br><span class="footnote">la configuration distribuée</span></td><td>Ajoute <code>timecoder.c</code> d'xwax.</td><td><strong>GPL-3.</strong> Le binaire produit est GPL-3 et est distribué comme tel, avec le droit d'en obtenir la source.</td></tr>
 </table>
 
 <p>Le <strong>plugin Unreal</strong> reste sous la licence de son auteur, quelle
