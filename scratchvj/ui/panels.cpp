@@ -31,6 +31,15 @@ const ImU32 kSage = IM_COL32(0x7E, 0x94, 0x6B, 0xFF);
 const ImU32 kAmber = IM_COL32(0xC9, 0x9A, 0x2F, 0xFF);
 const ImU32 kAlert = IM_COL32(0xB5, 0x4B, 0x3A, 0xFF);
 const ImU32 kSlate = IM_COL32(0x6E, 0x86, 0x96, 0xFF);
+// `signal.warn` for the stage -- "still working, but drifting". The line
+// inherits all four signals and had only three (SCRATCHVJ-09); the house asked
+// this product to produce the warm value. Derived, not picked: the atelier
+// warn #C48A4B at the same hue, with its HSL lightness and saturation scaled
+// by the mean of the ratios this table already applies to done (#7FB069 ->
+// #7E946B) and fail (#D9584B -> #B54B3A): L x0.863, S x0.654. Relative
+// luminance lands at 0.684 of the atelier value, between done's 0.729 and
+// fail's 0.682. A candidate until tokens.json carries lines.scene.signal.warn.
+const ImU32 kWarn = IM_COL32(0x9C, 0x77, 0x4E, 0xFF);
 
 ImVec4 rgba(ImU32 c) { return ImGui::ColorConvertU32ToFloat4(c); }
 
@@ -92,7 +101,7 @@ const char* link_text(LinkState link) {
 ImU32 link_colour(LinkState link) {
     switch (link) {
         case LinkState::Ok: return kSage;
-        case LinkState::Degraded: return kAmber;
+        case LinkState::Degraded: return kWarn;
         case LinkState::Lost: return kAlert;
     }
     return kFaint;
@@ -207,6 +216,9 @@ constexpr float kControlHeight = 28.0f;
 // The house cites the value rather than paraphrasing it -- "minimal" had
 // already produced four different radii across the catalogue (SCRATCHVJ-12).
 constexpr float kControlRadius = 3.0f;
+// `rhythm.accent_cap`: the 2 px cap at the left of the top bar, the one place
+// the product's colour identifies it (ERGONOMIE.md, the top bar).
+constexpr float kAccentCap = 2.0f;
 
 // An action. `primary` fills it with the accent -- and the fill is an aplat,
 // which the stage cadran (design/SCENE.md, variable 2) allows once per panel
@@ -537,7 +549,7 @@ void filmstrip(Deck& deck, Frame& frame, float width, float height = 34.0f) {
             std::snprintf(memo, sizeof(memo), "en m\xC3\xA9moire : %.1f s", span_s);
         }
         const ImVec2 size = ImGui::CalcTextSize(memo);
-        draw->AddText(ImVec2(origin.x + width - size.x - 6.0f, origin.y + 3.0f), kSlate, memo);
+        draw->AddText(ImVec2(origin.x + width - size.x - 6.0f, origin.y + 3.0f), kMuted, memo);
         pop_font();
     }
     if (hovered && loaded && !ImGui::IsItemActive()) {
@@ -552,13 +564,22 @@ void filmstrip(Deck& deck, Frame& frame, float width, float height = 34.0f) {
 void draw_status(Engine& engine, Frame& frame) {
     ImGui::BeginChild("status", ImVec2(0.0f, 40.0f), ImGuiChildFlags_None,
                       ImGuiWindowFlags_NoScrollbar);
+    // The accent cap: a filet down the left of the bar, which is where the
+    // product's colour identifies it. The name beside it is chalk -- colour on
+    // text is what fail alone may do (SCRATCHVJ-10).
+    {
+        ImDrawList* draw = ImGui::GetWindowDrawList();
+        const ImVec2 at = ImGui::GetWindowPos();
+        draw->AddRectFilled(at, ImVec2(at.x + kAccentCap, at.y + ImGui::GetWindowHeight()), kAccent);
+    }
     ImGui::Dummy(ImVec2(0.0f, 2.0f));
-    text_c(kAccent, "scratchvj");
+    text_c(kInk, "scratchvj");
 
     // The platter link, as a light. Sage: locked and confident on every deck
-    // that follows a platter. Amber: a platter is read but not locked, or its
-    // confidence is low. Alert: a link that WAS there dropped. Hair: nothing is
-    // plugged in -- said as such, never as a figure the demo would invent.
+    // that follows a platter. Warn: a platter is read but not locked, or its
+    // confidence is low -- still working, drifting. Alert: a link that WAS
+    // there dropped. Hair: nothing is plugged in -- said as such, never as a
+    // figure the demo would invent.
     ImGui::SameLine(0.0f, 22.0f);
     {
         ImU32 colour = kHair;
@@ -568,7 +589,7 @@ void draw_status(Engine& engine, Frame& frame) {
             const TimecodeState& b = engine.deck_b().timecode.state();
             const bool any_lost = a.link == LinkState::Lost || b.link == LinkState::Lost;
             const bool weak = a.confidence < 0.6f && engine.deck_a().clock.source() == DeckSource::Timecode;
-            colour = any_lost ? kAlert : (weak || !frame.platter_locked) && !frame.script_running ? kAmber : kSage;
+            colour = any_lost ? kAlert : (weak || !frame.platter_locked) && !frame.script_running ? kWarn : kSage;
             word = frame.script_running ? "Phase \xC2\xB7 script" : "Phase";
         }
         light(colour, word);
@@ -634,17 +655,19 @@ void draw_status(Engine& engine, Frame& frame) {
 
     // What the background is doing to the library, and the last thing that
     // went wrong. A WIN32 application has no console, so a failure that is not
-    // on screen is a failure nobody sees.
+    // on screen is a failure nobody sees. Work in progress is said in chalk:
+    // the named progress carries the information, not a colour -- amber is
+    // deck A on this line, and nothing else (SCRATCHVJ-08).
     push_small();
     if (frame.analysis_busy && frame.analysis_pending > 0) {
         ImGui::SameLine(0.0f, 22.0f);
-        text_c(kAmber, "analyse en cours \xC2\xB7 %zu en attente", frame.analysis_pending);
+        text_c(kMuted, "analyse en cours \xC2\xB7 %zu en attente", frame.analysis_pending);
     } else if (frame.analysis_busy) {
         ImGui::SameLine(0.0f, 22.0f);
-        text_c(kAmber, "analyse en cours");
+        text_c(kMuted, "analyse en cours");
     } else if (frame.analysis_pending > 0) {
         ImGui::SameLine(0.0f, 22.0f);
-        text_c(kAmber, "%zu \xC3\xA0 analyser", frame.analysis_pending);
+        text_c(kMuted, "%zu \xC3\xA0 analyser", frame.analysis_pending);
     }
     if (!frame.last_error.empty()) {
         ImGui::SameLine(0.0f, 22.0f);
@@ -652,7 +675,7 @@ void draw_status(Engine& engine, Frame& frame) {
     }
     if (!frame.notice.empty()) {
         ImGui::SameLine(0.0f, 22.0f);
-        text_c(kSage, "%s", frame.notice.c_str());
+        text_c(kInk, "%s", frame.notice.c_str());
     }
 
     // A take. Red while it runs, with what it has written so far.
@@ -727,7 +750,7 @@ void draw_status(Engine& engine, Frame& frame) {
     const float right_x = ImGui::GetContentRegionMax().x - ImGui::CalcTextSize(outputs.c_str()).x;
     if (right_x > ImGui::GetCursorPosX() + 40.0f) {
         ImGui::SameLine(right_x);
-        text_c(frame.share_open ? kSage : kFaint, "%s", outputs.c_str());
+        text_c(frame.share_open ? kMuted : kFaint, "%s", outputs.c_str());
     }
     pop_font();
 
@@ -977,12 +1000,12 @@ void draw_library(Engine& engine, Frame& frame, float width, float height) {
         if (clip->state == AnalysisState::Analysing) {
             ImGui::Text("analyse %.0f %%", static_cast<double>(clip->progress) * 100.0);
             ImGui::SameLine(0.0f, 6.0f);
-            meter(clip->progress, 50.0f, kAmber, false);
+            meter(clip->progress, 50.0f, kMuted, false);
         } else if (clip->playable()) {
             ImGui::Text("%s \xC2\xB7 %ux%u \xC2\xB7 ", short_clock(clip->duration_s).c_str(),
                         clip->width, clip->height);
             ImGui::SameLine(0.0f, 0.0f);
-            text_c(clip->shown_equirect() ? kSlate : kFaint, "%s%s", projection_word(*clip),
+            text_c(clip->shown_equirect() ? kMuted : kFaint, "%s%s", projection_word(*clip),
                    clip->has_alpha ? " \xC2\xB7 alpha" : "");
         } else {
             ImGui::Text("%s", state_text(*clip));
@@ -1044,7 +1067,7 @@ void draw_library(Engine& engine, Frame& frame, float width, float height) {
                              : item.target == DeckTarget::B     ? "\xE2\x86\x92 B"
                              : item.target == DeckTarget::Overlay ? "\xE2\x86\x92 Incr."
                                                                   : "\xE2\x86\x92 ?";
-        ImGui::PushStyleColor(ImGuiCol_Text, rgba(item.target == DeckTarget::None ? kFaint : kAccent));
+        ImGui::PushStyleColor(ImGuiCol_Text, rgba(item.target == DeckTarget::None ? kFaint : kInk));
         if (ImGui::SmallButton(target)) {
             const DeckTarget next = item.target == DeckTarget::None ? DeckTarget::A
                                     : item.target == DeckTarget::A  ? DeckTarget::B
@@ -1366,19 +1389,19 @@ void draw_library_screen(Engine& engine, Frame& frame) {
         pop_font();
         push_small();
         if (clip->state == AnalysisState::Analysing) {
-            text_c(kAmber, "analyse %.0f %%", static_cast<double>(clip->progress) * 100.0);
+            text_c(kMuted, "analyse %.0f %%", static_cast<double>(clip->progress) * 100.0);
             ImGui::SameLine(0.0f, 8.0f);
-            meter(clip->progress, 120.0f, kAmber, false);
+            meter(clip->progress, 120.0f, kMuted, false);
         } else if (clip->playable()) {
             ImGui::PushStyleColor(ImGuiCol_Text, rgba(kFaint));
             ImGui::Text("%s \xC2\xB7 %ux%u \xC2\xB7 ", short_clock(clip->duration_s).c_str(),
                         clip->width, clip->height);
             ImGui::PopStyleColor();
             ImGui::SameLine(0.0f, 0.0f);
-            text_c(clip->shown_equirect() ? kSlate : kFaint, "%s", projection_word(*clip));
+            text_c(clip->shown_equirect() ? kMuted : kFaint, "%s", projection_word(*clip));
             if (clip->has_alpha) {
                 ImGui::SameLine(0.0f, 0.0f);
-                text_c(kSage, " \xC2\xB7 alpha");
+                text_c(kMuted, " \xC2\xB7 alpha");
             }
             if (clip->is_sequence || clip->is_still) {
                 ImGui::SameLine(0.0f, 0.0f);
@@ -1742,7 +1765,7 @@ void draw_settings_screen(Engine& engine, Frame& frame) {
         }
         ImGui::SameLine(0.0f, 8.0f);
         const bool connected = i < frame.rig.size() && frame.rig[i].connected;
-        text_c(connected ? kSage : kFaint, connected ? "connect\xC3\xA9" : "absent");
+        text_c(connected ? kInk : kFaint, connected ? "connect\xC3\xA9" : "absent");
         ImGui::SameLine(0.0f, 8.0f);
         if (ImGui::SmallButton("retirer")) {
             desk.devices.erase(desk.devices.begin() + static_cast<std::ptrdiff_t>(i));
@@ -1950,7 +1973,9 @@ void draw_deck_diagnostics(Deck& deck, Engine& engine, Frame& frame, bool is_a) 
     {
         ImGui::BeginGroup();
         eyebrow("LIAISON");
-        text_c(link_colour(state.link), "%s", link_text(state.link));
+        // The word is chalk unless the link is lost: fail is the one colour
+        // allowed on text. The light beside it carries the state's colour.
+        text_c(state.link == LinkState::Lost ? kAlert : kInk, "%s", link_text(state.link));
         ImGui::EndGroup();
     }
 
@@ -1962,16 +1987,16 @@ void draw_deck_diagnostics(Deck& deck, Engine& engine, Frame& frame, bool is_a) 
         push_small();
         if (!frame.deck_a_live) {
             if (!frame.platter_error.empty()) {
-                text_c(kAmber, "plateau r\xC3\xA9""el : %s", frame.platter_error.c_str());
+                text_c(kMuted, "plateau r\xC3\xA9""el : %s", frame.platter_error.c_str());
             } else {
                 dim("plateau r\xC3\xA9""el : non lu \xE2\x80\x94 choisir « Platine » pour l'\xC3\xA9""couter");
             }
         } else if (!frame.platter_connected) {
-            text_c(kAmber, "plateau r\xC3\xA9""el : aucune entr\xC3\xA9""e audio");
+            text_c(kMuted, "plateau r\xC3\xA9""el : aucune entr\xC3\xA9""e audio");
         } else if (!frame.platter_locked) {
             text_c(kFaint, "%s \xC2\xB7 silence", frame.platter_endpoint.c_str());
         } else {
-            text_c(frame.platter_slews > 0 ? kAmber : kSage, "%s \xC2\xB7 niveau %.2f%s",
+            text_c(kMuted, "%s \xC2\xB7 niveau %.2f%s",
                    frame.platter_endpoint.c_str(), static_cast<double>(frame.platter_level),
                    frame.platter_slews > 0 ? " !" : "");
         }
@@ -2272,7 +2297,7 @@ void draw_deck(Deck& deck, Engine& engine, Frame& frame, void* texture,
             pop_font();
         }
         ImGui::SameLine(0.0f, 10.0f);
-        if (button("r\xC3\xA9gler", Icon::None, false, 0.0f, kSlate)) ImGui::OpenPopup("gaze");
+        if (button("r\xC3\xA9gler")) ImGui::OpenPopup("gaze");
         if (ImGui::IsItemHovered()) {
             ImGui::SetTooltip("le regard suit aussi les potards EQ de la voie 1 (mapping) ;\n"
                               "un curseur boug\xC3\xA9 ici tient jusqu'au prochain pas du mapping");
@@ -3105,7 +3130,7 @@ void draw_surface_header(Frame& frame) {
         eyebrow(("SURFACE \xE2\x80\x94 " + names).c_str());
         ImGui::SameLine(0.0f, 14.0f);
         push_small();
-        text_c(frame.midi_bound > 0 ? kSage : kAmber,
+        text_c(kMuted,
                "%zu port%s \xC2\xB7 %llu messages \xC2\xB7 %zu/%zu li\xC3\xA9s", connected,
                connected > 1 ? "s" : "", static_cast<unsigned long long>(frame.midi_messages),
                frame.midi_bound, frame.midi_total);
@@ -3136,7 +3161,7 @@ void draw_surface_header(Frame& frame) {
                               ? frame.rig[static_cast<std::size_t>(frame.learn_device)]
                                     .profile->display_name.c_str()
                               : "?";
-        text_c(kAmber, "%s \xE2\x80\x94 BOUGE : %s", who, frame.learn_prompt.c_str());
+        text_c(kInk, "%s \xE2\x80\x94 BOUGE : %s", who, frame.learn_prompt.c_str());
         pop_font();
         ImGui::SameLine(0.0f, 10.0f);
         if (ImGui::SmallButton("passer")) frame.learn_skip = true;
@@ -3162,7 +3187,7 @@ void draw_surface_header(Frame& frame) {
             }
             if (d.profile != nullptr && !d.profile->verified) {
                 ImGui::SameLine(0.0f, 4.0f);
-                text_c(kAmber, "non v\xC3\xA9rifi\xC3\xA9");
+                text_c(kMuted, "non v\xC3\xA9rifi\xC3\xA9");
                 if (ImGui::IsItemHovered()) {
                     ImGui::SetTooltip("profil \xC3\xA9" "crit depuis un document, jamais balay\xC3\xA9 sur "
                                       "le mat\xC3\xA9riel \xE2\x80\x94 voir profiles/README.md");
@@ -3398,7 +3423,7 @@ void draw_effect_card(Engine& engine, Frame& frame, std::size_t slot) {
                 case Correspondence::Analogue:
                     text_c(kMuted, "audio : %s \xC2\xB7 vid\xC3\xA9o : %s \xC2\xB7 ", info->audio, info->video);
                     ImGui::SameLine(0.0f, 0.0f);
-                    text_c(kAmber, "analogue");
+                    text_c(kMuted, "analogue");
                     break;
                 case Correspondence::VideoOnly:
                     text_c(kMuted, "vid\xC3\xA9o seule : %s", info->video);
@@ -3497,7 +3522,7 @@ void draw_effect_card(Engine& engine, Frame& frame, std::size_t slot) {
     if (is_multi_tap_effect(unit.type)) {
         const int moments = frame.tap_moments[slot < 3 ? slot : 2];
         push_small();
-        text_c(moments > 1 ? kSage : kFaint, "%d moment%s lus", moments, moments == 1 ? "" : "s");
+        text_c(moments > 1 ? kMuted : kFaint, "%d moment%s lus", moments, moments == 1 ? "" : "s");
         pop_font();
         if (ImGui::IsItemHovered()) {
             ImGui::SetTooltip("les tra\xC3\xAEn\xC3\xA9""es lisent le clip \xC3\xA0 plusieurs moments ;\n"
@@ -3505,7 +3530,7 @@ void draw_effect_card(Engine& engine, Frame& frame, std::size_t slot) {
         }
     } else if (!is_single_frame_effect(unit.type)) {
         push_small();
-        text_c(kAmber, "pas encore \xC3\xA0 l'image");
+        text_c(kMuted, "pas encore \xC3\xA0 l'image");
         pop_font();
     }
     ImGui::EndGroup();
@@ -3564,8 +3589,8 @@ void draw_effects_screen(Engine& engine, Frame& frame) {
             ImGui::TableSetColumnIndex(3);
             push_small();
             switch (fx.relation) {
-                case Correspondence::Identical: text_c(kSage, "identique"); break;
-                case Correspondence::Analogue: text_c(kAmber, "\xE2\x89\x88 analogue"); break;
+                case Correspondence::Identical: text_c(kMuted, "identique"); break;
+                case Correspondence::Analogue: text_c(kMuted, "\xE2\x89\x88 analogue"); break;
                 case Correspondence::VideoOnly: text_c(kFaint, "vid\xC3\xA9o seule"); break;
             }
             pop_font();
@@ -3751,7 +3776,7 @@ void draw_mapping_list(Engine& engine, Frame& frame) {
         ImGui::SetCursorPosY(ImGui::GetCursorPosY() + dy);
         push_mono();
         if (row.source.kind == SourceKind::Control) {
-            text_c(row.source.control_id.empty() ? kAmber : kInk, "%s",
+            text_c(row.source.control_id.empty() ? kMuted : kInk, "%s",
                    row.source.control_id.empty() ? "aucun" : row.source.control_id.c_str());
         } else {
             text_c(kInk, "%s", source_text(row.source.kind));
@@ -3923,7 +3948,7 @@ void draw_output_displays(Frame& frame) {
         ImGui::PushID(static_cast<int>(display.id));
         const bool on = display.is_output;
         push_mono();
-        text_c(on ? kSage : kInk, "%s", display.name.c_str());
+        text_c(kInk, "%s", display.name.c_str());
         pop_font();
         ImGui::SameLine(0.0f, 10.0f);
         push_small();
@@ -4350,7 +4375,7 @@ void draw_output_screen(Engine& engine, Frame& frame) {
     if (!g_presets.message.empty()) {
         ImGui::Dummy(ImVec2(0.0f, 6.0f));
         push_small();
-        ImGui::PushStyleColor(ImGuiCol_Text, rgba(kSage));
+        ImGui::PushStyleColor(ImGuiCol_Text, rgba(kMuted));
         ImGui::TextUnformatted(g_presets.message.c_str());
         ImGui::PopStyleColor();
         pop_font();
@@ -4520,7 +4545,7 @@ void draw_mixer_column(Engine& engine, Frame& frame, float width, float height) 
 
     ImGui::Dummy(ImVec2(0.0f, 8.0f));
     push_small();
-    ImGui::PushStyleColor(ImGuiCol_Text, rgba(engine.cuts().transforming() ? kAmber : kFaint));
+    ImGui::PushStyleColor(ImGuiCol_Text, rgba(kFaint));
     ImGui::Text("coupes %.1f/s%s", static_cast<double>(engine.cuts().cuts_per_second()),
                 engine.cuts().transforming() ? "  TRANSFORM" : "");
     ImGui::PopStyleColor();
@@ -4604,13 +4629,13 @@ void draw_program_strip(Engine& engine, Frame& frame, float height) {
             // Said plainly: a receiver waiting for a sender looks exactly
             // like a receiver that is broken.
             if (frame.live_connected && frame.live_is_self) {
-                text_c(kAmber, "retour \xE2\x80\x94 sa propre sortie \xC2\xB7 %.1f s",
+                text_c(kMuted, "retour \xE2\x80\x94 sa propre sortie \xC2\xB7 %.1f s",
                        static_cast<double>(frame.live_span_s));
             } else if (frame.live_connected) {
                 text_c(kFaint, "%s \xC2\xB7 %.1f s d'historique", frame.live_sender.c_str(),
                        static_cast<double>(frame.live_span_s));
             } else {
-                text_c(kAmber, "aucun sender Spout");
+                text_c(kMuted, "aucun sender Spout");
             }
         } else if (engine.overlay().clip.frame_count > 0) {
             text_c(kFaint, "%s \xC2\xB7 %s", engine.overlay().name.c_str(),
