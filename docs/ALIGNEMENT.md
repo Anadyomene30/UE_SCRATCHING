@@ -1,8 +1,27 @@
-# Alignement — le relevé (phase 0)
+# Alignement — le relevé
 
 Relevé le **2026-09-09**, en lecture seule, branche `claude/scratch-video-unreal-0oi7dv`
-à **`75eee2f`**. Aucun fichier de code modifié. Les remontées sont dans
+à **`75eee2f`**. Les remontées sont dans
 [`../REMONTEES-SCRATCHVJ.md`](../REMONTEES-SCRATCHVJ.md).
+
+**Ce document a cessé d'être un relevé de phase 0 le 2026-09-10.** Les verdicts du
+tour 01 ont été appliqués, puis les phases 1 à 6 du talon, et chaque ligne porte
+désormais un état terminal. L'ordre de lecture est celui du travail : les verdicts
+d'abord, puis une section par phase, puis le relevé lui-même — qui garde ses
+`fichier:ligne`, parce qu'il décrit un état à une date et qu'il porte cette date.
+Les numéros de ligne du code sont ceux du 2026-09-09 et ne sont plus vrais ; c'est
+ce qu'un relevé daté est.
+
+| Phase | Ce qu'elle a fait | Commit |
+|---|---|---|
+| 0 | le relevé, onze axes, sept variables du cadran | — |
+| 1 | `docs/manifeste.md` | `2e4164c` |
+| 2 | le vocabulaire, et la migration de `library.json` | `ef3cbbc` |
+| 3 | `docs/repere.md` — écrit, pas tranché | `9f1bc14` |
+| 4 | le noyau du clavier, `Échap` compris | `9b88327` |
+| 5 | le fichier unique de jetons | `c4fa93c` |
+| 6 | la licence dans les deux sens | `4670820` |
+| 7 | **rendue par la note** (`SCRATCHVJ-17`) ; reste *remonté* jusqu'à ce que `suite.css` porte le papier sombre | — |
 
 ## Application des verdicts du tour 01 — 2026-09-10
 
@@ -336,6 +355,97 @@ sept valeurs de châssis (`SCRATCHVJ-06`), la mono unique, la convention du cham
 creusé contre relevé, les cinq crans de l'échelle, les trois étages de la
 densité, la valeur chaude de `warn` (`SCRATCHVJ-21`), l'accent du produit — qui
 attend son nom. Toutes changent en un endroit chacune, et c'est ce fichier.
+
+
+---
+
+## Phase 6 — la licence dans les deux sens · 2026-09-10 · `4670820`
+
+**Le premier sens était écrit, le second manquait partout.** Les trois documents
+disaient que le binaire est GPL-3 ; aucun ne disait à son lecteur ce que cela lui
+donne. C'est cette moitié-là que la phase ajoute, et dans les termes de la
+source : *un utilisateur de scène doit savoir qu'il a le droit d'avoir la source —
+c'est un argument, pas un aveu.*
+
+| Document | Ce qu'il disait | Ce qu'il dit |
+|---|---|---|
+| `README.md` | « GPL-3.0 », et la frontière `dvs/` | la même chose, plus le droit à la source, plus ce qui est vendu, plus pourquoi la frontière reste visible dans le code |
+| `docs/pdf/manuel.html` | couverture : « la configuration par défaut n'embarque aucun code GPL » | « **GPL-3** — vous avez droit à la source » ; l'annexe E distingue le défaut de **compilation** de la configuration **distribuée** |
+| `docs/pdf/argumentaire.html` | « une fois la licence tranchée » | « tranché depuis le 9 septembre 2026 », la voie retenue et sa raison, et ce que l'acheteur y gagne |
+
+**Et rien ne prétend plus vendre autre chose.** Le tableau « Modèles
+envisageables » proposait cinq modèles, dont deux qui ne tiennent pas sous
+GPL-3 — la licence perpétuelle par poste, qui suppose de pouvoir refuser la
+redistribution, et l'édition Pro fermée par-dessus un noyau ouvert. Il est
+remplacé par les trois choses que la maison autorise à vendre : **le binaire, les
+mises à jour, et que ça marche le soir même**. Les deux modèles qui tombent sont
+**nommés** avec la raison, plutôt que retirés en silence.
+
+**Ce qui ne change pas, et qui est demandé par la source.** La frontière de
+licence reste une **option de compilation visible dans le code**, et
+`dvs/decoder.h` la documente en tête de fichier. Ce n'est plus présenté comme un
+moyen de livrer un binaire sans GPL — ça ne l'est pas — mais comme ce qui permet
+de répondre en une phrase à « est-ce que votre catalogue contient du GPL ? ».
+
+**Un effet de bord, et c'est une divergence réparée.** Régénérer les deux PDF a
+aussi régénéré les annexes du manuel, qui se fabriquent depuis le binaire : le
+catalogue imprimé décrivait encore la table à **63 contrôles**, le binaire en
+donne **141**. C'est exactement ce que ce mécanisme existe pour empêcher, et le
+`README.md` de `docs/pdf/` cesse d'écrire ce nombre — il nomme les deux commandes
+qui le donnent.
+
+
+---
+
+## Définition de fini — l'état au 2026-09-10
+
+Les critères communs aux dix produits sont dans `maison/03-DEFINITION-DE-FINI.md`,
+à son adresse. Ceux-ci sont ceux qu'elle demande **de montrer**, plus les quatre
+que le talon ajoute pour ce produit.
+
+| Critère | État |
+|---|---|
+| `ALIGNEMENT.md` existe dans `docs/`, chaque ligne porte un état | **oui** — aucune ligne ne porte plus l'état *ouvert (phase N)* ; les deux occurrences que `grep` en trouve sont celle-ci et la définition de l'état, plus bas |
+| chaque phase s'est terminée par un rapport en trois parties | **oui** — une section par phase ci-dessus |
+| un seul fichier de jetons, provenance et version en tête | **oui** — `scratchvj/ui/tokens.h` |
+| aucune valeur hexadécimale ailleurs dans le code | **oui** — `grep -c "IM_COL32(0x" scratchvj/ui/panels.cpp` répond 0 ; les seules valeurs restantes hors du fichier sont les effacements de vue GPU en noir, qui sont le fond derrière l'image et non une couleur d'interface |
+| chaque jeton que le toolkit n'a pas su produire est noté avec son substitut | **oui** — un seul : 11,5 px, arrondi à 13, noté dans le fichier |
+| une couleur écrite dans une cible linéaire ou un shader porte sa conversion | **sans objet** — les dix shaders ne portent aucune constante de couleur, et c'est écrit en tête du fichier de jetons |
+| aucun libellé n'emploie un mot absent de la table du vocabulaire | **oui** — phase 2 |
+| aucune chaîne écrite sur disque n'est autre que la forme canonique | **oui** — phase 2, et la migration est vérifiée sur quatre fichiers réels |
+| tout fichier que le produit lisait avant l'alignement se lit encore | **oui** — les deux anciennes formes de `library.json` sont encore lues, vérifié sur un `library.json` réel |
+| aucune chaîne affichée n'est écrite dans le code | **non — et c'est la phase de langue**, qui n'est pas un critère d'alignement mais un critère de **vente**, et qui se mesure à part (`FOND-13`). Aucune phase du talon ne la porte ; elle va au carnet |
+| les touches réservées liées ont leur effet, et aucun autre | **oui** — `Espace`, et `?` / `F1` depuis la phase 4 ; `F` et `B` sont libres |
+| `Échap` suit la pile et ne ferme jamais la fenêtre | **oui** — phase 4, rang 6 |
+| un glisser vers la droite fait défiler la scène vers la droite | **sans objet** — le regard n'est jamais manipulé à la souris ; et le critère est de toute façon *suspendu* tant que les viseurs n'ont pas été comparés à l'écran |
+| aucune erreur n'ouvre de modale | **oui** — zéro modale dans le produit, mesuré |
+| chacune nomme la valeur en cause et l'action qui répare | **oui** — phase 4 |
+| aucune progression n'affiche un pourcentage seul | **non — au carnet**, et c'est la maison qui l'y a rangé (`SCRATCHVJ-20`) : c'est un ajout, et aucune phase ne le porte. L'entrée est dans `docs/roadmap.md` avec son coût |
+| les tests existants passent | **oui** — voir ci-dessous |
+| ce qui a été corrigé sur la foi d'un écart de `DIVERGENCES.md` est vérifié | **oui** — ce produit n'y figure pas ; les 22 écarts sont confrontés un par un plus bas |
+
+Et les quatre du talon :
+
+| Critère propre à scratchvj | État |
+|---|---|
+| `docs/manifeste.md`, `docs/vocabulaire.md`, `docs/repere.md` existent ; le troisième expose des options et une recommandation, pas une décision | **oui** |
+| l'aplat orange est toujours là, et il n'y en a toujours qu'un par panneau | **oui** — au sens de la plus petite région bordée, fermé en `41ca9c5` |
+| aucune couleur, taille ou fonte hors du fichier unique ; la mono et la luminance changent en une ligne chacune | **oui** — `kMonoFile`, et les sept lignes du châssis |
+| la suite de tests passe, `*_check` des shaders compris — et le rapport dit **laquelle** | **oui**, ci-dessous |
+
+**Les tests, et laquelle.** `ctest --test-dir build-ui -C Release
+--output-on-failure` : six tests, tous passés — `scratchvj_core_tests`,
+`gpu_check`, `sphere_check`, `eye_check`, `fx_check`, `taps_check`. C'est celle
+qui contient les cinq contrôles de shader. `ctest --test-dir build -C Debug
+--output-on-failure` passe aussi (`scratchvj_core_tests` seul). Les deux
+compilations sont à **zéro avertissement**. Restent hors suite, comme toujours :
+`spout_check` et `net_check`, qui écoutent une application en cours d'exécution,
+et `xr_check`, dont le verdict dépend du matériel branché.
+
+**La migration, et sur quels fichiers.** `library.json`, quatre fichiers réels
+dérivés de celui de cette machine — ancien avec les trois valeurs
+d'énumération, nouveau, mixte, corrompu. Le détail est dans la section de la
+phase 2.
 
 
 ---
@@ -1280,16 +1390,15 @@ gardée et assumée comme stratégie.** »
 
 | Où | Ce qui est écrit | État |
 |---|---|---|
-| `README.md:155-165` | « **GPL-3.0.** […] The licence is declared […] », et la frontière `dvs/` | **conforme** |
+| `README.md` | « **GPL-3.0**, and it is a decision rather than an accident » ; « if you have a build, you have the right to its source » ; ce qui est vendu ; la frontière `dvs/` | **fermé** (`4670820`, phase 6) — le premier sens y était, le second manquait |
 | `dvs/decoder.h` | la frontière documentée en tête | **conforme** — `secteurs.html:629-633` |
-| `docs/pdf/argumentaire.html:204-250` | « La licence : une décision commerciale, pas une contrainte subie » ; « la frontière de licence du projet est une **option de compilation** » ; « Modèles envisageables, **une fois la licence tranchée** » | **ouvert (phase 6)** — le document présente comme ouverte une décision prise le 9 septembre |
-| `docs/pdf/argumentaire.html:334` | « **Les questions de licence** — configuration sans GPL, frontière de… », dans la liste de ce qui reste à décider | **ouvert (phase 6)** |
-| `docs/pdf/manuel.html:21` | « Licence — voir annexe E ; **la configuration par défaut n'embarque aucun code GPL** » | **ouvert (phase 6)** — et c'est le contraire de la décision : xwax reste (`secteurs.html:618`) |
+| `docs/pdf/argumentaire.html`, § 07 | le chapô dit désormais « **tranché depuis le 9 septembre 2026** » ; les trois voies deviennent celle qui a été retenue, avec sa raison commerciale ; l'acheteur lit qu'il a droit à la source, « c'est un argument, pas un aveu » ; « Modèles envisageables » devient « **Ce qui se vend** » — le binaire, les mises à jour, et que ça marche le soir même | **fermé** (`4670820`, phase 6) |
+| `docs/pdf/argumentaire.html`, l'encadré des affirmations qui engagent | « Le choix, lui, est fait… ce qui reste à faire relire par un juriste est l'**analyse** qui l'accompagne » | **fermé** (`4670820`, phase 6) — une décision prise n'est pas une décision vérifiée, et les deux ne se rangent pas au même endroit |
+| `docs/pdf/manuel.html`, la couverture et l'annexe E | « **GPL-3** — vous avez droit à la source » ; l'annexe E ouvre sur la décision et sur ce qu'elle donne au lecteur ; le tableau distingue le **défaut de compilation** de **la configuration distribuée** | **fermé** (`4670820`, phase 6) — la phrase disait le contraire de la décision : xwax reste |
 
-Les deux documents que l'acheteur lit avant d'installer quoi que ce soit
-contredisent la décision de la maison. C'est du travail de produit, pas une
-question à remonter — mais c'est le point le plus visible du relevé après le
-papier.
+Les deux documents que l'acheteur lisait avant d'installer quoi que ce soit
+contredisaient la décision de la maison. C'était du travail de produit, pas une
+question à remonter, et c'est fait (`4670820`, phase 6).
 
 ---
 

@@ -774,6 +774,46 @@ Link sans le coût d'en écrire une source.
 
 ---
 
+### Les deux langues — français et anglais, complets
+
+*Au carnet le 2026-09-10, après la phase 2 du vocabulaire, et pas avant : c'est
+l'ordre que la maison impose. `design/ERGONOMIE.md`, « Le langage » : « Traduire
+une interface existante reste une **fonctionnalité**, pas un alignement — elle
+demande une phase, et chaque produit en ajoute une à son carnet, après la phase du
+vocabulaire et jamais avant. »*
+
+**La règle, tranchée le 2026-09-10** (`FOND-13`) : français et anglais partout,
+complets tous les deux, une seule langue affichée à la fois. Un logiciel autonome
+démarre dans la langue du système si elle est servie, en anglais sinon, et la
+change dans ses préférences — sans redémarrage là où le toolkit le permet. Ce
+n'est **pas** un critère d'alignement : c'est un critère de **vente**, et il se
+mesure à part.
+
+**Ce que ça coûte ici.** Toutes les chaînes affichées de cet instrument sont
+écrites en français dans le code, en dur, dans `scratchvj/ui/panels.cpp` pour
+l'essentiel et dans `scratchvj/ui/main_ui.cpp` pour les erreurs. La règle veut
+qu'une chaîne affichée **porte une clé**, et que la clé soit le mot canonique de
+`spec/00-vocabulaire.md` quand il en existe un.
+
+- **Le nombre de chaînes ne s'écrit pas ici** : `grep -c 'text_c\|ImGui::Text\|
+  SetTooltip\|row_label\|eyebrow\|button(' scratchvj/ui/panels.cpp` le donne, et
+  il ne se périme pas.
+- **La moitié du travail est déjà faite, et c'est la phase 2 qui l'a faite** : les
+  mots qui ont une forme canonique sont désormais les bons, donc leurs clés
+  existent déjà. `docs/vocabulaire.md` nomme les autres.
+- **Le point dur est le format**, pas la traduction : ce produit n'a aucun
+  mécanisme de table de chaînes, et `scratchvj_core` n'a aucune dépendance
+  externe — ce qui interdit une bibliothèque d'i18n dans `core/`. La table vivrait
+  dans `ui/`, comme le fichier de jetons.
+- **Trois endroits ne sont pas de l'interface et ne se traduisent pas** : les
+  identifiants de contrôles et de destinations (`ch1.eq.hi`, `deck.a.yaw`), qui
+  sont des adresses ; les formes canoniques écrites sur disque ; et les
+  commentaires du code, qui sont en anglais.
+
+**Quand.** Avant la première vente, jamais avant que les deux langues puissent
+être complètes ensemble. Une troisième langue ne s'ouvre pas tant que les deux
+premières ne le sont pas.
+
 ### La progression de l'analyse — l'étape nommée et le temps restant
 
 *Au carnet le 2026-09-10, phase 4. Ce n'est pas un manquement d'alignement : la
