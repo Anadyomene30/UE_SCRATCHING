@@ -691,7 +691,7 @@ void draw_status(Engine& engine, Frame& frame) {
     ImGui::SameLine(0.0f, 8.0f);
     push_small();
     if (frame.take_replaying) {
-        if (button("\xE2\x96\xA0 relecture", Icon::None, true)) frame.take_replay_stop = true;
+        if (button("\xE2\x96\xA0 relecture")) frame.take_replay_stop = true;
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s\nclic : arr\xC3\xAAter", frame.take_replay_name.c_str());
         ImGui::SameLine(0.0f, 6.0f);
         meter(frame.take_replay_progress, 60.0f, kAccent, false);
@@ -1019,7 +1019,7 @@ void draw_library(Engine& engine, Frame& frame, float width, float height) {
     if (!engine.queue().empty()) {
         ImGui::SameLine(inner - 100.0f);
         push_small();
-        if (button("Suivant \xE2\x86\x92", Icon::None, true)) frame.load_next_request = true;
+        if (button("Suivant \xE2\x86\x92")) frame.load_next_request = true;
         if (ImGui::IsItemHovered()) {
             ImGui::SetTooltip("charge le premier de la file (sur A si rien n'est dit)");
         }
@@ -1290,7 +1290,7 @@ void draw_library_screen(Engine& engine, Frame& frame) {
                                                           sizeof(new_crate),
                                                           ImGuiInputTextFlags_EnterReturnsTrue);
             ImGui::SameLine();
-            if ((button("Cr\xC3\xA9""er", Icon::None, true) || entered) && new_crate[0] != '\0') {
+            if ((button("Cr\xC3\xA9""er") || entered) && new_crate[0] != '\0') {
                 frame.library_crate = library.create_crate(new_crate);
                 new_crate[0] = '\0';
                 frame.library_dirty = true;
@@ -3627,7 +3627,7 @@ void draw_mapping_list(Engine& engine, Frame& frame) {
     ImGui::PopStyleColor();
     pop_font();
     ImGui::SameLine(ImGui::GetContentRegionAvail().x - 90.0f);
-    if (button("+ Liaison", Icon::None, true)) {
+    if (button("+ Liaison")) {
         // A new row starts from the last control touched, so "turn the knob,
         // press +" is the whole gesture.
         Mapping row;
