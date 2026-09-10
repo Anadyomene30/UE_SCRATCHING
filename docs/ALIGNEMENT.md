@@ -1,7 +1,13 @@
 # Alignement — le relevé
 
+**Maison lue jusqu'à : bf8c2e1 (2026-09-10)**
+
+*C'est le marqueur que `Suite 360\tools\depuis.py` lit pour dire ce qui a changé
+dans la maison depuis la dernière lecture de ce dépôt. Il s'écrit en finissant, et
+sans lui l'outil ne devine pas : il le dit, et il s'arrête là.*
+
 Relevé le **2026-09-09**, en lecture seule, branche `claude/scratch-video-unreal-0oi7dv`
-à **`75eee2f`**. Les remontées sont dans
+à **`75eee2f`**. Ce qui monte d'ici est dans
 [`REMONTEES.md`](REMONTEES.md).
 
 **Ce document a cessé d'être un relevé de phase 0 le 2026-09-10.** Les verdicts du
@@ -39,7 +45,7 @@ verdict les débloquait.
 |---|---|---|---|---|
 | 01 | tranché, source modifiée | `"auto"` devient l'absence de clé, même migration que `equirect` → `equirect_360` | fermé | `ef3cbbc` |
 | 02 | tranché, source modifiée | `rectilinear`, `little_planet`, `fisheye_view` | fermé | `ef3cbbc` |
-| 03 | tranché, source modifiée | « 360 » là où 44 px ne tiennent pas plus ; `2D` et « équirectangulaire » seul disparaissent | fermé — le mot est celui de la table, `SCRATCHVJ-22` reste ouverte côté maison | `ef3cbbc` |
+| 03 | tranché, source modifiée | « 360 » là où 44 px ne tiennent pas plus ; `2D` et « équirectangulaire » seul disparaissent | fermé — le mot est celui de la table, et `SCRATCHVJ-22` l'a confirmé | `ef3cbbc` |
 | 04 | tranché, source modifiée | corps 15 px, 11,5 arrondi au cran voisin, échelle candidate | fermé | `c4fa93c` |
 | 05 | reporté | nommer les trois étages dans le fichier de jetons, sans valeurs | remonté | — |
 | 06 | reporté | rien ; isoler la mono et le fond en une ligne chacune en phase 5 | remonté | — |
@@ -105,6 +111,118 @@ dans ses termes, et la version française que `CLAUDE.md` portait déjà.
 
 ---
 
+## Application des verdicts des tours 02 et 03 — 2026-09-10
+
+Neuf verdicts (`Suite 360\remontees\filoscope.md`, lus sur place, section
+« Tours 02 et 03 »), plus six décisions rendues ailleurs qui touchent ce dépôt.
+**Rien n'a été rejugé.** Deux points seulement n'ont pas été appliqués tels quels,
+et les deux sont écrits en bas de cette section avec leur mesure.
+
+**Le commit de toutes les lignes fermées ci-dessous est celui qui porte cette
+section** — *« Carry the verdicts of rounds 02 and 03 »*, 2026-09-10. Il est
+cité par son titre et non par son empreinte : un commit ne peut pas porter la
+sienne, puisque c'est lui qui modifie le relevé où la ligne vit
+(`maison/03-DEFINITION-DE-FINI.md`, 2026-09-10). Il est dit une fois ici plutôt
+qu'à chaque ligne du tableau.
+
+Deux choses ont changé dans la maison avant même les verdicts : **le nom est
+arrêté — Filoscope** — et `MAISON.md` n'existe plus, ni ici ni là-bas. Ce qui
+était propre à ce dépôt se lit dans `maison/produits/filoscope.md`, sur place ;
+les renvois `MAISON.md:NN` de ce relevé sont ceux d'un document daté qui n'existe
+plus, et ils sont laissés tels quels pour la même raison que les numéros de ligne
+du code — un relevé décrit un état à une date.
+
+| # | Verdict | Ce que ça fait dans ce dépôt | État |
+|---|---|---|---|
+| 21 | tranché, source modifiée | `#9C774E` est entré tel quel dans `tokens.json` v5 avec la règle de dérivation ; la constante reste en partie 2, l'outil ne la nomme pas encore | fermé côté produit ; l'outil est signalé plus bas |
+| 22 | tranché, source modifiée | rien à écrire : le mot appliqué en phase 2 est celui que la maison a retenu, et `SCENE.md` ne porte plus « Plate » | fermé |
+| 23 | tranché, source modifiée | Q1 : les quatre nombres colorés reviennent à la craie, `out_of_tolerance()` et `link_colour()` disparaissent. Q2 : les quatre autres états de dérive étaient déjà en `warn` | fermé |
+| 24 | tranché sur Q1 ; tranché et reporté en deux moitiés sur Q2 | Q1 : rien, la clause tenait déjà par son critère. Q2 : les cinq emplois du vert de `done` sur l'incrustation passent à la craie | fermé sur ce qui est tranché ; la troisième valeur de la paire n'est pas inventée |
+| 25 | tranché, source modifiée | `core/sphere.h` cite `lines.scene.viewer.plate.fov_deg_default` pour le champ au repos, et dit que `viewer.geometry` ne porte que la borne de tangage ; 90° était déjà la valeur | fermé ; les bornes 20–170 restent ouvertes, et le commentaire dit où elles vont |
+| 26 | tranché, source modifiée | rien à écrire : les deux lignes du § 5.3 passent en *hors périmètre* avec la citation de la fiche | hors périmètre |
+| 27 | tranché, source modifiée | les trois libellés du sélecteur de vue prennent leur forme construite ; les angles passent sous la ligne | fermé |
+| 28 | tranché, source modifiée | rien : la migration est vérifiée, elle ne touche que les trois noms que le produit fabrique | fermé |
+| 29 | tranché, source modifiée | l'appui d'un aplat s'éclaircit vers la craie ; `tok::lift()` est l'opération de `tok::veil()` dans l'autre sens | fermé |
+
+**Ce que ça change à l'écran.** Quatre nombres de mesure — balance en dB, erreur
+de phase, vitesse de plateau, confiance du décodeur — ne changent plus de
+couleur ; la figure de Lissajous, le voyant de liaison et le mot les doublent
+comme avant. L'incrustation se nomme en craie aux cinq endroits où elle portait
+le vert de `done`, y compris les deux sélecteurs de sa ligne. Un bouton en aplat
+s'éclaircit sous le doigt au lieu de virer à l'ambre. Le sélecteur de vue 360
+écrit « Vue rectiligne · Vue little planet · Vue fisheye », et les angles sont
+passés sous la ligne, faute de place — vérifié sur une capture, pas raisonné :
+`pwsh tools/shot.ps1 -Arguments "clips/tokyo_test_360.mp4" -Out captures/x.png -Wait 16`
+(`captures/` est ignoré par git ; la commande, elle, ne se périme pas).
+
+**Les six décisions rendues ailleurs.**
+
+| Décision | État ici |
+|---|---|
+| la pile d'`Échap` a sept rangs (`LACUNA-MOTION-25`, `RELIEF-37`) | **sans objet** — ce produit ne traite plus `Échap` du tout, c'est le rang 6 ; le seul rang qui aurait un objet est le popup ouvert, et ImGui le ferme |
+| `viewer.grid` entre dans `tokens.json` (`VIGIE-36`) | **sans objet** — aucune grille de repérage n'est dessinée |
+| le pas de base d'un champ à gratter est un millième de la plage (`VIGIE-37`) | **noté** — Dear ImGui ne produit pas de modificateur de pas sur un `SliderFloat` ; le toolkit qui ne sait pas le note et passe, ce qui est le cas écrit dans le verdict |
+| les fontes ont une source unique et un mécanisme (`VIGIE-40`) | **appliqué, et la première mesure était fausse** — voir ci-dessous ; les deux familles y sont, et ce qui manquait était un drapeau de `build.py` |
+| `print-color-adjust: exact` (`ANAMORPHE-28`) | **sans objet** — `docs/pdf/_style.css` ne l'a jamais porté ; il est dans `docs/pdf/suite.css`, que ces deux documents ne chargent pas encore |
+| une infobulle est admise sur un contrôle muet ou pour nommer un raccourci (`MUTOSCOPE-33`) | **noté** — rien à changer, les infobulles de ce produit sont déjà de ces deux formes |
+
+### Les deux points qui n'ont pas été appliqués tels quels
+
+**1. `signal.warn` reste en partie 2 du fichier de jetons, et c'est l'outil.**
+La valeur est entrée dans la source, à l'octet près, et le verdict demande de
+vérifier que l'outil l'émet. Il ne l'émet pas : la table `noms` de
+`Suite 360\tools\distribute.py` descend `signal.done` et `signal.fail` pour ce
+produit, et rien d'autre du bloc `signal`. La constante reste donc déclarée après
+le marqueur de fin, avec la valeur de la source et la mention de ce défaut, comme
+le verdict le demande dans ce cas. Le jour où l'outil la nomme, cette déclaration
+s'efface et le bloc généré la porte.
+
+**2. Les mots des deux documents sont en Archivo — et la première mesure de
+cette session était fausse.** `docs/pdf/fonts-inline.css` est chargé par
+`manuel.html` et par `argumentaire.html`, avant la feuille, comme `VIGIE-40` le
+demande. La première vérification a conclu qu'Archivo n'arrivait pas dans le PDF,
+et une remontée est partie sur cette base. **Elle était fausse, et la maison
+l'avait déjà dit** (`maison/03-DEFINITION-DE-FINI.md`, encadré ajouté le
+2026-09-10 sur `LACUNA-29` et `DIORAMA-16`) : un moteur de navigateur émet une
+instance de fonte **variable** en `/Subtype /Type3`, sans `/BaseFont`. Chercher
+« Archivo » dans les octets répond *absent* alors que la fonte est là, et le
+piège est asymétrique — Fragment Mono n'est pas variable, donc elle sort en
+`/BaseFont` bien visible. La leçon est plus utile que le résultat : **« ouvre »
+est le mot ; ce qui se vérifie sans ouvrir, c'est l'ABSENCE d'un repli.**
+
+**Ce que la mesure refaite a trouvé, et c'était un vrai défaut, ici.**
+`docs/pdf/build.py` imprimait dès que Chrome croyait la page prête. Les
+`@font-face` de `fonts-inline.css` sont en `font-display: block`, ce qui rend le
+texte **invisible** pendant la période de blocage au lieu de le composer dans un
+repli : le PDF sortait **sans son corps de texte, et sans aucune erreur** —
+l'argumentaire à 14 pages et 65 Ko au lieu de 326. Un drapeau le répare,
+`--virtual-time-budget`, et il est dans `build.py` avec sa raison. C'est le seul
+changement de cette session sur la chaîne PDF.
+
+| | Manuel | Argumentaire |
+|---|---|---|
+| objets `Type3` — les instances d'Archivo | 27 | 20 |
+| `DMMono` en `/BaseFont` | oui | oui |
+| `Times`, `Arial` | aucun | aucun |
+| `SegoeUI` | 6 occurrences | aucune |
+
+Les six `SegoeUI` du manuel ne sont pas des mots : ce sont **six caractères** —
+`←` `→` `↔` `√` `≥` `ᵉ` — hors des deux `unicode-range` des sous-ensembles de la
+maison. **Ce point monte** (`REMONTEES.md`, `SCRATCHVJ-32`), et il est ce qui
+reste d'une remontée qui, telle qu'elle était partie, n'avait pas lieu d'être :
+`SCRATCHVJ-30` est réécrite en **déclaration** — le drapeau qui manquait, et à
+quoi ressemble une chaîne d'impression qui n'attend pas ses fontes.
+
+*La réserve DM Mono contre Fragment Mono pour la ligne scène n'est pas touchée :
+les deux passent le moteur d'impression, donc cette mesure ne la tranche pas.*
+
+**Les tests.** `cmake --build build-ui --config Release` : zéro avertissement ;
+`ctest --test-dir build-ui -C Release` : 6 / 6, les cinq contrôles de shader
+compris ; `scratchvj_tests` : 607 passés, 0 échoué. Aucun fichier écrit sur
+disque n'est touché par cette session.
+
+---
+
 ## Phase 2 — le vocabulaire · 2026-09-10 · `ef3cbbc`
 
 Les deux moitiés que le talon demande : les formes canoniques de la 360 partout
@@ -115,20 +233,20 @@ les mots propres à la scène.
 |---|---|---|
 | 01 | `equirect` → `equirect_360` ; `"auto"` cesse de s'écrire, la clé s'omet ; les deux anciennes formes se lisent encore | fermé |
 | 02 | `Projection::{Rectilinear, LittlePlanet, FisheyeView}`, et les trois libellés | fermé ; les libellés FR des deux dernières → `SCRATCHVJ-27` |
-| 03 | « 360 » et « Rectiligne » ; `2D` et « équirectangulaire » seul ont disparu, console et nom de caisse compris | fermé ; `SCRATCHVJ-22` reste ouverte côté maison |
+| 03 | « 360 » et « Rectiligne » ; `2D` et « équirectangulaire » seul ont disparu, console et nom de caisse compris | fermé, et `SCRATCHVJ-22` l'a confirmé |
 | 13 | les 25 libellés de paramètre en capitale initiale | fermé |
 | — | les états d'analyse aux mots canoniques d'`ERGONOMIE.md` | fermé |
 | — | `docs/vocabulaire.md` | fermé |
 
-**`SCRATCHVJ-22` : le mot employé est « Rectiligne ».** La remontée du tour 02
+**`SCRATCHVJ-22` : le mot employé est « Rectiligne ».** La question posée au tour 02
 opposait « Plate » (`SCENE.md`, et le verdict 03 qui l'a produite) à
 « Rectiligne » (la table du langage d'`ERGONOMIE.md`, sur `LACUNA-17`), écrits le
 même jour. Le mot appliqué ici est **celui de la table**, pour la raison que la
 table donne elle-même : « une plate en projection Plate » n'est lisible ni à
-l'écrit ni à l'oral, et la table est la source des deux colonnes. **La remontée
-reste ouverte côté maison** : ce dépôt ne peut pas faire dire la même chose aux
-deux sources, et tant que `SCENE.md` écrit « Plate », le produit de scène suivant
-reposera la question.
+l'écrit ni à l'oral, et la table est la source des deux colonnes. **La ligne est
+fermée le 2026-09-10** : la maison a tranché dans ce sens et sur ces arguments,
+`design/SCENE.md` ne porte plus « Plate », et la source écrit pourquoi — « **un
+cadran re-règle des valeurs ; il n'ouvre pas une seconde table de libellés** ».
 
 Conséquence de forme, notée parce qu'elle n'était pas prévue : « Rectiligne »
 tient partout où « 2D » tenait — les sélecteurs de ce produit se dimensionnent
@@ -799,16 +917,16 @@ clé, aucune valeur ne nomme une projection, une disposition ou un œil.
 
 | Ligne (`ui/panels.cpp`) | Chaîne | Où | État |
 |---|---|---|---|
-| `388` | `equirect 360` / `plan 2D` | détail sous la vignette du deck | **fermé** (`ef3cbbc`, phase 2, SCRATCHVJ-03) — « 360 » et « Rectiligne » ; `2D` et « équirectangulaire » seul ont disparu, console comprise ; la forme longue est à côté, dans l'infobulle de l'inspecteur et dans celle du sélecteur d'en-tête. **`SCRATCHVJ-22` est tranché par la table** : le mot est celui d'`ERGONOMIE.md`, « Rectiligne », et non le « Plate » de `SCENE.md` — la remontée reste ouverte côté maison, qui doit faire dire la même chose aux deux sources |
-| `851` | `360°` / `2D` | `projection_word()`, employé en `976` et `1369` | **fermé** (`ef3cbbc`, phase 2, SCRATCHVJ-03) — « 360 » et « Rectiligne » ; `2D` et « équirectangulaire » seul ont disparu, console comprise ; la forme longue est à côté, dans l'infobulle de l'inspecteur et dans celle du sélecteur d'en-tête. **`SCRATCHVJ-22` est tranché par la table** : le mot est celui d'`ERGONOMIE.md`, « Rectiligne », et non le « Plate » de `SCENE.md` — la remontée reste ouverte côté maison, qui doit faire dire la même chose aux deux sources |
-| `1197` | `{"Tous", "2D", "360°", "Alpha"}` | filtres de la bibliothèque | **fermé** (`ef3cbbc`, phase 2, SCRATCHVJ-03) — « 360 » et « Rectiligne » ; `2D` et « équirectangulaire » seul ont disparu, console comprise ; la forme longue est à côté, dans l'infobulle de l'inspecteur et dans celle du sélecteur d'en-tête. **`SCRATCHVJ-22` est tranché par la table** : le mot est celui d'`ERGONOMIE.md`, « Rectiligne », et non le « Plate » de `SCENE.md` — la remontée reste ouverte côté maison, qui doit faire dire la même chose aux deux sources |
+| `388` | `equirect 360` / `plan 2D` | détail sous la vignette du deck | **fermé** (`ef3cbbc`, phase 2, SCRATCHVJ-03) — « 360 » et « Rectiligne » ; `2D` et « équirectangulaire » seul ont disparu, console comprise ; la forme longue est à côté, dans l'infobulle de l'inspecteur et dans celle du sélecteur d'en-tête. **`SCRATCHVJ-22` est fermé** (2026-09-10) : la maison a tranché dans le sens du produit et `design/SCENE.md` ne porte plus « Plate » — « **un cadran re-règle des valeurs ; il n'ouvre pas une seconde table de libellés** » — et si « Rectiligne » ne tenait pas dans le sélecteur, la forme courte serait « Rectil. », jamais un autre mot |
+| `851` | `360°` / `2D` | `projection_word()`, employé en `976` et `1369` | **fermé** (`ef3cbbc`, phase 2, SCRATCHVJ-03) — « 360 » et « Rectiligne » ; `2D` et « équirectangulaire » seul ont disparu, console comprise ; la forme longue est à côté, dans l'infobulle de l'inspecteur et dans celle du sélecteur d'en-tête. **`SCRATCHVJ-22` est fermé** (2026-09-10) : la maison a tranché dans le sens du produit et `design/SCENE.md` ne porte plus « Plate » — « **un cadran re-règle des valeurs ; il n'ouvre pas une seconde table de libellés** » — et si « Rectiligne » ne tenait pas dans le sélecteur, la forme courte serait « Rectil. », jamais un autre mot |
+| `1197` | `{"Tous", "2D", "360°", "Alpha"}` | filtres de la bibliothèque | **fermé** (`ef3cbbc`, phase 2, SCRATCHVJ-03) — « 360 » et « Rectiligne » ; `2D` et « équirectangulaire » seul ont disparu, console comprise ; la forme longue est à côté, dans l'infobulle de l'inspecteur et dans celle du sélecteur d'en-tête. **`SCRATCHVJ-22` est fermé** (2026-09-10) : la maison a tranché dans le sens du produit et `design/SCENE.md` ne porte plus « Plate » — « **un cadran re-règle des valeurs ; il n'ouvre pas une seconde table de libellés** » — et si « Rectiligne » ne tenait pas dans le sélecteur, la forme courte serait « Rectil. », jamais un autre mot |
 | `1464` | `PROJECTION` | sur-titre de l'inspecteur | **conforme** — sur-titre de panneau, capitales admises (`DIRECTION-ARTISTIQUE.md:200-201`) |
-| `1468-1469` | `Auto (360°)`, `Auto (2D)`, `2D`, `360°` | sélecteur de l'inspecteur | **fermé** (`ef3cbbc`, phase 2, SCRATCHVJ-03) — « 360 » et « Rectiligne » ; `2D` et « équirectangulaire » seul ont disparu, console comprise ; la forme longue est à côté, dans l'infobulle de l'inspecteur et dans celle du sélecteur d'en-tête. **`SCRATCHVJ-22` est tranché par la table** : le mot est celui d'`ERGONOMIE.md`, « Rectiligne », et non le « Plate » de `SCENE.md` — la remontée reste ouverte côté maison, qui doit faire dire la même chose aux deux sources |
-| `2039` | `{"2D", "360°"}` | sélecteur sur l'en-tête du deck | **fermé** (`ef3cbbc`, phase 2, SCRATCHVJ-03) — « 360 » et « Rectiligne » ; `2D` et « équirectangulaire » seul ont disparu, console comprise ; la forme longue est à côté, dans l'infobulle de l'inspecteur et dans celle du sélecteur d'en-tête. **`SCRATCHVJ-22` est tranché par la table** : le mot est celui d'`ERGONOMIE.md`, « Rectiligne », et non le « Plate » de `SCENE.md` — la remontée reste ouverte côté maison, qui doit faire dire la même chose aux deux sources |
+| `1468-1469` | `Auto (360°)`, `Auto (2D)`, `2D`, `360°` | sélecteur de l'inspecteur | **fermé** (`ef3cbbc`, phase 2, SCRATCHVJ-03) — « 360 » et « Rectiligne » ; `2D` et « équirectangulaire » seul ont disparu, console comprise ; la forme longue est à côté, dans l'infobulle de l'inspecteur et dans celle du sélecteur d'en-tête. **`SCRATCHVJ-22` est fermé** (2026-09-10) : la maison a tranché dans le sens du produit et `design/SCENE.md` ne porte plus « Plate » — « **un cadran re-règle des valeurs ; il n'ouvre pas une seconde table de libellés** » — et si « Rectiligne » ne tenait pas dans le sélecteur, la forme courte serait « Rectil. », jamais un autre mot |
+| `2039` | `{"2D", "360°"}` | sélecteur sur l'en-tête du deck | **fermé** (`ef3cbbc`, phase 2, SCRATCHVJ-03) — « 360 » et « Rectiligne » ; `2D` et « équirectangulaire » seul ont disparu, console comprise ; la forme longue est à côté, dans l'infobulle de l'inspecteur et dans celle du sélecteur d'en-tête. **`SCRATCHVJ-22` est fermé** (2026-09-10) : la maison a tranché dans le sens du produit et `design/SCENE.md` ne porte plus « Plate » — « **un cadran re-règle des valeurs ; il n'ouvre pas une seconde table de libellés** » — et si « Rectiligne » ne tenait pas dans le sélecteur, la forme courte serait « Rectil. », jamais un autre mot |
 | `2236` | `{"Perspective", "Little planet", "Fisheye"}` | sélecteur `VUE 360` | **fermé** (`ef3cbbc`, phase 2, SCRATCHVJ-02) — `Rectilinear`, `LittlePlanet`, `FisheyeView` dans le code, « Rectiligne » / « Little planet » / « Fisheye » à l'écran. Les libellés FR des deux dernières ne sont dans aucune table → tour 03, `SCRATCHVJ-27` |
 | `2240` | `VUE 360` | libellé de ligne | **fermé** (`ef3cbbc`, phase 2, SCRATCHVJ-13) — « Vue 360 », capitale initiale |
 | `2288` | `SOURCE ÉQUIRECTANGULAIRE — cadre de visée` | sur-titre du popup de regard | **conforme** — sur-titre, et le mot est le bon (`ERGONOMIE.md:366`) |
-| `4534` | `PROGRAMME · 360 PROJETÉ` | bande programme | **fermé** (`ef3cbbc`, phase 2, SCRATCHVJ-03) — « 360 » et « Rectiligne » ; `2D` et « équirectangulaire » seul ont disparu, console comprise ; la forme longue est à côté, dans l'infobulle de l'inspecteur et dans celle du sélecteur d'en-tête. **`SCRATCHVJ-22` est tranché par la table** : le mot est celui d'`ERGONOMIE.md`, « Rectiligne », et non le « Plate » de `SCENE.md` — la remontée reste ouverte côté maison, qui doit faire dire la même chose aux deux sources |
+| `4534` | `PROGRAMME · 360 PROJETÉ` | bande programme | **fermé** (`ef3cbbc`, phase 2, SCRATCHVJ-03) — « 360 » et « Rectiligne » ; `2D` et « équirectangulaire » seul ont disparu, console comprise ; la forme longue est à côté, dans l'infobulle de l'inspecteur et dans celle du sélecteur d'en-tête. **`SCRATCHVJ-22` est fermé** (2026-09-10) : la maison a tranché dans le sens du produit et `design/SCENE.md` ne porte plus « Plate » — « **un cadran re-règle des valeurs ; il n'ouvre pas une seconde table de libellés** » — et si « Rectiligne » ne tenait pas dans le sélecteur, la forme courte serait « Rectil. », jamais un autre mot |
 
 ## 1.4 Ligne de commande, démonstration, documentation
 
@@ -816,8 +934,8 @@ clé, aucune valeur ne nomme une projection, une disposition ou un œil.
 |---|---|---|
 | `app/main.cpp:41` | « a 2:1 picture is flagged equirect » (aide) | **fermé** (`ef3cbbc`, phase 2, SCRATCHVJ-01) — la forme canonique s'écrit, `"auto"` est devenu l'absence de clé, dans la même migration que `equirect` → `equirect_360` |
 | `app/main.cpp:296` | `  equirect 360` (sortie de `analyze`) | **fermé** (`ef3cbbc`, phase 2, SCRATCHVJ-01) — la forme canonique s'écrit, `"auto"` est devenu l'absence de clé, dans la même migration que `equirect` → `equirect_360` |
-| `app/main.cpp:341` | `  360         équirectangulaire` / `non` (sortie de `info`) | **fermé** (`ef3cbbc`, phase 2, SCRATCHVJ-03) — « 360 » et « Rectiligne » ; `2D` et « équirectangulaire » seul ont disparu, console comprise ; la forme longue est à côté, dans l'infobulle de l'inspecteur et dans celle du sélecteur d'en-tête. **`SCRATCHVJ-22` est tranché par la table** : le mot est celui d'`ERGONOMIE.md`, « Rectiligne », et non le « Plate » de `SCENE.md` — la remontée reste ouverte côté maison, qui doit faire dire la même chose aux deux sources |
-| `app/engine.cpp:277` | caisse `360°` de la démonstration | **fermé** (`ef3cbbc`, phase 2, SCRATCHVJ-03) — « 360 » et « Rectiligne » ; `2D` et « équirectangulaire » seul ont disparu, console comprise ; la forme longue est à côté, dans l'infobulle de l'inspecteur et dans celle du sélecteur d'en-tête. **`SCRATCHVJ-22` est tranché par la table** : le mot est celui d'`ERGONOMIE.md`, « Rectiligne », et non le « Plate » de `SCENE.md` — la remontée reste ouverte côté maison, qui doit faire dire la même chose aux deux sources |
+| `app/main.cpp:341` | `  360         équirectangulaire` / `non` (sortie de `info`) | **fermé** (`ef3cbbc`, phase 2, SCRATCHVJ-03) — « 360 » et « Rectiligne » ; `2D` et « équirectangulaire » seul ont disparu, console comprise ; la forme longue est à côté, dans l'infobulle de l'inspecteur et dans celle du sélecteur d'en-tête. **`SCRATCHVJ-22` est fermé** (2026-09-10) : la maison a tranché dans le sens du produit et `design/SCENE.md` ne porte plus « Plate » — « **un cadran re-règle des valeurs ; il n'ouvre pas une seconde table de libellés** » — et si « Rectiligne » ne tenait pas dans le sélecteur, la forme courte serait « Rectil. », jamais un autre mot |
+| `app/engine.cpp:277` | caisse `360°` de la démonstration | **fermé** (`ef3cbbc`, phase 2, SCRATCHVJ-03) — « 360 » et « Rectiligne » ; `2D` et « équirectangulaire » seul ont disparu, console comprise ; la forme longue est à côté, dans l'infobulle de l'inspecteur et dans celle du sélecteur d'en-tête. **`SCRATCHVJ-22` est fermé** (2026-09-10) : la maison a tranché dans le sens du produit et `design/SCENE.md` ne porte plus « Plate » — « **un cadran re-règle des valeurs ; il n'ouvre pas une seconde table de libellés** » — et si « Rectiligne » ne tenait pas dans le sélecteur, la forme courte serait « Rectil. », jamais un autre mot |
 | `app/engine.cpp:75` | `width == height * 2 ? kCacheEquirect` | **fermé** (verdict SCRATCHVJ-18, rien à écrire) — grappe G7 : Mutoscope est la référence, `evidence` gagne `filename`, et **un rang absent est absent, il ne dégrade rien** (`spec/01-manifeste-plate.md`). L'inférence au ratio reste, « Auto (360°) » reste — une règle de détection, pas un mot |
 | `app/analyze.cpp:255-258` | la même règle, avec sa raison écrite | **fermé** (verdict SCRATCHVJ-18, rien à écrire) — grappe G7 : Mutoscope est la référence, `evidence` gagne `filename`, et **un rang absent est absent, il ne dégrade rien** (`spec/01-manifeste-plate.md`). L'inférence au ratio reste, « Auto (360°) » reste |
 | `core/destinations.cpp:17-20` | « regard 360 du deck A : lacet (degrés) », « zoom little planet / fisheye du deck A » | **fermé** (`ef3cbbc`, phase 2, SCRATCHVJ-02) — `Rectilinear`, `LittlePlanet`, `FisheyeView` dans le code, « Rectiligne » / « Little planet » / « Fisheye » à l'écran. Les libellés FR des deux dernières ne sont dans aucune table → tour 03, `SCRATCHVJ-27` ; l'unité entre parenthèses est traitée à l'axe 10.1 |
@@ -961,9 +1079,9 @@ le rang 6 (« ne rien faire ») est remplacé par « quitter ».
 |---|---|---|---|
 | `Espace` | `MAISON.md:101`, `ERGONOMIE.md:250` | oui | **conforme** |
 | `Échap`, selon la pile | `MAISON.md:101`, `ERGONOMIE.md:275-285` | oui, et juste | **fermé** (`9b88327`, phase 4, SCRATCHVJ-15) — voir 5.1 |
-| `Ctrl`+`Z` / `Ctrl`+`Maj`+`Z` | `MAISON.md:101`, `ERGONOMIE.md:257` | **non** | **fermé** (verdict SCRATCHVJ-15, rien à écrire) — **sans objet** : « une touche réservée n'est exigible que d'un produit qui a la chose qu'elle manipule » (`ERGONOMIE.md`, encadré sous « Le clavier réservé à la suite », réécrit sur cette remontée). Le produit n'a pas d'annulation : il ne détient aucun état réversible au sens de `04-frontieres.md:19-23`, et la scène « ne produit aucun fichier » (`secteurs.html:191-193`) |
+| `Ctrl`+`Z` / `Ctrl`+`Maj`+`Z` | `MAISON.md:101`, `ERGONOMIE.md:257` | **non** | **hors périmètre** — la fiche produit ne la programme plus : « `Ctrl`+`Z` est **sans objet** — un produit sans état persistant n'a pas d'annulation à offrir » (`maison/produits/filoscope.md`, corrigé le 2026-09-10 sur `SCRATCHVJ-26`). Le critère est celui d'`ERGONOMIE.md` : « une touche réservée n'est exigible que d'un produit qui a la chose qu'elle manipule ». Ce produit ne détient aucun état réversible au sens de `04-frontieres.md:19-23`, et la scène « ne produit aucun fichier » (`secteurs.html:191-193`) |
 | `?` / `F1` | `MAISON.md:101`, `ERGONOMIE.md:255` | **oui** | **fermé** (`9b88327`, phase 4) — une carte du clavier en popup non modal, ouverte par `F1` ou par le caractère `?` (lu dans la file de caractères, pour être atteignable sur AZERTY comme sur QWERTY). Elle porte les cinq gestes du clavier et dit que le reste se joue sur les plateaux |
-| `Tab` | `MAISON.md:101`, `ERGONOMIE.md:253` | **non** | **fermé** (verdict SCRATCHVJ-15, rien à écrire) — l'effet est sur `F`, l'une des quatre lettres libres ; et `Tab` est rouvert par la suite elle-même (`ERGONOMIE.md`, « La touche qui masque l'interface est rouverte ») |
+| `Tab` | `MAISON.md:101`, `ERGONOMIE.md:253` | **non** | **hors périmètre** — « et `Tab` ne se programme pas : la touche est **rouverte** » (`maison/produits/filoscope.md`, corrigé le 2026-09-10 sur `SCRATCHVJ-26` ; quatre produits avaient posé la même question sur la même ligne d'un talon généré). L'effet est sur `F`, l'une des quatre lettres libres |
 
 ## 5.4 Le reste du clavier réservé de l'atelier
 
@@ -983,7 +1101,7 @@ cellules de 44 px) et sur la surface MIDI ; aucun n'a de raccourci clavier.
 `1`–`5` » et un conflit potentiel avec le clavier réservé. **Cette interface
 n'existe plus** : elle a été remplacée par la refonte de septembre (`9ccce6f`, et
 `design/README.md:6-8`). Le conflit annoncé n'existe pas.
-→ **fermé** (verdict SCRATCHVJ-15, rien à écrire ici) — les deux sources sont corrigées (`secteurs.html` § 5.3, `tools/gen-maison.py`) ; la conclusion tient par Mutoscope seul (`MUTOSCOPE-01`).
+→ **fermé** (verdict SCRATCHVJ-15, rien à écrire ici) — les deux sources sont corrigées ; `MAISON.md` et son générateur n'existent plus, et ce qui est propre à ce produit se lit dans `maison/produits/filoscope.md`. La conclusion tient par Mutoscope seul (`MUTOSCOPE-01`).
 
 ## 5.6 Le viseur 360 à la souris — **axe vide, et c'est écrit**
 

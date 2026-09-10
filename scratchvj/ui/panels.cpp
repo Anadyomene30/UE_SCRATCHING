@@ -38,18 +38,21 @@ using tok::kWell;
 
 ImVec4 rgba(ImU32 c) { return ImGui::ColorConvertU32ToFloat4(c); }
 
-// The colour of a MEASURED VALUE that has left its tolerance -- a balance in
-// dB, a phase error, a platter speed past 2.5x. It says "still working, but
-// drifting", which is exactly `signal.warn`; and it is no longer the amber,
-// which belongs to deck A and to nothing else (SCENE.md, variable 4).
+// A MEASURED VALUE IS CHALK, ALWAYS. `out_of_tolerance()` used to colour four
+// readouts -- a balance in dB, a phase error, a platter speed past 2.5x, a
+// decoder confidence -- and SCRATCHVJ-23 Q1 answered the half that was open:
 //
-// THE ONE PLACE THIS CHANGES. Half of SCRATCHVJ-23 is open: the sources say
-// `fail` is the only colour allowed to carry text, that a one- or
-// two-character source label is not text and that a phrase always is -- and a
-// NUMBER is neither. If the house answers that a number is text, these sites
-// return to chalk and the drift is said by the light beside them; it costs
-// this function and nothing else.
-ImU32 out_of_tolerance(bool within) { return within ? kInk : kWarn; }
+//   "Un nombre coloré est du texte, et il revient à la craie. [...] Un chiffre
+//    qui change de couleur est exactement le mécanisme qu'un instrument de
+//    mesure ne fait pas : la valeur se lit, la dérive se dit à côté -- par le
+//    voyant, la jauge ou le mot." (design/DIRECTION-ARTISTIQUE.md)
+//
+// Nothing was lost with the colour, because each of the four was already
+// doubled: the Lissajous figure carries `warn` beside the balance and the
+// phase, the LIAISON word and its light sit beside the confidence, and the
+// platter's state is said in words under the same drawer as the speed. This
+// comment is what is left of the function -- the one place the colour lived,
+// exactly as it announced it would be.
 
 void push_mono() { if (g_fonts.mono != nullptr) ImGui::PushFont(g_fonts.mono, 0.0f); }
 void push_small() { if (g_fonts.small != nullptr) ImGui::PushFont(g_fonts.small, 0.0f); }
@@ -106,14 +109,11 @@ const char* link_text(LinkState link) {
     return "?";
 }
 
-ImU32 link_colour(LinkState link) {
-    switch (link) {
-        case LinkState::Ok: return kSage;
-        case LinkState::Degraded: return kWarn;
-        case LinkState::Lost: return kAlert;
-    }
-    return kFaint;
-}
+// There was a `link_colour()` here, and it is gone with the last number it
+// coloured (SCRATCHVJ-23 Q1): the link's three states are said by `link_text()`
+// above -- OK, FAIBLE, PERDUE -- which is the word that lets the confidence go
+// back to chalk without anything being lost. The top bar's platter light still
+// carries the state, and it composes its own colour from more than this deck.
 
 // One value with its unit, the readout block the mockup repeats under each deck.
 void readout(const char* name, const std::string& value, const char* unit, ImU32 colour) {
@@ -250,7 +250,18 @@ bool button(const char* label, Icon icon = Icon::None, bool primary = false,
 
     ImDrawList* draw = ImGui::GetWindowDrawList();
     const ImVec2 corner(origin.x + w, origin.y + kParamRow);
-    const ImU32 fill = primary ? (held ? kAmber : kAccent) : (held || hovered ? kHair : kWell);
+    // PRESSING AN APLAT LIGHTENS IT TOWARDS THE LINE'S CHALK; it never takes a
+    // colour (design/SCENE.md, SCRATCHVJ-29). It used to take the amber, which
+    // is an eighth use of a value that belongs to deck A and says "which source
+    // are we talking about" -- not "a finger is on it". Removing it without a
+    // replacement was refused for the reason the verdict puts first: on a played
+    // instrument THE PRESS FEEDBACK IS THE CONFIRMATION, there being no other. A
+    // second tint would make two coloured aplats in one place, which variable 2
+    // counts as two. Lightening derives from the chassis, so it follows
+    // SCRATCHVJ-06 without ever being re-set -- and a press is a momentary
+    // state, not a panel's state.
+    const ImU32 fill = primary ? (held ? tok::lift(kAccent, tok::kLiftPressed) : kAccent)
+                               : (held || hovered ? kHair : kWell);
     draw->AddRectFilled(origin, corner, fill, kControlRadius);
     draw->AddRect(origin, corner, primary ? kAccent : kHair, kControlRadius);
     const ImU32 ink = !enabled ? kFaint : primary ? kGround : tint;
@@ -875,7 +886,12 @@ void send_to_buttons(Engine& engine, Frame& frame, ClipId id, bool compact) {
         frame.load_target = DeckTarget::B;
     }
     ImGui::SameLine(0.0f, 4.0f);
-    if (small_button(compact ? "Incr." : "Incrustation", kSage)) {
+    // THE OVERLAY IS NAMED IN CHALK, never in a colour (design/SCENE.md,
+    // SCRATCHVJ-24 Q2). It used to carry `done`'s green -- a SIGNAL used as an
+    // IDENTITY, that value's third role, and the pattern the direction
+    // artistique counts as a collision. Whether `lines.scene.pair` gains a
+    // third value is reported to a calibrated screen; it is not invented here.
+    if (small_button(compact ? "Incr." : "Incrustation", kInk)) {
         frame.load_clip = id;
         frame.load_target = DeckTarget::Overlay;
     }
@@ -1205,7 +1221,9 @@ void draw_pad_banks(Engine& engine, Frame& frame, float height) {
     const struct { DeckTarget target; const char* title; ImU32 accent; } rows[] = {
         {DeckTarget::A, "Deck A", kAmber},
         {DeckTarget::B, "Deck B", kSlate},
-        {DeckTarget::Overlay, "Incrustation", kSage},
+        // Chalk, not `done`'s green: the overlay is a third source, and a third
+        // source is named, not coloured (SCRATCHVJ-24 Q2).
+        {DeckTarget::Overlay, "Incrustation", kInk},
     };
     bool first = true;
     for (const auto& row : rows) {
@@ -1560,7 +1578,7 @@ void draw_library_screen(Engine& engine, Frame& frame) {
             const struct { DeckTarget target; const char* label; ImU32 tint; } cells[] = {
                 {DeckTarget::A, "case libre A", kAmber},
                 {DeckTarget::B, "B", kSlate},
-                {DeckTarget::Overlay, "Incr.", kSage},
+                {DeckTarget::Overlay, "Incr.", kInk},  // SCRATCHVJ-24 Q2
             };
             for (const auto& cell : cells) {
                 if (cell.target != DeckTarget::A) ImGui::SameLine(0.0f, 4.0f);
@@ -1872,13 +1890,15 @@ void draw_platter_scope(const Frame& frame) {
     const float side = 108.0f;
     const bool measured = reading.verdict == ScopeVerdict::Measured;
 
-    // Amber is for "look at this", and these two are where a good chain sits:
-    // a leg pair within a decibel and within five degrees of square. They
-    // colour the readout and nothing else -- no measurement, no correction and
-    // no lock decision depends on them.
+    // Where a good chain sits: a leg pair within a decibel and within five
+    // degrees of square. It colours the FIGURE and nothing else -- the two
+    // readouts beside it are chalk, because a number is text (SCRATCHVJ-23 Q1)
+    // -- and no measurement, no correction and no lock decision depends on it.
     const bool balanced = std::fabs(reading.balance_db) <= 1.0f &&
                           std::fabs(reading.phase_error_deg) <= 5.0f;
     // An unbalanced figure still reads, and still drifts: warn, not deck A.
+    // This is the drift being said BESIDE the values, which is what lets them
+    // go back to chalk without anything being lost.
     const ImU32 ink = !measured ? kFaint : (balanced ? kSage : kWarn);
 
     ImDrawList* draw = ImGui::GetWindowDrawList();
@@ -1918,11 +1938,9 @@ void draw_platter_scope(const Frame& frame) {
     if (measured) {
         char value[16];
         std::snprintf(value, sizeof(value), "%+.2f", static_cast<double>(reading.balance_db));
-        readout("BALANCE", value, "dB",
-                out_of_tolerance(std::fabs(reading.balance_db) <= 1.0f));
+        readout("BALANCE", value, "dB", kInk);
         std::snprintf(value, sizeof(value), "%+.1f", static_cast<double>(reading.phase_error_deg));
-        readout("PHASE", value, "\xC2\xB0",
-                out_of_tolerance(std::fabs(reading.phase_error_deg) <= 5.0f));
+        readout("PHASE", value, "\xC2\xB0", kInk);
         std::snprintf(value, sizeof(value), "%+.3f %+.3f", static_cast<double>(reading.centre_x),
                       static_cast<double>(reading.centre_y));
         readout("CENTRE", value, nullptr, kInk);
@@ -1965,14 +1983,17 @@ void draw_deck_diagnostics(Deck& deck, Engine& engine, Frame& frame, bool is_a) 
     {
         char v[16];
         std::snprintf(v, sizeof(v), "%.2f", deck.played.velocity);
-        readout("VITESSE", v, "\xC3\x97",
-                out_of_tolerance(std::fabs(deck.played.velocity) <= 2.5));
+        readout("VITESSE", v, "\xC3\x97", kInk);
     }
     ImGui::SameLine(0.0f, 22.0f);
     {
         char v[16];
         std::snprintf(v, sizeof(v), "%.0f", static_cast<double>(state.confidence) * 100.0);
-        readout("CONFIANCE", v, "%", link_colour(state.link));
+        // Chalk, like every measured value: the link's colour is carried by the
+        // LIAISON word and its light two readouts to the right, and a number
+        // that changes colour is what an instrument does not do
+        // (SCRATCHVJ-23 Q1).
+        readout("CONFIANCE", v, "%", kInk);
     }
     ImGui::SameLine(0.0f, 22.0f);
     {
@@ -1985,7 +2006,8 @@ void draw_deck_diagnostics(Deck& deck, Engine& engine, Frame& frame, bool is_a) 
         ImGui::BeginGroup();
         eyebrow("LIAISON");
         // The word is chalk unless the link is lost: fail is the one colour
-        // allowed on text. The light beside it carries the state's colour.
+        // allowed on text. This word is also what says the drift for the
+        // CONFIANCE readout three columns to the left, which is chalk.
         text_c(state.link == LinkState::Lost ? kAlert : kInk, "%s", link_text(state.link));
         ImGui::EndGroup();
     }
@@ -2180,8 +2202,7 @@ void draw_deck(Deck& deck, Engine& engine, Frame& frame, void* texture,
                 const float dy = (kParamRow - ImGui::GetTextLineHeight()) * 0.5f;
                 ImGui::SetCursorPosY(ImGui::GetCursorPosY() + dy);
                 push_mono();
-                text_c(out_of_tolerance(std::fabs(deck.played.velocity) <= 2.5), "%+.2f\xC3\x97",
-                       deck.played.velocity);
+                text_c(kInk, "%+.2f\xC3\x97", deck.played.velocity);
                 pop_font();
             } else {
                 float rate = static_cast<float>(deck.clock.rate());
@@ -2274,11 +2295,22 @@ void draw_deck(Deck& deck, Engine& engine, Frame& frame, void* texture,
     if (is_a && deck.clip.is_equirect()) {
         ImGui::Dummy(ImVec2(0.0f, 8.0f));
         SphereView& gaze = engine.view_a();
-        // The reprojections, in the canonical words of spec/00-vocabulaire.md
-        // (SCRATCHVJ-02). "Rectiligne" is the ERGONOMIE.md label "Vue
-        // rectiligne" shortened by the room this row has; the row already
-        // says "Vue 360".
-        static const char* const kProjections[] = {"Rectiligne", "Little planet", "Fisheye"};
+        // The three VIEW MODES, in the labels design/ERGONOMIE.md now carries
+        // for them (SCRATCHVJ-27). The two that were noted substitutes here --
+        // "Little planet" and "Fisheye" -- stopped being substitutes when the
+        // house wrote the rule that produced them:
+        //
+        //   "Le libellé d'un mode de vue se construit, il ne s'invente pas :
+        //    « Vue » + le mot de la projection, et « Vue » porte dans la colonne
+        //    lisible exactement la désambiguïsation que le suffixe `_view` porte
+        //    dans la colonne canonique."
+        //
+        // The word "Vue" is what disambiguates, and it is not decoration: on its
+        // own, "Fisheye" names a FILE projection with its own parameters, and
+        // "Rectiligne" names `flat`. The row label above says which sphere is
+        // being looked at; these three say how.
+        static const char* const kProjections[] = {"Vue rectiligne", "Vue little planet",
+                                                   "Vue fisheye"};
         int which = gaze.projection == Projection::Rectilinear     ? 0
                     : gaze.projection == Projection::LittlePlanet ? 1
                                                                   : 2;
@@ -2289,10 +2321,20 @@ void draw_deck(Deck& deck, Engine& engine, Frame& frame, void* texture,
                               : which == 1 ? Projection::LittlePlanet
                                            : Projection::FisheyeView;
         }
-        ImGui::SameLine(0.0f, 14.0f);
+        ImGui::SameLine(0.0f, 10.0f);
+        if (button("r\xC3\xA9gler")) ImGui::OpenPopup("gaze");
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("le regard suit aussi les potards EQ de la voie 1 (mapping) ;\n"
+                              "un curseur boug\xC3\xA9 ici tient jusqu'au prochain pas du mapping");
+        }
+        // The angles moved UNDER the row rather than the labels being cut. The
+        // three built labels are half again as wide as the noted substitutes
+        // they replace, and the row no longer holds the selector, the button and
+        // the reading at once. A short form is bounded by the place (SCENE.md),
+        // and the place under the row was free -- so nothing here is a short
+        // form, and the reading is not clipped either. Checked on the capture,
+        // not reasoned about: tools/shot.ps1.
         {
-            const float dy = (kParamRow - ImGui::GetTextLineHeight()) * 0.5f;
-            ImGui::SetCursorPosY(ImGui::GetCursorPosY() + dy);
             push_small();
             ImGui::PushStyleColor(ImGuiCol_Text, rgba(kMuted));
             // Angles at one decimal with an explicit sign, the display precision
@@ -2306,12 +2348,6 @@ void draw_deck(Deck& deck, Engine& engine, Frame& frame, void* texture,
             }
             ImGui::PopStyleColor();
             pop_font();
-        }
-        ImGui::SameLine(0.0f, 10.0f);
-        if (button("r\xC3\xA9gler")) ImGui::OpenPopup("gaze");
-        if (ImGui::IsItemHovered()) {
-            ImGui::SetTooltip("le regard suit aussi les potards EQ de la voie 1 (mapping) ;\n"
-                              "un curseur boug\xC3\xA9 ici tient jusqu'au prochain pas du mapping");
         }
         if (ImGui::BeginPopup("gaze")) {
             // Doubles, because that is what core/sphere speaks; ImGui edits
@@ -4610,9 +4646,13 @@ void draw_program_strip(Engine& engine, Frame& frame, float height) {
         // platter, so the question that decides a live DECK -- hold the frame
         // you grabbed, or hold your distance behind the present -- does not
         // arise. A scratchable live deck needs DeckSource::Live, not written.
+        //
+        // The chosen segment is filled in CHALK and no longer in `done`'s green
+        // (SCRATCHVJ-24 Q2): these two selectors sit on the overlay's panel, and
+        // the overlay is named, never coloured.
         static const char* const kOverlaySources[] = {"Clip", "Live Spout"};
         int which = frame.overlay_live ? 1 : 0;
-        if (segmented("overlay.source", kOverlaySources, 2, which, nullptr, kSage)) {
+        if (segmented("overlay.source", kOverlaySources, 2, which, nullptr, kInk)) {
             frame.overlay_live = which == 1;
         }
     }
@@ -4625,7 +4665,7 @@ void draw_program_strip(Engine& engine, Frame& frame, float height) {
         // picture; the rest for taste.
         static const char* const kBlends[] = {"Normal", "Ajout", "Multipli\xC3\xA9", "Screen", "Alpha"};
         int which = static_cast<int>(overlay.blend);
-        if (segmented("overlay.blend", kBlends, 5, which, nullptr, kSage)) {
+        if (segmented("overlay.blend", kBlends, 5, which, nullptr, kInk)) {
             overlay.blend = static_cast<BlendMode>(which);
         }
         if (ImGui::IsItemHovered()) {

@@ -1,6 +1,43 @@
-/* Archivo-Variable.ttf est refuse par le moteur d'impression de Chrome (le fichier
-   est valide, DM Mono du meme dossier passe) : la pile systeme prend le relais et
-   Chrome l'incorpore en sous-ensemble, donc le PDF est identique partout. */
+/* LES MOTS SONT EN ARCHIVO DEPUIS LE 2026-09-10, et la raison qui l'en empechait
+   n'etait ni la fonte ni le chemin. Elle etait ecrite ici : « Archivo-Variable.ttf
+   est refuse par le moteur d'impression de Chrome ». C'etait faux, et la fausse
+   conclusion tenait a la facon de verifier.
+
+   CE QUI SE PASSAIT VRAIMENT. `build.py` imprimait des que Chrome croyait la page
+   prete. Les @font-face de `fonts-inline.css` sont en `font-display: block`, ce
+   qui rend le texte INVISIBLE pendant la periode de blocage au lieu de le composer
+   dans un repli. Le PDF sortait donc sans le corps de texte, sans aucune erreur :
+   l'argumentaire faisait 14 pages et 65 Ko au lieu de 326. `build.py` porte
+   maintenant `--virtual-time-budget`, avec la raison ecrite a cote.
+
+   POURQUOI LA VERIFICATION AVAIT MENTI, et c'est le vrai enseignement. Chercher
+   `/BaseFont` dans les octets du PDF repond ABSENT pour une fonte VARIABLE : un
+   moteur de navigateur en emet une instance en `/Subtype /Type3`, des procedures
+   de dessin, SANS `/BaseFont`. Le piege est asymetrique — Fragment Mono n'est pas
+   variable et sort en `/BaseFont` bien visible — donc une session qui trouve l'une
+   et pas l'autre conclut logiquement que la seconde manque. Trois sessions de la
+   maison ont fait cette verification le meme jour ; les deux qui l'avaient
+   automatisee ont conclu faux, celle-ci comprise. La regle est desormais dans
+   `maison/03-DEFINITION-DE-FINI.md` : « OUVRE » est le mot, et ce qui se verifie
+   sans ouvrir c'est l'ABSENCE d'un repli, jamais la presence d'une variable.
+
+   CE QUE LES DEUX PDF PORTENT AUJOURD'HUI (mesure du 2026-09-10) : 27 objets
+   `Type3` dans le manuel, 20 dans l'argumentaire, aux `FontBBox` distinctes
+   comme l'axe de largeur l'exige — c'est Archivo ; plus `DMMono` en `/BaseFont`.
+   Aucun `Times`, aucun `Arial`. Le manuel garde six occurrences de `SegoeUI`,
+   pour six caracteres seulement — ← → ↔ √ ≥ ᵉ — qui tombent hors des deux
+   `unicode-range` des sous-ensembles de la maison. C'est monte (`SCRATCHVJ-32`).
+
+   LA MONO NE BOUGE PAS. Le choix entre DM Mono et Fragment Mono pour la ligne
+   scene n'est PAS tranche — c'est de la couche 3, SCRATCHVJ-06 est reportee, et
+   c'est a ce depot de fournir la mesure. `fonts-inline.css` porte Fragment Mono
+   et ne l'impose a rien : la famille "DMMono" ci-dessous reste celle des valeurs,
+   et le jour ou la maison tranche, ce sont ces deux lignes-la et rien d'autre.
+   Ce qui vient d'etre mesure ne tranche pas non plus : les deux passent.
+
+   RIEN D'AUTRE DE CETTE FEUILLE NE SE REECRIT. Le papier sombre attend
+   SCRATCHVJ-17 et les deux valeurs de SCRATCHVJ-06 ; la note est rendue, la
+   feuille ne l'est pas. */
 @font-face { font-family: "DMMono"; src: url("../../scratchvj/ui/fonts/DMMono-Regular.ttf"); font-weight: 400; }
 @font-face { font-family: "DMMono"; src: url("../../scratchvj/ui/fonts/DMMono-Medium.ttf"); font-weight: 600; }
 
@@ -25,7 +62,7 @@
 html { font-size: 10.2pt; }
 
 body {
-  font-family: "Segoe UI", system-ui, "Helvetica Neue", Arial, sans-serif;
+  font-family: "Archivo", "Segoe UI", system-ui, "Helvetica Neue", Arial, sans-serif;
   font-weight: 400;
   color: var(--body);
   line-height: 1.52;

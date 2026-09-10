@@ -302,11 +302,23 @@ que la dérive côté ancrage, la courbe de crossfader) viennent de raisons non
 
 La loi commune, les sources et les verdicts vivent dans **`C:\Users\dimit\Documents\CODE\Suite 360`**, et **se lisent là-bas, jamais ici**. Ce dépôt n'en contient aucune copie, pas même un résumé.
 
-- `Suite 360\maison\` — les six documents de la loi, à lire en une fois.
+- `Suite 360\maison\` — les documents de la loi, à lire en une fois.
 - `Suite 360\maison\produits\filoscope.md` — ce que la maison attend de ce dépôt.
 - `Suite 360\remontees\filoscope.md` — les verdicts déjà rendus, tour par tour.
 - `Suite 360\PROTOCOLE.md` — comment une question monte d'ici, et le prompt à copier.
 
 Ce qui monte d'ici s'écrit dans `docs/REMONTEES.md` ; l'état de chaque ligne est dans `docs/ALIGNEMENT.md`.
+
+**Trois gestes, et ils ne sont pas facultatifs :**
+
+- **Au début de toute session**, pour savoir ce qui attend ce dépôt — ce que la maison a écrit depuis la dernière lecture, si les jetons sont périmés, ce qui est remonté sans verdict, et surtout les verdicts rendus et non encore transportés :
+
+  ```sh
+  python "C:\Users\dimit\Documents\CODE\Suite 360\tools\depuis.py" Filoscope
+  ```
+
+- **Avant toute fonctionnalité ou modification demandée**, `Suite 360\maison\06-LA-PORTE.md` : **six questions** — les mots, le clavier, les surfaces, le contrat, la frontière, ce qui est déjà ouvert. Six non, on construit, et on le **déclare**. **Un seul oui : on s'arrête**, on cite la règle avec son fichier, on dit ce que la demande veut vraiment, on donne les trois issues avec leur coût et une recommandation, et **on présente le choix au fondateur** — sans reformuler en silence, sans décider, sans suspendre de soi-même. La porte ne s'applique ni à un retrait, ni à une correction de défaut, ni à un alignement.
+
+- **En finissant** : ce qui a été ajouté se **déclare** dans `docs/REMONTEES.md`, et le marqueur en tête de `docs/ALIGNEMENT.md` se met à jour — `Maison lue jusqu'à : <sha> (<date>)`. Sans marqueur, `depuis.py` ne devine pas et le dit.
 
 **Le fichier de jetons de ce dépôt est écrit par `Suite 360\tools\distribute.py`** entre deux marqueurs. Ce qui est entre les marqueurs ne s'édite pas — la prochaine exécution écrase la correction ; si une valeur est fausse, c'est `design/tokens.json` qui a tort. Ce qui suit le marqueur de fin appartient à ce produit.

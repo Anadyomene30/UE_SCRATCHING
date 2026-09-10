@@ -143,6 +143,16 @@ def print_pdf(chrome, source, target):
         [chrome, "--headless", "--disable-gpu", "--no-pdf-header-footer",
          # sans ce drapeau, _style.css et les polices sont ignores en silence
          "--allow-file-access-from-files",
+         # SANS CE DRAPEAU, LES MOTS DISPARAISSENT, et rien ne le dit. Chrome
+         # imprime des qu'il croit la page prete ; les @font-face de
+         # `fonts-inline.css` sont en `font-display: block`, ce qui rend le texte
+         # INVISIBLE pendant la periode de blocage au lieu de le composer dans un
+         # repli. Une impression trop rapide sort donc des pages ou le corps de
+         # texte manque -- 14 pages a 65 Ko contre 326, mesure le 2026-09-10 --
+         # et aucune erreur n'est emise. Le temps virtuel avance jusqu'a ce que la
+         # page soit oisive, ce qui laisse les fontes arriver ; il est virtuel,
+         # donc il ne coute pas dix secondes de mur.
+         "--virtual-time-budget=10000",
          "--print-to-pdf=" + target,
          "file:///" + source.replace("\\", "/")],
         check=True, capture_output=True,

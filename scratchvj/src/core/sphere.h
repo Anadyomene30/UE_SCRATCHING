@@ -42,13 +42,25 @@ enum class Projection {
 // `viewer.geometry.pitch_deg_clamp` of design/tokens.json: the pitch is bounded
 // at +/-89.9 and not at 90, whatever drives it. At the exact pole the yaw
 // becomes undefined and the view jumps; a knob pushed to its end lands on the
-// pole exactly as a mouse would (SCRATCHVJ-16).
+// pole exactly as a mouse would (SCRATCHVJ-16). `viewer.geometry` carries THIS
+// AND NOTHING ELSE -- it is what is required of every viewer, whatever it looks
+// at; the three field values live under `viewer.plate` (SCRATCHVJ-25 Q1, which
+// corrected two sources that wrote the wrong path).
 constexpr double kPitchClampDeg = 89.9;
 
 struct SphereView {
     double yaw_deg = 0.0;       // positive turns the view to the right
     double pitch_deg = 0.0;     // bounded by kPitchClampDeg wherever it is set
     double roll_deg = 0.0;
+    // `lines.scene.viewer.plate.fov_deg_default` of design/tokens.json, and the
+    // stage cadran is why it is not the 75 of the workshop: 75 is written for a
+    // monitor at 60 cm where a plate is JUDGED, 90 is what is PROJECTED to an
+    // audience. Reading distance is variable 1 of the cadran, so the resting
+    // field is re-set by the room and not by a repo (SCRATCHVJ-25 Q2). The
+    // BOUNDS are a different question and do NOT come down with it: 20-170 is
+    // justified by little planet, which is a reason of REPROJECTION and not of
+    // room, and they wait for the `Domaine` column of the reprojection table
+    // (SCRATCHVJ-02) -- see engine.cpp and the gaze popup in ui/panels.cpp.
     double fov_deg = 90.0;      // horizontal, for Rectilinear
     double aspect = 16.0 / 9.0;
     Projection projection = Projection::Rectilinear;

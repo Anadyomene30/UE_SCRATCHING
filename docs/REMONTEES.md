@@ -1866,3 +1866,184 @@ même argument, mot pour mot, que celui qui a rendu la paire A / B commune.
 **Ce que ce dépôt a fait en attendant.** Rien. La valeur est en service, elle est
 en partie 1 du fichier de jetons sous le nom `pair.a`, et l'emploi est écrit dans
 le relevé pour qu'il ne se prenne pas pour un oubli.
+
+---
+
+
+# Tour 04
+
+Trois points écrits le **2026-09-10**, en transportant les verdicts des tours 02
+et 03, sur la branche `claude/scratch-video-unreal-0oi7dv`. La numérotation
+continue après `SCRATCHVJ-29`. **Deux sont des déclarations** — elles n'attendent
+rien, elles disent à la maison ce que ce dépôt a trouvé et ce qu'il a ajouté ;
+**une seule attend un verdict.** Ce qui a été fait est dans `docs/ALIGNEMENT.md`,
+« Application des verdicts des tours 02 et 03 ».
+
+| # | Objet | Portée | Ce que ça bloque |
+|---|---|---|---|
+| 30 | *Déclaration* — une chaîne d'impression qui n'attend pas ses fontes perd le corps de texte, sans erreur | toute la maison, tout produit qui imprime | rien : le drapeau qui manquait est posé |
+| 31 | *Déclaration* — l'opération d'éclaircissement, et une ligne de paramètre coupée en deux | ce produit | rien |
+| 32 | Six caractères tombent hors des `unicode-range` des sous-ensembles de la maison | toute la maison | rien aujourd'hui ; six glyphes du manuel sont en Segoe UI |
+
+---
+
+## SCRATCHVJ-30 — *Déclaration* — une chaîne d'impression doit attendre ses fontes, et `font-display: block` rend l'échec invisible
+
+**Ce n'est pas une question.** C'est un fait mesuré ici, qui vaut pour tout
+produit dont la chaîne PDF est un navigateur sans affichage — c'est-à-dire pour
+tous, puisque c'est le seul moteur PDF de cette machine.
+
+**Ce qui a été trouvé.** `docs/pdf/build.py` lançait Chrome et imprimait dès que
+la page était jugée prête. Les `@font-face` que `fonts-inline.css` dépose sont en
+`font-display: block`, ce qui rend le texte **invisible** pendant la période de
+blocage — et non composé dans un repli. Le PDF sortait donc **sans son corps de
+texte, et sans qu'aucune erreur soit émise** : l'argumentaire à 14 pages et
+**65 Ko au lieu de 326**. Un seul drapeau le répare :
+
+```
+--virtual-time-budget=10000
+```
+
+Le temps est virtuel : il laisse arriver les fontes sans coûter dix secondes de
+mur. Le drapeau est dans `build.py`, avec la raison écrite à côté, exactement
+comme `--allow-file-access-from-files` l'était déjà — et pour le même motif, une
+défaillance silencieuse.
+
+**Pourquoi ça monte, alors que ça se répare dans un dépôt.** Parce que le
+mécanisme est celui de la maison et qu'il porte `font-display: block` pour de
+bonnes raisons d'écran, mais qu'à l'impression ce descripteur change la nature de
+l'échec : sans lui, un document mal composé est *laid* ; avec lui, il est *vide*.
+Neuf autres produits recevront `fonts-inline.css` et n'auront aucune raison de
+soupçonner ça. **Ma suggestion**, si la maison veut l'écrire une fois : la ligne
+de la définition de fini qui dit d'ouvrir son PDF gagne sa contrepartie
+mécanique — *une chaîne d'impression laisse arriver les fontes avant d'imprimer*
+— et le fichier `fonts-inline.css`, qui explique déjà pourquoi `data:` et pas un
+chemin relatif, est le bon endroit pour le dire.
+
+**Et ce que ce dépôt a conclu de travers avant de mesurer juste, parce que ça
+vaut d'être su.** La première vérification de cette session a conclu qu'Archivo
+n'arrivait pas dans le PDF, et une remontée est partie sur cette base. Elle était
+fausse, pour la raison exacte que `maison/03-DEFINITION-DE-FINI.md` venait
+d'écrire : une instance de fonte **variable** sort en `/Subtype /Type3`, sans
+`/BaseFont`, donc chercher « Archivo » dans les octets répond *absent* alors
+qu'elle est là. Le piège est asymétrique — Fragment Mono n'est pas variable et
+sort bien visible — et il est convaincant. **Trois sessions de la maison ont fait
+cette vérification le même jour ; les deux qui l'avaient automatisée ont conclu
+faux, celle-ci comprise.** La règle a tenu : c'est en cherchant *pourquoi* le
+repli n'apparaissait pas non plus que le vrai défaut est sorti.
+
+**Ce que les deux PDF portent maintenant** :
+
+| | Manuel | Argumentaire |
+|---|---|---|
+| objets `Type3` — les instances d'Archivo | 27 | 20 |
+| `DMMono` en `/BaseFont` | oui | oui |
+| `Times`, `Arial` | aucun | aucun |
+| `SegoeUI` | 6 occurrences, six caractères — voir `SCRATCHVJ-32` | aucune |
+
+**Le commit.** *« Carry the verdicts of rounds 02 and 03 »*, 2026-09-10.
+
+---
+
+## SCRATCHVJ-31 — *Déclaration* — l'éclaircissement d'un aplat, et une ligne coupée en deux
+
+**Ce n'est pas une question, et elle n'attend aucun verdict.** Deux choses ont
+été ajoutées à ce dépôt en transportant les verdicts, et elles sont écrites ici
+pour que la maison n'ait pas à les découvrir.
+
+**1. Ce qui a été ajouté.**
+
+- Une **opération**, `tok::lift(jeton, fraction)`, dans le fichier de jetons de ce
+  dépôt : elle tire un jeton vers la craie du châssis, canal par canal. C'est
+  l'opération que `tok::veil()` fait dans l'autre sens, et c'est celle que
+  `design/SCENE.md` décrit sans la nommer — « l'appui d'un aplat s'éclaircit vers
+  la craie de la ligne ». Son seul emploi est l'appui d'un bouton en aplat.
+- Une **fraction**, `kLiftPressed`, 0x4C sur 255, dans la même table que les cinq
+  voiles déjà déclarés.
+- Une **ligne de paramètre coupée en deux** : le sélecteur de vue 360 garde sa
+  ligne avec son libellé et le bouton « régler », et la lecture des angles est
+  passée dessous. Les trois libellés construits sont une fois et demie plus larges
+  que les substituts qu'ils remplacent, et la ligne ne tenait plus. Vérifié sur
+  une capture, pas raisonné.
+
+**2. Ce que ça touche dans la maison : rien, et c'est vérifiable.**
+
+- Aucun mot : `lift` et `kLiftPressed` sont des noms de code, pas des libellés ;
+  rien de neuf ne s'affiche.
+- Aucune touche.
+- Aucune surface nouvelle : l'aplat existait, son appui aussi ; il change de
+  valeur, il n'apparaît pas. Aucune couleur n'est introduite — les deux extrémités
+  de l'opération sont des jetons, et seule la fraction est écrite, comme les cinq
+  voiles.
+- Aucun fichier écrit sur disque, aucune colonne, aucun champ de session, aucun
+  pont.
+- **Aucune valeur nouvelle qui vaudrait pour la ligne** : si la maison veut fixer
+  la fraction pour tous les produits de scène, elle appartient à `lines.scene`, et
+  ces trois lignes disparaissent d'ici. Ce dépôt ne le demande pas — un seul
+  produit de scène ne fait pas une valeur de ligne.
+
+**3. Par quelle issue de la porte : aucune.** Les six questions n'ont pas été
+posées, parce que la porte ne s'applique pas — ce n'est ni une demande neuve, ni
+une fonctionnalité : c'est l'exécution de deux verdicts rendus, tels qu'ils ont
+été rendus. Aucune règle n'a été suspendue.
+
+**4. Le commit.** *« Carry the verdicts of rounds 02 and 03 »*, 2026-09-10.
+
+---
+
+## SCRATCHVJ-32 — Six caractères tombent hors des sous-ensembles de la maison
+
+**Portée : toute la maison.** Ne bloque rien : six glyphes d'un document sur deux.
+Trouvé en appliquant la vérification que la définition de fini demande — chercher
+l'**absence** d'un repli — sur les deux PDF de ce dépôt.
+
+**Ce que dit la source.** `maison/03-DEFINITION-DE-FINI.md` : *« Ce qui se vérifie
+sans ouvrir, en revanche, et qui vaut d'être fait : que `SegoeUI` ou `Times`
+n'apparaisse PAS là où un mot de la maison devrait être. L'absence d'un repli est
+une preuve utilisable. »*
+
+**Ce que la mesure donne.** L'argumentaire ne contient aucun `SegoeUI`, aucun
+`Times`, aucun `Arial` : il est entièrement dans les deux familles. Le manuel en
+contient six occurrences, et ce ne sont pas des mots — ce sont **six
+caractères** :
+
+| Caractère | Point de code | Où il sert dans le manuel |
+|---|---|---|
+| `←` | U+2190 | le sens d'un geste, le retour |
+| `→` | U+2192 | une correspondance, un enchaînement |
+| `↔` | U+2194 | une relation à double sens |
+| `√` | U+221A | une formule |
+| `≥` | U+2265 | un seuil |
+| `ᵉ` | U+1D49 | un ordinal — « 2ᵉ » |
+
+Les deux `unicode-range` que `fonts-inline.css` déclare pour Archivo couvrent
+`U+2191` et `U+2193` — les flèches **haut et bas** — et pas `U+2190`, `U+2192`,
+`U+2194`. Les quatre flèches d'un même jeu ne sont donc pas dans le même état, ce
+qui n'est probablement pas voulu.
+
+**La question.** Les sous-ensembles de la famille des mots doivent-ils porter les
+caractères que la prose de la maison emploie déjà — flèches horizontales,
+comparateurs, exposants — ou un document qui en a besoin doit-il les composer
+autrement ?
+
+**Ma recommandation : les faire entrer dans le sous-ensemble, et n'en faire ni un
+choix de produit ni une règle de rédaction.** Trois raisons.
+
+1. **La maison les emploie déjà.** `→` est dans les tables de `ERGONOMIE.md`, de
+   `00-vocabulaire.md` et dans les verdicts eux-mêmes ; un document qui les
+   reprend n'invente rien.
+2. **Une règle de rédaction ne tiendra pas.** Interdire `→` dans un document,
+   c'est demander à neuf produits de se souvenir d'une liste de caractères ; c'est
+   exactement le genre de règle que personne ne peut vérifier, et
+   `03-DEFINITION-DE-FINI.md` demande qu'un critère se **montre**.
+3. **Ça se vérifie ensuite en une commande**, celle que la définition de fini
+   décrit déjà : si `SegoeUI` n'apparaît plus nulle part, la plage est bonne.
+
+*Si la fonte ne contient pas ces glyphes du tout — c'est possible, un
+sous-ensemble Google Fonts est taillé sur des plages et pas sur un besoin —
+alors la réponse est ailleurs et je ne la connais pas : c'est ce que la maison
+saura en regardant le fichier, et pas ce dépôt.*
+
+**Ce que ce dépôt a fait en attendant.** Rien. Les six caractères restent, en
+Segoe UI, et le compte est écrit dans `docs/pdf/README.md` pour que la prochaine
+session ne le redécouvre pas.

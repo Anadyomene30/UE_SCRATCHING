@@ -230,8 +230,29 @@ constexpr std::uint32_t kGroundClearRgba = clear_rgba(kGroundRgb);
 // #B54B3A) : L ×0,863, S ×0,654. Sa luminance relative tombe à 0,684 de la
 // valeur d'atelier, entre celle de `done` (0,729) et celle de `fail` (0,682).
 //
-// CANDIDATE tant que `tokens.json` ne porte pas `lines.scene.signal.warn` : sa
-// teinte est à 4° de l'accent du produit, ce qui est remonté (`SCRATCHVJ-21`).
+// ELLE N'EST PLUS CANDIDATE. `SCRATCHVJ-21` est rendue : la valeur est entrée
+// TELLE QUELLE dans `design/tokens.json` v5, sous `lines.scene.signal.warn`,
+// avec la règle de dérivation ci-dessus recopiée dans son `$comment` pour que le
+// prochain jeton de scène se dérive au lieu de se choisir. La collision de
+// teinte est enregistrée à la même adresse — `warn` à 31,5°, l'accent du produit
+// à 27,7°, seule la clarté les sépare à un mètre dans le noir — et l'arbitrage
+// est écrit : c'est l'ACCENT qui bougera s'il faut bouger, parce qu'un signal est
+// de l'état et n'a jamais été de la couche 3. La séance sur écran calibré
+// regardera cinq voisinages et non quatre.
+//
+// ELLE RESTE ICI, ET C'EST UN DÉFAUT DE L'OUTIL, PAS UNE DÉCISION DE CE DÉPÔT.
+// `Suite 360/tools/distribute.py` ne nomme pas encore `signal.warn` pour ce
+// produit : sa table `noms` descend `signal.done` et `signal.fail`, et rien
+// d'autre du bloc `signal`. Tant qu'elle ne le nomme pas, la constante vit en
+// partie 2 avec la valeur de la source, à l'octet près ; le jour où l'outil
+// l'émet, cette déclaration s'efface et le bloc généré la porte. Remonté.
+//
+// SON EMPLOI EST ÉTENDU (`SCRATCHVJ-23` Q2) : `warn` couvre TOUT état de dérive
+// et non le seul lien de platine — table MIDI partiellement connectée, figure de
+// Lissajous déséquilibrée, jauge de fraîcheur de l'ancre, liaison activée mais
+// inactive. Le verdict `-09` avait nommé un site parce qu'un seul site avait été
+// remonté ; laisser les quatre autres en ambre reconstruirait le double rôle que
+// `-08` venait de retirer.
 constexpr ImU32 kWarn = col(0x9C774E);
 
 // LES DEUX FONTES, et la distinction qu'elles portent : les mots dans la
@@ -290,6 +311,29 @@ constexpr std::uint32_t kVeilLoop = 0x33;       // sur l'accent — l'intervalle
 constexpr std::uint32_t kVeilDropTarget = 0x30; // sur l'accent — la case de banque sous un glisser
 constexpr std::uint32_t kVeilRowHover = 0x80;   // sur `chassis.panel` — la ligne survolée
 constexpr std::uint32_t kVeilMaskIdle = 0x60;   // sur `pair.b` — le masque, outil non armé
+
+// L'ÉCLAIRCISSEMENT — l'opération de `veil`, dans l'autre sens. `veil` pose une
+// opacité sur un jeton ; celle-ci tire un jeton VERS la craie de la ligne, canal
+// par canal, d'une fraction sur 255. Elle a un seul emploi, et il est écrit dans
+// la source : « **l'appui d'un aplat s'éclaircit vers la craie de la ligne ; il
+// ne prend pas de couleur** » (`design/SCENE.md`, `SCRATCHVJ-29`).
+//
+// Ce n'est pas une valeur en dur de plus : les deux extrémités sont des jetons —
+// l'aplat d'un côté, `chassis.chalk` de l'autre — et seule la fraction vit ici,
+// comme les cinq voiles ci-dessus. Le jour où `SCRATCHVJ-06` change la craie du
+// châssis, l'appui suit sans être re-réglé : c'est la troisième raison que le
+// verdict retient.
+constexpr ImU32 lift(ImU32 token, std::uint32_t amount) {
+    ImU32 out = token & 0xFF000000u;
+    for (int shift = 0; shift < 24; shift += 8) {
+        const int from = static_cast<int>((token >> shift) & 0xFFu);
+        const int to = static_cast<int>((kInk >> shift) & 0xFFu);
+        const int mixed = from + (to - from) * static_cast<int>(amount) / 255;
+        out |= static_cast<ImU32>(mixed & 0xFF) << shift;
+    }
+    return out;
+}
+constexpr std::uint32_t kLiftPressed = 0x4C;    // l'aplat sous le doigt — 30 % vers la craie
 
 // LE RYTHME D'IMGUI. Dix nombres, dont quatre ne sont pas des multiples de
 // l'unité de 4 de la suite — `10`, `6`, `6` et `18`. Ils NE SE RÉGULARISENT

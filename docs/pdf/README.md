@@ -36,15 +36,50 @@ Le script a donc besoin du binaire. Il cherche `scratchvj.exe` dans les réperto
 de build habituels ; **recompiler d'abord**, sinon les annexes décrivent un état
 périmé — c'est exactement le piège que `CLAUDE.md` documente pour les `*_check`.
 
-## Pourquoi le corps de texte n'est pas en Archivo
+## Le corps de texte est en Archivo — et ce qui l'en empêchait
 
-`scratchvj/ui/fonts/Archivo-Variable.ttf` est refusé par le moteur d'impression de
-Chrome : le fichier est valide et l'application le charge sans problème, mais
-`DMMono-Regular.ttf` du même dossier passe alors qu'Archivo retombe sur la police
-système. Le corps est donc composé dans la pile système (Segoe UI sur Windows), que
-Chrome incorpore en sous-ensemble dans le PDF — le rendu est donc identique partout.
-DM Mono, lui, est bien incorporé et porte l'identité du projet sur les chiffres, le
-code et les intertitres.
+**Ce n'était ni la fonte ni le chemin.** Cette page portait, jusqu'au
+2026-09-10, la conclusion inverse : « Archivo-Variable.ttf est refusé par le
+moteur d'impression de Chrome ». Elle était fausse, et elle l'était pour la
+raison qui compte le plus ici — **la façon de vérifier**.
+
+**Ce qui se passait vraiment.** `build.py` imprimait dès que Chrome croyait la
+page prête. Les `@font-face` de `fonts-inline.css` sont en `font-display: block`,
+ce qui rend le texte **invisible** pendant la période de blocage au lieu de le
+composer dans un repli. Le PDF sortait donc sans le corps de texte, sans aucune
+erreur : l'argumentaire faisait 14 pages et **65 Ko au lieu de 326**. Un seul
+drapeau le répare, et il est dans `build.py` avec sa raison :
+`--virtual-time-budget=10000`.
+
+**Pourquoi la vérification avait menti.** Chercher `/BaseFont` dans les octets du
+PDF répond *absent* pour une fonte **variable** : un moteur de navigateur en émet
+une instance en `/Subtype /Type3` — des procédures de dessin — **sans
+`/BaseFont`**. Le piège est **asymétrique**, et c'est ce qui le rend
+convaincant : Fragment Mono n'est pas variable et sort en `/BaseFont` bien
+visible, donc une session qui trouve l'une et pas l'autre conclut logiquement que
+la seconde manque. `maison/03-DEFINITION-DE-FINI.md` porte désormais la règle :
+« **ouvre** » est le mot, et ce qui se vérifie sans ouvrir, c'est l'**absence**
+d'un repli — jamais la présence d'une variable.
+
+**Ce que les deux PDF portent aujourd'hui**, mesuré le 2026-09-10 :
+
+| | Manuel | Argumentaire |
+|---|---|---|
+| objets `Type3` — les instances d'Archivo | 27 | 20 |
+| `DMMono` en `/BaseFont` | oui | oui |
+| `Times`, `Arial` | aucun | aucun |
+| `SegoeUI` | 6 occurrences | aucune |
+
+Les six `SegoeUI` du manuel ne sont pas des mots : ce sont **six caractères** —
+`←` `→` `↔` `√` `≥` `ᵉ` — qui tombent hors des deux `unicode-range` des
+sous-ensembles de la maison. C'est monté (`../REMONTEES.md`, `SCRATCHVJ-32`).
+
+**Vérifier soi-même**, sans rien installer — et en cherchant ce qui NE doit PAS
+être là, pas ce qui doit y être :
+
+```sh
+python -c "d=open('docs/pdf/scratchvj-argumentaire.pdf','rb').read();print('Type3',d.count(b'/Type3'),'SegoeUI',d.count(b'SegoeUI'),'Times',d.count(b'Times'))"
+```
 
 ## Tenir les deux documents à jour
 
