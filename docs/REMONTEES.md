@@ -2047,3 +2047,189 @@ saura en regardant le fichier, et pas ce dépôt.*
 **Ce que ce dépôt a fait en attendant.** Rien. Les six caractères restent, en
 Segoe UI, et le compte est écrit dans `docs/pdf/README.md` pour que la prochaine
 session ne le redécouvre pas.
+
+> **Tranché le 2026-09-10 au soir. La recommandation est retenue :** Archivo a
+> été re-sous-ensemblée depuis sa fonte complète et porte désormais
+> `← → ↔ ↕ √ ≈ ≠ ≤ ≥ π`. **Cinq des six caractères sont réparés** ; `ᵉ` (U+1D49)
+> reste en repli, Archivo ne l'ayant pas. La réserve écrite en italique
+> ci-dessus — *« si la fonte ne contient pas ces glyphes du tout »* — était la
+> bonne question à poser : c'est exactement le cas de `ᵉ`, et c'est aussi
+> pourquoi `U+21B5` a été essayé puis **retiré** de la plage, une plage élargie
+> sans le glyphe faisant dessiner un carré au lieu de retomber sur un repli.
+> Vérifié ici : `docs/ALIGNEMENT.md`, « Application des verdicts du tour 04 ».
+
+---
+
+# Tour 05
+
+Trois points écrits le **2026-09-10**, en transportant les verdicts du tour 04.
+La numérotation continue après `SCRATCHVJ-32`. Les trois lignes du tour 04 sont
+fermées. **Le premier point est une déclaration** — il n'attend rien ; **les deux
+autres attendent un verdict**, et le premier des deux est le plus utile parce
+qu'il porte sur un outil de mesure que les dix produits emploient.
+
+| # | Objet | Portée | Ce que ça bloque |
+|---|---|---|---|
+| 33 | *Déclaration* — les deux PDF régénérés sur l'Archivo élargie, et le balayage refait au caractère près | ce produit | rien |
+| 34 | Le contrôle mécanique de la définition de fini ne nomme que `SegoeUI` et `Times` — la liste des replis de Chromium est plus longue | toute la maison | rien aujourd'hui ; un produit peut se croire propre sans l'être |
+| 35 | L'argument qui motive la réserve « DM Mono contre Fragment Mono » vient d'être infirmé | ce produit et la ligne scène | rien : la réserve reste ouverte, mais sur un autre argument |
+
+---
+
+## SCRATCHVJ-33 — *Déclaration* — les PDF régénérés, et le balayage refait au caractère près
+
+**Ce n'est pas une question.** C'est ce que ce dépôt a fait en appliquant les
+trois verdicts du tour 04.
+
+**1. Ce qui a changé.** Rien dans le code, et rien dans `docs/pdf/build.py` :
+l'attente des fontes — `--virtual-time-budget=10000`, avec sa raison écrite au
+long — y était déjà depuis `SCRATCHVJ-30`. `docs/pdf/fonts-inline.css` a été reçu
+à jour (`3b6fb5c`) et les deux documents ont été régénérés dessus.
+
+| | Avant | Après |
+|---|---|---|
+| `scratchvj-manuel.pdf` | 1 246 Ko | 1 280 Ko |
+| `scratchvj-argumentaire.pdf` | 579 Ko | 603 Ko |
+
+*Les deux poids augmentent. C'est la première chose regardée, et c'est
+`SCRATCHVJ-30` retournée contre elle-même : un PDF qui a perdu son corps de
+texte ne proteste pas, il maigrit.*
+
+**2. Les cinq réparations, vérifiées une par une.** Les caractères ne sont plus
+cherchés par le nom de leur fonte mais par leur point de code, en dépouillant la
+table `/ToUnicode` de chaque objet de fonte — ce qui dit *exactement* quelle
+fonte compose quel caractère :
+
+| Caractère | Point de code | Avant | Après |
+|---|---|---|---|
+| `←` | U+2190 | Segoe UI | **Archivo**, en `/Subtype /Type3` |
+| `→` | U+2192 | Segoe UI | **Archivo** |
+| `↔` | U+2194 | Segoe UI | **Archivo** |
+| `√` | U+221A | Segoe UI | **Archivo** |
+| `≥` | U+2265 | Segoe UI | **Archivo** |
+| `ᵉ` | U+1D49 | Segoe UI | Segoe UI — attendu |
+
+**3. Ce que la réserve sur `π` devient ici.** `π` (U+03C0) n'apparaît dans aucun
+des deux documents. La réserve du verdict — `π` réparé côté Archivo mais pas
+côté Fragment Mono — ne porte donc pas sur ce dépôt, dont la chasse fixe
+documentaire est DM Mono. Elle reste entière pour `ANAMORPHE-32`.
+
+**4. Par quelle issue de la porte.** Aucune : la porte ne s'applique ni à un
+alignement ni à la régénération d'un document (`maison/06-LA-PORTE.md`).
+
+**5. Les tests.** `cmake --build build-ui --config Release` : zéro
+avertissement. `ctest --test-dir build-ui -C Release --output-on-failure` :
+6 / 6.
+
+---
+
+## SCRATCHVJ-34 — La liste des replis de Chromium est plus longue que `SegoeUI` et `Times`
+
+**Portée : toute la maison.** Ne bloque rien aujourd'hui : un caractère d'un
+document sur deux. Mais ça touche l'**outil de mesure** que la définition de fini
+donne aux dix produits, et un outil de mesure qui rate coûte plus cher qu'un
+défaut, parce qu'il produit une conformité fausse.
+
+**Ce que dit la source.** `maison/03-DEFINITION-DE-FINI.md` :
+
+> Ce qui se vérifie sans ouvrir, en revanche, et qui vaut d'être fait : que
+> **`SegoeUI` ou `Times` n'apparaisse PAS** là où un mot de la maison devrait
+> être. L'absence d'un repli est une preuve utilisable ; la présence d'une fonte
+> variable ne l'est pas.
+
+**Ce que la mesure donne.** Le manuel de ce dépôt contient, après réparation,
+**deux** caractères en repli et non un :
+
+| Caractère | Point de code | Repli | Où |
+|---|---|---|---|
+| `ᵉ` | U+1D49 | `SegoeUI` | un ordinal — « 2ᵉ » |
+| `₀` | U+2080 | **`Consolas`** | `pos = origine + taux·(t − t₀)`, au chapitre du repère temporel |
+
+`₀` n'avait jamais été vu, et pas parce qu'il est neuf — il est dans ce manuel
+depuis le début. Il n'avait jamais été vu **parce qu'on ne le cherchait pas** :
+le contrôle nomme `SegoeUI` et `Times`, or Chromium ne retombe pas sur Segoe UI
+pour un indice numérique dans un contexte à chasse fixe, il retombe sur Consolas.
+Un autre produit a rencontré le même phénomène avec une troisième fonte le même
+soir : `CambriaMath`, sur `⌖` (U+2316), dans les PDF de Lacuna.
+
+**La question.** Le contrôle mécanique de la définition de fini doit-il nommer
+une **liste** de replis — au moins `SegoeUI`, `Times`, `Consolas`, `CambriaMath`,
+`Arial` — ou doit-il changer de méthode ?
+
+**Ma recommandation : changer de méthode, et ne pas allonger la liste.** Trois
+raisons, et la troisième est celle qui décide.
+
+1. **Une liste de noms ne se ferme jamais.** Le repli dépend des fontes
+   installées sur la machine qui imprime, du contexte CSS (`monospace` contre
+   `sans-serif`) et de la version du moteur. Deux produits ont trouvé deux noms
+   qui n'étaient pas dans la règle en une soirée ; il y en aura un troisième.
+2. **La liste dit *combien* et pas *quoi*.** `d.count(b'SegoeUI')` répondait
+   « 6 » quand il y avait six caractères, par coïncidence ; après réparation il
+   répond « 3 » pour un seul caractère. Un chiffre qu'on ne peut pas interpréter
+   n'est pas une mesure.
+3. **La bonne mesure est déjà à portée et ne demande rien de plus.** On énumère
+   les objets de fonte du PDF, **flux d'objets compressés inclus**, et on
+   dépouille la table `/ToUnicode` de chacun : on obtient la liste *exacte* des
+   caractères composés par chaque fonte. Ce qui n'est ni Archivo — en `Type3`,
+   sans nom — ni la chasse fixe du produit est un repli, **quel que soit son
+   nom**, et on sait lequel. C'est du `zlib` et des expressions régulières,
+   c'est-à-dire la bibliothèque standard : aucune dépendance nouvelle, ce que
+   `02-INTERDITS.md` exige.
+
+*Ce qui reste vrai dans la règle actuelle, et qu'il ne faut pas perdre* :
+« l'absence d'un repli est une preuve utilisable ; la présence d'une fonte
+variable ne l'est pas ». La méthode ci-dessus ne touche pas à ce partage, elle
+rend seulement l'absence **vérifiable pour de bon**.
+
+**Ce que ce dépôt a fait en attendant.** La mesure est faite : elle est dans
+`docs/ALIGNEMENT.md`, et `docs/pdf/README.md` porte la commande grossière **avec
+la mention de ce qu'elle ne voit pas**. Le caractère `₀` n'est **pas** réparé
+ici : élargir une plage est une décision de maison, et `SCRATCHVJ-32` vient d'en
+administrer la preuve — un essai naïf y perdait onze caractères pour en gagner
+dix.
+
+---
+
+## SCRATCHVJ-35 — L'argument qui motive « DM Mono contre Fragment Mono » vient de tomber
+
+**Portée : ce produit et la ligne scène.** Ne bloque rien. C'est une **source qui
+porte un fait devenu faux**, et la règle générale née de `LACUNA-22` demande que
+l'écart se signale.
+
+**Ce que dit la source.** `maison/produits/filoscope.md`, § *La mono* :
+
+> ce qui n'est pas tranché, c'est **DM Mono contre Fragment Mono pour la
+> scène**, DM Mono passant le moteur d'impression de Chrome qu'Archivo ne passe
+> pas.
+
+**Ce que la mesure donne.** Archivo **passe** le moteur d'impression de Chrome.
+Elle est dans les deux PDF de ce dépôt, en `/Subtype /Type3` — 47 objets dans le
+manuel, 38 dans l'argumentaire — et elle y compose l'alphabet accentué complet
+ainsi que les cinq caractères que le tour 04 vient de réparer. C'est le même
+constat que celui qui a fait refuser `LACUNA-29` : chercher le nom d'une fonte
+variable dans les octets d'un PDF répond *absent* sur une fonte présente.
+
+**La conséquence, et elle est étroite.** La réserve reste ouverte — ce dépôt ne
+touche à rien, c'est de la couche 3 et la fiche dit « ne rien changer ». Mais la
+**parenthèse qui la motive** est fausse, et `design/SCENE.md` le sait déjà de son
+côté : *« la mesure passée à ce jour compare Archivo variable à DM Mono, ce qui
+ne dit rien »*. Les deux documents disent aujourd'hui deux choses différentes du
+même fait.
+
+**La question.** La parenthèse de `maison/produits/filoscope.md` doit-elle être
+corrigée pour dire ce que `design/SCENE.md` dit déjà — que la mesure passée ne
+tranche rien, et que le test à passer est Fragment Mono contre DM Mono ?
+
+**Ma recommandation : oui, et rien d'autre.** Ne pas trancher la mono à cette
+occasion. La fiche produit est ce qu'une session lit en premier ; tant qu'elle
+porte l'argument, chaque session qui la lit repart avec une raison de garder DM
+Mono qui n'existe plus. Corriger la phrase coûte une ligne ; la laisser coûte une
+relecture à chaque tour.
+
+*Et le test lui-même reste à passer.* Ce dépôt est celui que `design/SCENE.md`
+désigne pour le faire — « seul produit du catalogue qui tient une chaîne PDF
+réelle ». Il ne l'a pas passé ici : Fragment Mono n'est pas montée dans
+`docs/pdf/`, et l'y monter serait un ajout qu'aucune phase ne porte
+(`03-DEFINITION-DE-FINI.md`, G4). **Le jour où la maison le demande, c'est une
+heure**, et la mesure est celle-ci : les deux `@font-face` dans une même page,
+imprimée par le même Chrome, et le dépouillement des `/ToUnicode` des deux.

@@ -1,6 +1,6 @@
 # Alignement — le relevé
 
-**Maison lue jusqu'à : bf8c2e1 (2026-09-10)**
+**Maison lue jusqu'à : d9fa7be (2026-09-10)**
 
 *C'est le marqueur que `Suite 360\tools\depuis.py` lit pour dire ce qui a changé
 dans la maison depuis la dernière lecture de ce dépôt. Il s'écrit en finissant, et
@@ -213,6 +213,10 @@ reste d'une remontée qui, telle qu'elle était partie, n'avait pas lieu d'être
 `SCRATCHVJ-30` est réécrite en **déclaration** — le drapeau qui manquait, et à
 quoi ressemble une chaîne d'impression qui n'attend pas ses fontes.
 
+> *Ce tableau est celui du 2026-09-10 après-midi. **Cinq des six caractères ont
+> été réparés le soir même** par le re-sous-ensemblage d'Archivo (`SCRATCHVJ-32`,
+> tranché) ; le tableau à jour est dans la section du tour 04, ci-dessous.*
+
 *La réserve DM Mono contre Fragment Mono pour la ligne scène n'est pas touchée :
 les deux passent le moteur d'impression, donc cette mesure ne la tranche pas.*
 
@@ -220,6 +224,79 @@ les deux passent le moteur d'impression, donc cette mesure ne la tranche pas.*
 `ctest --test-dir build-ui -C Release` : 6 / 6, les cinq contrôles de shader
 compris ; `scratchvj_tests` : 607 passés, 0 échoué. Aucun fichier écrit sur
 disque n'est touché par cette session.
+
+---
+
+## Application des verdicts du tour 04 — 2026-09-10, le soir
+
+Trois lignes étaient parties, trois verdicts sont rendus
+(`Suite 360/remontees/filoscope.md`, « Tour 04 »). **Le commit de toutes les
+lignes fermées ci-dessous est celui qui porte cette section** — *« Regenerate the
+PDFs on the widened Archivo, and name the two characters still in fallback »*,
+2026-09-10 — cité par son titre, un commit ne pouvant pas porter sa propre
+empreinte.
+
+| # | Verdict | Ce que ça fait dans ce dépôt | État |
+|---|---|---|---|
+| SCRATCHVJ-30 | **pris acte** — « la déclaration la plus utile de la journée » | Rien à faire. L'avertissement est passé dans `Suite 360/tools/fonts_inline.py` et **descend dans les neuf avec le fichier** ; le réglage reste `font-display: block`, « c'est l'attente qui manquait, pas le réglage », et `docs/pdf/build.py` porte déjà cette attente | **fermé** |
+| SCRATCHVJ-31 | **pris acte** | Rien à faire. `tok::lift(jeton, fraction)` est « exactement ce que le verdict décrivait sans le nommer » ; la lecture des angles passée sous la ligne est « le bon arbitrage » et reste telle quelle | **fermé** |
+| SCRATCHVJ-32 | **tranché, source modifiée** — cinq des six réparés | Archivo re-sous-ensemblée (`1788f09`) ; `docs/pdf/fonts-inline.css` reçu à jour (`3b6fb5c`) ; les deux PDF régénérés et le balayage refait, ci-dessous. Le sixième, `ᵉ` (U+1D49), **reste en repli et c'est attendu** : Archivo ne l'a pas | **fermé** |
+
+### Le balayage refait, et ce qu'il donne
+
+```
+python docs/pdf/build.py
+```
+
+| | Manuel | Argumentaire |
+|---|---|---|
+| poids avant | 1 246 Ko | 579 Ko |
+| **poids après** | **1 280 Ko** | **603 Ko** |
+| objets `Type3` — les instances d'Archivo | 47 | 38 |
+| `DMMono` en `/BaseFont` | oui | oui |
+| `Times`, `Arial` | aucun | aucun |
+| `SegoeUI` | **1 caractère** | aucun |
+| `Consolas` | **1 caractère** | aucun |
+
+*Le poids est regardé en premier, et c'est la leçon de `SCRATCHVJ-30` retournée
+contre soi : un PDF dont le corps de texte manque ne dit rien, il pèse seulement
+65 Ko au lieu de 326. Les deux poids **augmentent**, ce qui est la signature d'un
+sous-ensemble élargi et non d'une page vide.*
+
+**Les cinq caractères réparés, un par un.** Ils ne sont plus cherchés par leur
+fonte mais par leur point de code, en dépouillant la table `/ToUnicode` de chaque
+objet de fonte du PDF — ce qui dit *exactement* quelle fonte compose quel
+caractère, au lieu de compter des octets :
+
+| Caractère | Point de code | Avant | Après |
+|---|---|---|---|
+| `←` | U+2190 | Segoe UI | **Archivo** (Type3) |
+| `→` | U+2192 | Segoe UI | **Archivo** (Type3) |
+| `↔` | U+2194 | Segoe UI | **Archivo** (Type3) |
+| `√` | U+221A | Segoe UI | **Archivo** (Type3) |
+| `≥` | U+2265 | Segoe UI | **Archivo** (Type3) |
+| `ᵉ` | U+1D49 | Segoe UI | Segoe UI — **attendu**, Archivo ne l'a pas |
+
+`π` (U+03C0) n'apparaît dans **aucun** des deux documents : la réserve du verdict
+sur `π` côté Fragment Mono ne porte pas ici, ce dépôt composant sa chasse fixe en
+DM Mono.
+
+**Et un sixième caractère qui n'avait jamais été vu**, parce qu'on ne le
+cherchait pas : `₀` (U+2080, indice zéro), dans `pos = origine + taux·(t − t₀)`
+au chapitre du repère temporel. Il sort en **Consolas**, pas en Segoe UI. Le
+contrôle mécanique que la maison nomme — *« que `SegoeUI` ou `Times`
+n'apparaisse PAS »* — ne l'aurait jamais attrapé, et c'est ce que le tour 05
+remonte (`SCRATCHVJ-34`). Le caractère lui-même n'est pas réparé ici : la plage
+des sous-ensembles est une décision de maison, et `≥` vient d'en administrer la
+preuve.
+
+*La réserve DM Mono contre Fragment Mono pour la ligne scène n'est toujours pas
+tranchée par cette mesure — mais l'argument qui la motivait vient de tomber, et
+c'est `SCRATCHVJ-35`.*
+
+**Les tests.** `cmake --build build-ui --config Release` : zéro avertissement.
+`ctest --test-dir build-ui -C Release --output-on-failure` : **6 / 6**, les cinq
+contrôles de shader compris.
 
 ---
 
@@ -539,6 +616,7 @@ que le talon ajoute pour ce produit.
 | aucune erreur n'ouvre de modale | **oui** — zéro modale dans le produit, mesuré |
 | chacune nomme la valeur en cause et l'action qui répare | **oui** — phase 4 |
 | aucune progression n'affiche un pourcentage seul | **non — au carnet**, et c'est la maison qui l'y a rangé (`SCRATCHVJ-20`) : c'est un ajout, et aucune phase ne le porte. L'entrée est dans `docs/roadmap.md` avec son coût |
+| un produit qui compose un PDF l'**ouvre** et vérifie que les deux familles y sont (`VIGIE-40`) | **oui, avec une réserve nommée** — les mots sont en Archivo, en `/Subtype /Type3` : cette famille-là ne se cherche pas par son nom, et c'est la maison qui l'a mesuré (`maison/03-DEFINITION-DE-FINI.md`, encadré). La chasse fixe de ces deux documents est **DM Mono et non Fragment Mono**, ce qui est une réserve ouverte et non un manquement (`maison/produits/filoscope.md`, « ne rien changer »). Le contrôle mécanique — l'absence d'un repli — est fait au caractère près dans la section du tour 04 |
 | les tests existants passent | **oui** — voir ci-dessous |
 | ce qui a été corrigé sur la foi d'un écart de `DIVERGENCES.md` est vérifié | **oui** — ce produit n'y figure pas ; les 22 écarts sont confrontés un par un plus bas |
 

@@ -61,25 +61,44 @@ la seconde manque. `maison/03-DEFINITION-DE-FINI.md` porte désormais la règle 
 « **ouvre** » est le mot, et ce qui se vérifie sans ouvrir, c'est l'**absence**
 d'un repli — jamais la présence d'une variable.
 
-**Ce que les deux PDF portent aujourd'hui**, mesuré le 2026-09-10 :
+**Ce que les deux PDF portent aujourd'hui**, mesuré le 2026-09-10 au soir, après
+le re-sous-ensemblage d'Archivo :
 
 | | Manuel | Argumentaire |
 |---|---|---|
-| objets `Type3` — les instances d'Archivo | 27 | 20 |
+| poids | 1 280 Ko | 603 Ko |
+| objets `Type3` — les instances d'Archivo | 47 | 38 |
 | `DMMono` en `/BaseFont` | oui | oui |
 | `Times`, `Arial` | aucun | aucun |
-| `SegoeUI` | 6 occurrences | aucune |
+| `SegoeUI` | **1 caractère** | aucun |
+| `Consolas` | **1 caractère** | aucun |
 
-Les six `SegoeUI` du manuel ne sont pas des mots : ce sont **six caractères** —
-`←` `→` `↔` `√` `≥` `ᵉ` — qui tombent hors des deux `unicode-range` des
-sous-ensembles de la maison. C'est monté (`../REMONTEES.md`, `SCRATCHVJ-32`).
+Cinq des six caractères qui tombaient hors des sous-ensembles sont réparés :
+`←` `→` `↔` `√` `≥` sortent maintenant en Archivo (`SCRATCHVJ-32`, tranché).
+Restent **deux** caractères, et ni l'un ni l'autre n'est un mot :
+
+| Caractère | Point de code | Repli | Pourquoi |
+|---|---|---|---|
+| `ᵉ` | U+1D49 | Segoe UI | Archivo n'a pas l'exposant — **attendu**, c'est le verdict |
+| `₀` | U+2080 | Consolas | jamais vu jusqu'ici : on cherchait `SegoeUI` et `Times`, pas `Consolas` (`../REMONTEES.md`, `SCRATCHVJ-34`) |
+
+**Le poids est la première chose à regarder**, et avant les fontes : un PDF dont
+le corps de texte manque ne proteste pas, il maigrit — 65 Ko au lieu de 326, quatorze
+pages blanches. Un chiffre qui s'effondre est le seul symptôme.
 
 **Vérifier soi-même**, sans rien installer — et en cherchant ce qui NE doit PAS
-être là, pas ce qui doit y être :
+être là, pas ce qui doit y être. Noter que la liste des replis à chercher est
+**plus longue que celle que la maison nomme** : Chromium retombe aussi sur
+`Consolas` pour une chasse fixe et sur `CambriaMath` pour un symbole.
 
 ```sh
-python -c "d=open('docs/pdf/scratchvj-argumentaire.pdf','rb').read();print('Type3',d.count(b'/Type3'),'SegoeUI',d.count(b'SegoeUI'),'Times',d.count(b'Times'))"
+python -c "d=open('docs/pdf/scratchvj-manuel.pdf','rb').read();print(len(d),*[(n,d.count(n.encode())) for n in ('/Type3','SegoeUI','Times','Arial','Consolas','CambriaMath')])"
 ```
+
+Ce compte-là reste **grossier** : il compte des octets, et il ne voit pas les
+descripteurs qui vivent dans les flux d'objets compressés. Le compte juste se
+lit en dépouillant la table `/ToUnicode` de chaque objet de fonte, ce qui donne
+le caractère exact au lieu d'une occurrence — c'est ce qui a trouvé `₀`.
 
 ## Tenir les deux documents à jour
 
