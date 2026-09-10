@@ -362,7 +362,8 @@ void Engine::configure_rack_and_mappings() {
     mapping_.add(control_mapping("ch1.eq.hi -> deck A yaw 360", "ch1.eq.hi", "deck.a.yaw",
                                  -180.0f, 180.0f));
     mapping_.add(control_mapping("ch1.eq.mid -> deck A pitch 360", "ch1.eq.mid",
-                                 "deck.a.pitch", -90.0f, 90.0f));
+                                 "deck.a.pitch", -static_cast<float>(kPitchClampDeg),
+                                 static_cast<float>(kPitchClampDeg)));
 
     Mapping filter =
         control_mapping("ch1.filter -> cutoff + flou", "ch1.filter", "fx.a.filter", 0.0f, 1.0f);
@@ -509,7 +510,9 @@ void Engine::dispatch(std::size_t index, Dest dest, float value, DeckCommands& a
             break;
 
         case Dest::DeckAYaw: view_a_.yaw_deg = static_cast<double>(value); break;
-        case Dest::DeckAPitch: view_a_.pitch_deg = static_cast<double>(value); break;
+        case Dest::DeckAPitch:
+            view_a_.pitch_deg = std::clamp(static_cast<double>(value), -kPitchClampDeg, kPitchClampDeg);
+            break;
         case Dest::DeckAFov: view_a_.fov_deg = std::clamp(static_cast<double>(value), 20.0, 170.0); break;
         case Dest::DeckAZoom: view_a_.planet_zoom = std::clamp(static_cast<double>(value), 0.1, 4.0); break;
 

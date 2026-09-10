@@ -34,9 +34,15 @@ enum class Projection {
     Fisheye,        // equidistant, a very wide circular view
 };
 
+// `viewer.geometry.pitch_deg_clamp` of design/tokens.json: the pitch is bounded
+// at +/-89.9 and not at 90, whatever drives it. At the exact pole the yaw
+// becomes undefined and the view jumps; a knob pushed to its end lands on the
+// pole exactly as a mouse would (SCRATCHVJ-16).
+constexpr double kPitchClampDeg = 89.9;
+
 struct SphereView {
     double yaw_deg = 0.0;       // positive turns the view to the right
-    double pitch_deg = 0.0;
+    double pitch_deg = 0.0;     // bounded by kPitchClampDeg wherever it is set
     double roll_deg = 0.0;
     double fov_deg = 90.0;      // horizontal, for Perspective
     double aspect = 16.0 / 9.0;

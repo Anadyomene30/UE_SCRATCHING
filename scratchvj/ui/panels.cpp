@@ -2259,11 +2259,15 @@ void draw_deck(Deck& deck, Engine& engine, Frame& frame, void* texture,
             ImGui::SetCursorPosY(ImGui::GetCursorPosY() + dy);
             push_small();
             ImGui::PushStyleColor(ImGuiCol_Text, rgba(kMuted));
-            ImGui::Text("lacet %+.0f\xC2\xB0 \xC2\xB7 tangage %+.0f\xC2\xB0 \xC2\xB7 %s %.0f",
-                        gaze.yaw_deg, gaze.pitch_deg,
-                        gaze.projection == Projection::Perspective ? "champ" : "zoom",
-                        gaze.projection == Projection::Perspective ? gaze.fov_deg
-                                                                   : gaze.planet_zoom);
+            // Angles at one decimal with an explicit sign, the display precision
+            // of ERGONOMIE.md; the zoom is a ratio, not an angle.
+            if (gaze.projection == Projection::Perspective) {
+                ImGui::Text("lacet %+.1f\xC2\xB0 \xC2\xB7 tangage %+.1f\xC2\xB0 \xC2\xB7 champ %.1f\xC2\xB0",
+                            gaze.yaw_deg, gaze.pitch_deg, gaze.fov_deg);
+            } else {
+                ImGui::Text("lacet %+.1f\xC2\xB0 \xC2\xB7 tangage %+.1f\xC2\xB0 \xC2\xB7 zoom %.2f",
+                            gaze.yaw_deg, gaze.pitch_deg, gaze.planet_zoom);
+            }
             ImGui::PopStyleColor();
             pop_font();
         }
@@ -2285,11 +2289,12 @@ void draw_deck(Deck& deck, Engine& engine, Frame& frame, void* texture,
                 }
             };
             eyebrow("REGARD");
-            slider("lacet", gaze.yaw_deg, -180.0f, 180.0f, "%.0f\xC2\xB0");
-            slider("tangage", gaze.pitch_deg, -90.0f, 90.0f, "%.0f\xC2\xB0");
-            slider("roulis", gaze.roll_deg, -180.0f, 180.0f, "%.0f\xC2\xB0");
+            slider("lacet", gaze.yaw_deg, -180.0f, 180.0f, "%+.1f\xC2\xB0");
+            slider("tangage", gaze.pitch_deg, -static_cast<float>(kPitchClampDeg),
+                   static_cast<float>(kPitchClampDeg), "%+.1f\xC2\xB0");
+            slider("roulis", gaze.roll_deg, -180.0f, 180.0f, "%+.1f\xC2\xB0");
             if (gaze.projection == Projection::Perspective) {
-                slider("champ", gaze.fov_deg, 20.0f, 170.0f, "%.0f\xC2\xB0");
+                slider("champ", gaze.fov_deg, 20.0f, 170.0f, "%.1f\xC2\xB0");
             } else {
                 slider("zoom", gaze.planet_zoom, 0.2f, 3.0f, "%.2f");
             }
