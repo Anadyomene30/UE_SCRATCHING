@@ -22,6 +22,41 @@
    LA LIGNE QUI MANQUAIT LE PLUS, et qui est maintenant dans la definition de
    fini : un produit OUVRE son PDF et verifie que les deux familles y sont. Ca
    se voit en dix secondes sur la premiere page, et personne ne le faisait.
+
+   ATTENTION AU MOMENT DE COMPOSER : ATTENDRE QUE LES FONTES SOIENT CHARGEES.
+   Les quatre faces sont en `font-display: block`, ce qui est le bon reglage
+   pour un document — on ne veut jamais qu'un repli soit CUIT dans un PDF. Mais
+   « block » rend le texte INVISIBLE pendant la periode de blocage au lieu de le
+   composer dans un repli. Un moteur qui imprime des qu'il croit la page prete
+   sort donc un PDF SANS SON CORPS DE TEXTE ET SANS AUCUNE ERREUR.
+
+   Mesure du 2026-09-10 (SCRATCHVJ-30) : un argumentaire sorti a 65 Ko au lieu
+   de 326, quatorze pages vides, aucun message. Avec Chrome headless, la reponse
+   est `--virtual-time-budget` ; avec un autre moteur, c'est d'attendre
+   `document.fonts.ready` avant de declencher l'impression.
+
+   Un document laid se voit. Un document vide ne se voit que si on l'ouvre —
+   et c'est la deuxieme raison pour laquelle la definition de fini dit OUVRE.
+
+   CE QUE LES SOUS-ENSEMBLES NE COUVRENT PAS, et il faut le savoir avant de
+   croire son document casse (SCRATCHVJ-32, 2026-09-10). Les .woff2 sont les
+   sous-ensembles « latin » et « latin-ext » de Google Fonts. Leur plage porte
+   les fleches VERTICALES — U+2191, U+2193 — et PAS les horizontales :
+
+       U+2190 ←   U+2192 →   U+2194 ↔   U+221A √   U+2265 ≥
+
+   Ces cinq caracteres sortent donc en fonte systeme, alors qu'Archivo les
+   possede : verifie dans docs/fonts/Archivo-Variable.ttf, ils y sont tous les
+   cinq. C'est le SOUS-ENSEMBLE qui les perd, pas la fonte. Et la maison emploie
+   « → » dans ses propres tables, donc le cas n'est pas theorique.
+
+   Le correctif est de re-sous-ensembler depuis le .ttf en elargissant la plage ;
+   il demande `pyftsubset` ET l'extension brotli, absente de cette machine au
+   2026-09-10. Ecrit ici plutot que repare a moitie : un produit qui voit du
+   Segoe UI sur une fleche saura que ce n'est ni son mecanisme ni son document.
+
+   Un seul des six caracteres releves est reellement absent d'Archivo : U+1D49,
+   le « e » en exposant. Celui-la restera en repli quoi qu'on fasse.
    ========================================================================= */
 
 @font-face {
