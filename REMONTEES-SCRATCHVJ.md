@@ -1702,9 +1702,9 @@ produit ; l'en-tête des jetons prend la forme du verdict 07.
 
 # Tour 03
 
-Deux points relevés le **2026-09-10** en faisant la **phase 2** du talon (le
-vocabulaire), sur la branche `claude/scratch-video-unreal-0oi7dv`, commit
-`ef3cbbc`. La numérotation continue après `SCRATCHVJ-26`. Aucun n'a été tranché
+Trois points relevés le **2026-09-10** en faisant les phases 2 et 5 du talon, sur
+la branche `claude/scratch-video-unreal-0oi7dv` — les deux premiers à `ef3cbbc`
+(le vocabulaire), le troisième à `c4fa93c` (les jetons). La numérotation continue après `SCRATCHVJ-26`. Aucun n'a été tranché
 dans le dépôt ; ce qui a été fait est dans `docs/ALIGNEMENT.md`, « Phase 2 — le
 vocabulaire ».
 
@@ -1712,6 +1712,7 @@ vocabulaire ».
 |---|---|---|---|
 | 27 | `little_planet` et `fisheye_view` n'ont de libellé dans aucune table, et « Fisheye » nomme déjà une projection de fichier | toute la maison | rien aujourd'hui ; le prochain viseur qui les affiche |
 | 28 | Un nom de caisse est un libellé de l'utilisateur **et** une chaîne écrite sur disque | ce produit, et tout produit qui laisse nommer un rangement | rien aujourd'hui ; la migration a dû trancher seule |
+| 29 | L'ambre est aussi l'état APPUYÉ d'un bouton en aplat, ce que la lettre de `SCENE.md` exclut | ligne scène | rien aujourd'hui ; le prochain produit de scène qui dessine un bouton |
 
 ---
 
@@ -1816,3 +1817,47 @@ produire **deux caisses du même nom** quand un fichier porte déjà les deux fo
 (vérifié sur `library-03-mixte.json`). Ce n'est pas une faute — les caisses ne
 sont pas identifiées par leur nom — mais une migration qui touche du contenu en
 fabrique toujours, et c'est le signe qu'elle est du mauvais côté de la frontière.
+
+---
+
+## SCRATCHVJ-29 — L'ambre est aussi l'état appuyé d'un bouton, et rien ne le dit
+
+**Portée : la ligne scène.** Ne bloque rien : c'est une valeur en service depuis
+la maquette. Trouvé en faisant la phase 5, en retirant l'ambre de partout où il
+ne signifie pas le deck A.
+
+**Ce que dit la source.** `design/SCENE.md`, variable 4 : « **l'ambre appartient
+au deck A** », et la paire A / B « est de l'ÉTAT, pas de l'identité — elle dit de
+quelle source on parle ». `tokens.json`, `lines.scene.pair.a` : « deck A —
+ambre ». La règle est sans réserve, et la phase 5 l'a appliquée à sept sites.
+
+**Ce que fait le code, et qui reste.** `scratchvj/ui/panels.cpp`, la fabrique de
+boutons : un bouton en aplat — celui qui porte l'état d'un panneau, « Boucle »,
+« Armé », « Slip » — se remplit de l'accent au repos et **de l'ambre pendant
+l'appui**. C'est un huitième emploi de l'ambre, et il ne dit pas de quelle source
+on parle : il dit « le doigt est dessus ».
+
+**Pourquoi il n'a pas été changé.** Parce que le changer demanderait
+**d'inventer une valeur**, et qu'aucune source n'en donne une. Le bloc
+`lines.scene` n'a pas de jeton d'état appuyé ; l'invariant non plus — la suite
+d'atelier n'a aucun aplat, donc aucun appui d'aplat à peindre. Retirer l'ambre
+sans le remplacer laisserait un bouton qui ne répond pas au doigt, ce qui est
+pire sur un instrument joué que sur un logiciel d'atelier : le retour visuel de
+l'appui **est** la confirmation, puisqu'il n'y en a aucune autre.
+
+**La question.** De quelle couleur se peint l'appui d'un aplat, à la scène ?
+
+**Ma recommandation : le jeton `chassis.chalk` de la ligne, et non une couleur.**
+Un appui est un état momentané et non un état de panneau ; le peindre d'une
+seconde teinte fait deux aplats colorés au même endroit, ce que la variable 2
+compte comme deux. Éclaircir l'aplat vers la craie de la ligne — la même
+opération que la fonction de voile de ce produit fait déjà dans l'autre sens —
+dit « appuyé » sans introduire de couleur, et se dérive du châssis, donc suit
+`SCRATCHVJ-06` sans avoir à être re-réglée. Si la maison préfère une valeur, elle
+appartient à `lines.scene`, pas à un dépôt : deux produits de scène qui la
+choisiraient chacun rendraient l'appui différent d'un instrument à l'autre — le
+même argument, mot pour mot, que celui qui a rendu la paire A / B commune.
+
+**Ce que ce dépôt a fait en attendant.** Rien. La valeur est en service, elle est
+en partie 1 du fichier de jetons sous le nom `pair.a`, et l'emploi est écrit dans
+le relevé pour qu'il ne se prenne pas pour un oubli.
