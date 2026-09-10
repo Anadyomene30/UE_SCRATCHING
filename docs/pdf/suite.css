@@ -1,7 +1,7 @@
 /* ============================================================================
    suite.css — la feuille unique des manuels et des documents commerciaux.
 
-   VERSION 4 — 2026-09-09
+   VERSION 5 — 2026-09-10
 
    Un produit livré porte une COPIE de cette feuille dans son dossier de
    documentation, comme il porte une copie des jetons : jamais un lien hors
@@ -39,9 +39,34 @@
    dans une feuille recopiée dans plusieurs dépôts est une promesse qu'aucun ne
    tiendra. Pire : Chrome applique le CORS aux fontes MÊME en file://, donc un
    chemin relatif échoue en silence et le document sort en Times sans prévenir.
-   Les fontes s'injectent au moment de composer le PDF, par le mécanisme du
-   produit, jamais par cette feuille. Relevé par Georama, qui a le seul chaînage
-   PDF éprouvé de l'atelier.
+   Relevé par Georama, qui a le seul chaînage PDF éprouvé de l'atelier.
+
+   LE MÉCANISME, LUI, EST ÉCRIT — depuis le 2026-09-10 seulement, et c'est une
+   leçon chère. Cette feuille a longtemps dit que les fontes s'injectaient
+   « par le mécanisme du produit » ; ce mécanisme n'existait nulle part, ni ici,
+   ni dans DIRECTION-ARTISTIQUE.md, ni dans un registre. Résultat mesurable :
+   les documents de Vigie sortaient depuis le début en Segoe UI et Consolas,
+   c'est-à-dire SANS AUCUNE des deux fontes de la maison, et personne ne pouvait
+   le voir puisque la feuille annonçait que le sujet était traité ailleurs
+   (VIGIE-40). Une phrase qui renvoie dans le vide est pire qu'une phrase
+   absente : elle ferme la question.
+
+   Le mécanisme est ../fonts/fonts-inline.css — les quatre coupes en data: URI,
+   écrites par Suite 360/tools/fonts_inline.py, distribuées par distribute.py :
+
+       <link rel="stylesheet" href="fonts-inline.css">
+       <link rel="stylesheet" href="suite.css">
+
+   Une URL data: n'est soumise ni au CORS ni à un chemin relatif ; le document
+   reste un fichier qui s'ouvre chez l'acheteur. Environ 283 Ko pour deux
+   familles complètes, licences OFL à côté. Ne pas confondre avec
+   docs/fonts/fonts.css, à chemins relatifs, qui est le mécanisme d'une
+   APPLICATION dont un bundler résout l'URL à la compilation.
+
+   ET LA LIGNE QUI MANQUAIT LE PLUS : un produit OUVRE son PDF et vérifie que
+   les deux familles y sont. Ça se voit en dix secondes sur la première page,
+   aucune définition de fini ne le demandait, et c'est ce qui a laissé le défaut
+   vivre.
 
    Emploi : <link rel="stylesheet" href="suite.css"> puis, sur <html> ou
    <body>, la classe du produit — p. ex. class="p-mutoscope". Valeurs de
@@ -70,11 +95,18 @@
 :root{
   /* la version de la feuille, lisible par une page : getComputedStyle(document
      .documentElement).getPropertyValue("--suite-css-version") */
-  --suite-css-version: 4;
+  --suite-css-version: 5;
 
   /* le papier — un neutre légèrement verdi, de la même famille que la craie
      de l'interface, pour que le manuel et l'application se ressemblent sans
-     que le manuel soit sombre */
+     que le manuel soit sombre.
+     CES SIX VALEURS SONT DESORMAIS UNE TRANSCRIPTION de ../design/tokens.json,
+     bloc « paper » (v5, ANAMORPHE-27). Elles vivaient ici seules, c'est-a-dire
+     dans une feuille de style qu'un generateur de PDF en Python ne sait pas
+     lire — et --ink-off valait deja exactement chassis.chalk_dim sans qu'un
+     lien soit ecrit entre les deux, ce qui est le debut precis de
+     DIVERGENCES.md. Cette feuille reste la source de la MISE EN PAGE du
+     papier ; elle a cesse d'etre la source de ses COULEURS. */
   --paper:      #F6F7F4;
   --paper-sunk: #EDEFEA;   /* encadrés, code, cellules d'en-tête */
   --ink:        #141815;
@@ -95,6 +127,19 @@
 
   --unit: 4px;
   --measure: 66ch;   /* la longueur de ligne, jamais dépassée en texte courant */
+
+  /* L'ECHELLE ET LES AXES, NOMMES — pour que le bloc de classes local d'un
+     document puisse y REFERER au lieu de retaper le nombre. DIORAMA-08 autorise
+     un document a ajouter des classes que cette feuille n'a pas ; DIORAMA-15 a
+     montre le 2026-09-10 que ces blocs locaux ecrivaient alors des tailles en
+     clair — 11px, 13px, "wdth" 112 — c'est-a-dire exactement ce que
+     maison/02-INTERDITS.md refuse ailleurs, et que cette feuille elle-meme
+     repetait sans les nommer. La regle qui va avec est dans
+     DIRECTION-ARTISTIQUE.md : un bloc local refere ces variables, et s'il lui
+     faut une valeur qu'aucune ne nomme, c'est CETTE FEUILLE qui manque d'un
+     jeton, et ca se remonte. */
+  --s-11: 11px; --s-12: 12px; --s-13: 13px; --s-16: 16px; --s-28: 28px;
+  --wdth-narrow: 62; --wdth-normal: 100; --wdth-mid: 112; --wdth-wide: 125;
 }
 
 /* les accents des produits — identiques à ../design/tokens.json.
@@ -379,6 +424,19 @@ figcaption{
 
 @media print{
   @page{ size:A4; margin:18mm 20mm; }
+
+  /* SANS CETTE LIGNE, LE PDF PERD LES SEULS FONDS QUE LA MAISON AUTORISE.
+     Chrome n'imprime pas les fonds si la page ne le demande pas : sans elle,
+     tous les encadres, tous les blocs de code et toutes les cellules d'en-tete
+     — c'est-a-dire --paper-sunk, le seul aplat que la direction artistique
+     laisse passer, et celui qui porte la structure de la page — sortent sur
+     fond blanc, sans message, et on ne le voit qu'en ouvrant le PDF. Trouve
+     par Anamorphe le 2026-09-10 (ANAMORPHE-28) ; il vaut pour tout produit qui
+     compose par un moteur de navigateur, c'est-a-dire pour tous ceux qui
+     emploient cette feuille. Ce n'est pas une valeur, c'est une instruction de
+     rendu, du meme ordre que le @page ci-dessus. */
+  html{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+
   html,body{ background:#fff; }
   .page{ max-width:none; padding:0; }
   h2{ break-after:avoid; page-break-after:avoid; }

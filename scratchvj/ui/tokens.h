@@ -148,7 +148,7 @@ constexpr ImU32 veil(ImU32 token, std::uint32_t alpha) {
 
 // JETONS DE LA MAISON — GENERE, NE PAS EDITER
 //
-// SOURCE   Suite 360/design/tokens.json v4 (2026-09-10)
+// SOURCE   Suite 360/design/tokens.json v5 (2026-09-10)
 // OUTIL    Suite 360/tools/distribute.py
 // SALLE    scene
 //
