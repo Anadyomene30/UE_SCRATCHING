@@ -39,16 +39,28 @@
    et c'est la deuxieme raison pour laquelle la definition de fini dit OUVRE.
 
    CE QUE LES SOUS-ENSEMBLES NE COUVRENT PAS, et il faut le savoir avant de
-   croire son document casse (SCRATCHVJ-32, 2026-09-10). Les .woff2 sont les
-   sous-ensembles « latin » et « latin-ext » de Google Fonts. Leur plage porte
-   les fleches VERTICALES — U+2191, U+2193 — et PAS les horizontales :
+   croire son document casse. Les .woff2 sont les sous-ensembles « latin » et
+   « latin-ext » de Google Fonts, et LES DEUX FAMILLES perdent des caracteres —
+   pas seulement Archivo, ce que la premiere redaction de cette note laissait
+   croire (corrige le 2026-09-10 sur ANAMORPHE-32, qui a balaye ~160 000 objets
+   de texte dans deux PDF et compte 29 replis pour quatre caracteres).
 
-       U+2190 ←   U+2192 →   U+2194 ↔   U+221A √   U+2265 ≥
+   Cote ARCHIVO, les mots. La plage porte les fleches VERTICALES — U+2191,
+   U+2193 — et PAS les horizontales :
 
-   Ces cinq caracteres sortent donc en fonte systeme, alors qu'Archivo les
-   possede : verifie dans docs/fonts/Archivo-Variable.ttf, ils y sont tous les
-   cinq. C'est le SOUS-ENSEMBLE qui les perd, pas la fonte. Et la maison emploie
-   « → » dans ses propres tables, donc le cas n'est pas theorique.
+       U+2190 ←   U+2192 →   U+2194 ↔   U+221A √   U+2265 ≥   U+2248 ≈
+
+   Cote FRAGMENT MONO, les valeurs, et c'est le cas le plus genant parce qu'il
+   touche la fonte des chiffres :
+
+       U+03C0 π
+
+   Tous sont dans les fontes completes : verifie dans les .ttf. C'est le
+   SOUS-ENSEMBLE qui les perd, pas la fonte. Et la maison emploie « → » dans ses
+   propres tables, donc le cas n'est pas theorique.
+
+   Un cas a part : U+2610 ☐, la case a cocher, qu'aucune des deux familles ne
+   porte et qui sortira toujours en repli.
 
    Le correctif est de re-sous-ensembler depuis le .ttf en elargissant la plage ;
    il demande `pyftsubset` ET l'extension brotli, absente de cette machine au
