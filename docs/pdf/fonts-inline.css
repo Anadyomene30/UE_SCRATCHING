@@ -35,6 +35,16 @@
    est `--virtual-time-budget` ; avec un autre moteur, c'est d'attendre
    `document.fonts.ready` avant de declencher l'impression.
 
+   ET LE DRAPEAU D'EN-TETE N'EST PAS CELUI QU'ON CROIT. En `--headless=new`,
+   `--print-to-pdf-no-header` NE FAIT RIEN : Chrome compose son en-tete et son
+   pied de page, et embarque ArialMT pour les ecrire. Le drapeau qui marche est
+   `--no-pdf-header-footer`. Verifie le 2026-09-10 sur la meme page : avec le
+   premier, un repli ArialMT de 37 caracteres ; avec le second, AUCUN REPLI.
+   Un produit qui balaye ses fontes trouvera donc un repli qu'il n'a pas ecrit,
+   et cherchera longtemps d'ou il vient. (GEORAMA, 2026-09-10.)
+
+       chrome --headless=new --disable-gpu --no-pdf-header-footer               --virtual-time-budget=20000 --print-to-pdf=<sortie> <page>
+
    Un document laid se voit. Un document vide ne se voit que si on l'ouvre —
    et c'est la deuxieme raison pour laquelle la definition de fini dit OUVRE.
 

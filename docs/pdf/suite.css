@@ -1,7 +1,7 @@
 /* ============================================================================
    suite.css — la feuille unique des manuels et des documents commerciaux.
 
-   VERSION 5 — 2026-09-10
+   VERSION 6 — 2026-09-10
 
    Un produit livré porte une COPIE de cette feuille dans son dossier de
    documentation, comme il porte une copie des jetons : jamais un lien hors
@@ -95,7 +95,7 @@
 :root{
   /* la version de la feuille, lisible par une page : getComputedStyle(document
      .documentElement).getPropertyValue("--suite-css-version") */
-  --suite-css-version: 5;
+  --suite-css-version: 6;
 
   /* le papier — un neutre légèrement verdi, de la même famille que la craie
      de l'interface, pour que le manuel et l'application se ressemblent sans
@@ -123,7 +123,18 @@
   --accent: #5C635B;
 
   --words: "Archivo", "Archivo Narrow", system-ui, -apple-system, sans-serif;
-  --vals:  "Fragment Mono", Consolas, "SF Mono", "DejaVu Sans Mono", monospace;
+  /* ARCHIVO EST DANS LA PILE DES VALEURS, ET CE N'EST PAS UNE ERREUR. Le
+     sous-ensemble de Fragment Mono ne porte ni les fleches ni « pi » ; celui
+     d'Archivo les porte depuis le 2026-09-10. Sans cette ligne, le « → » de
+     « 0 → 4 » qu'ecrit `td.n` est demande a Fragment Mono, qui ne l'a pas, et
+     part en Consolas : 31 fleches et un « ≈ » dans un seul manuel
+     (DIORAMA-22). Mettre la seconde famille de la maison AVANT les fontes
+     systeme garde le texte dans la maison un cran de plus, et le glyphe est
+     alors le bon.
+     Ce que ca ne casse pas : les caracteres semi-graphiques d'un schema, que
+     ni l'une ni l'autre ne porte — ils partaient deja en chasse fixe systeme
+     et continuent. */
+  --vals:  "Fragment Mono", "Archivo", Consolas, "SF Mono", "DejaVu Sans Mono", monospace;
 
   --unit: 4px;
   --measure: 66ch;   /* la longueur de ligne, jamais dépassée en texte courant */
@@ -436,6 +447,27 @@ figcaption{
      emploient cette feuille. Ce n'est pas une valeur, c'est une instruction de
      rendu, du meme ordre que le @page ci-dessus. */
   html{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+
+  /* UNE BOITE QUI DEFILE A L'ECRAN SE DECOUPE SUR LE PAPIER, ET SANS UN MOT.
+     Trouve le 2026-09-10 par DEUX produits, chacun de son cote et le meme soir
+     (GEORAMA-41, DIORAMA-23) — ce qui est la meilleure preuve qu'on puisse
+     avoir qu'un defaut est dans la feuille et pas dans un depot.
+
+     Ce que ca coute, mesure : une ligne de commande d'un manuel sortait
+     amputee de sa fin — « … when Store Training Context is on » devenait
+     « … when Store Training Context », et chez l'autre produit la valeur perdue
+     etait justement la CONVENTION D'AXES, « le point le plus facile a mal lire
+     de toute la chaine ». Le manuel enseigne alors une commande incomplete, et
+     rien ne le signale : le texte s'arrete, il ne se casse pas.
+
+     Et le rail lui-meme est PEINT : les deux fleches de la barre de defilement
+     sortent en Segoe Fluent Icons, sur des points de code d'usage prive
+     (U+EDD9, U+EDDA) qui tombent en carres hors Windows. Les deux seuls glyphes
+     d'un document a ne venir d'aucune source de la maison etaient ceux-la.
+
+     `visible` et rien d'autre : les deux mots reviennent, les fleches
+     disparaissent. */
+  pre, .tablewrap, .scroll{ overflow:visible; }
 
   html,body{ background:#fff; }
   .page{ max-width:none; padding:0; }
