@@ -32,7 +32,7 @@ verdict les débloquait.
 | 12 | tranché, source modifiée | `kControlRadius` 3, d'après `rhythm.radius_control` | fermé | `d138ac3` |
 | 13 | tranché, source modifiée | capitale initiale sur les 25 libellés | fermé | `ef3cbbc` |
 | 14 | reporté | les angles à une décimale, signe explicite ; `mm:ss.d` reste | angles fermés ; le temps remonté | `b025d6a` |
-| 15 | tranché, source modifiée | `Ctrl`+`Z` sans objet ; `Tab` sur `F` ; les pads `1`–`5` corrigés dans les sources ; `Échap` : le rang qui quitte se supprime | trois lignes fermées sans commit ; `Échap` ouvert (phase 4) | — |
+| 15 | tranché, source modifiée | `Ctrl`+`Z` sans objet ; `Tab` sur `F` ; les pads `1`–`5` corrigés dans les sources ; `Échap` : le rang qui quitte se supprime | fermé | `9b88327` |
 | 16 | tranché, source modifiée | tangage borné à ±89,9° (`kPitchClampDeg`) ; aucun HUD | fermé ; le champ par défaut → `SCRATCHVJ-25` | `b025d6a` |
 | 17 | reporté | rien ; `_style.css` ne se réécrit pas | remonté | — |
 | 18 | tranché, source modifiée | rien : G7, un rang absent ne dégrade rien | fermé | — |
@@ -176,6 +176,66 @@ le nom du deck de référence pour le temps musical, la phrase vérifiable qui d
 ce que fait un backspin, et — par conséquence directe — le format d'affichage
 d'un temps, que `SCRATCHVJ-14` a reporté pour cette raison exacte. `mm:ss.d`
 reste tel quel et la ligne reste *remontée*.
+
+
+---
+
+## Phase 4 — le noyau du clavier · 2026-09-10 · `9b88327`
+
+| Ce que le talon demande | État |
+|---|---|
+| `Espace` | déjà conforme, rien fait |
+| la pile d'`Échap` | **fermé** — le gestionnaire ne traite plus `Échap` : c'est le rang 6 |
+| `Ctrl`+`Z` | **sans objet**, verdict 15 ; toujours pas liée, et c'est la conformité |
+| `?` / `F1` | **fermé** — une carte du clavier |
+| `Tab` s'il a un sens | **sans objet** — l'effet est sur `F`, et `Tab` est rouvert par la suite |
+| le viseur 360 à la souris | **sans objet** — le regard n'est jamais manipulé à la souris (axe 5.6) |
+
+**`Échap` ne fait plus rien, et c'est la règle.** Les trois rangs que le
+gestionnaire SDL portait sont partis, pas seulement celui que le verdict nommait :
+
+- **quitter « image seule »** — `MAISON.md` l'interdit nommément à `Échap` pour ce
+  produit (« et ne quitte jamais « image seule » — `F` s'en charge ici ») ;
+- **fermer la fenêtre de sortie** — aucun des six rangs de la pile ne porte cet
+  effet, et le rang 6 dit alors de ne rien faire. La sortie se ferme depuis
+  l'écran SORTIE, qui a déjà le bouton ;
+- **quitter l'application** — le verdict, et l'interdit qui n'a pas de source en
+  dessous.
+
+Le seul rang qui ait un objet dans ce produit est le rang 1 lu au sens large — un
+popup ouvert — et c'est ImGui qui le ferme. L'événement se consomme donc une
+fois, ce que le verdict demandait, et il se consomme au premier rang qui
+s'applique parce qu'il n'y a plus qu'un traitant. **Rien n'est devenu
+inatteignable** : `F` et le basculeur de la barre haute rendent « image seule »,
+l'écran SORTIE ferme la sortie, le bouton de légende ferme la fenêtre.
+
+**La carte du clavier.** `?` et `F1` ouvrent un popup non modal qui liste les
+cinq gestes — `Espace`, `F`, `B`, `?` / `F1`, `Échap` — et dit que le reste se
+joue sur les plateaux et sur la table. Le `?` est lu **dans la file de
+caractères** et non sur la touche physique : la suite exige qu'une touche
+réservée soit atteignable sur AZERTY comme sur QWERTY sans touche morte, et `?`
+est `Maj`+`/` sur l'une, `Maj`+`,` sur l'autre.
+
+**Deux lignes requalifiées plutôt que corrigées**, chacune avec sa raison :
+
+- **la durée `%.1f s`** — la source dit « durée d'un **travail** » ; ces trois
+  nombres sont la longueur du tampon de l'anneau live, la grandeur qu'on
+  scratche. En `h min s` sans décimale, « 4 s d'historique » ne mesure plus rien ;
+- **les trois infobulles de transport** — supprimées, pas gardées. Le glyphe est
+  la convention de métier qu'`ERGONOMIE.md` autorise justement pour ces trois
+  commandes, et le nommer est le geste que le test de `DIRECTION-ARTISTIQUE.md`
+  désigne. Le raccourci, seule information que le glyphe ne portait pas, est
+  passé dans la carte.
+
+**Une ligne part au carnet, et c'est la maison qui l'y envoie.** « Aucun
+pourcentage seul » est un **ajout** (`SCRATCHVJ-20`) : ni l'étape nommée ni le
+temps restant n'existent dans `app/analyze`, et aucune phase du talon ne les
+porte. L'entrée est dans `docs/roadmap.md` avec son coût.
+
+**Ce que la phase n'a pas fait, et pourquoi.** Aucune touche n'a été ajoutée au
+noyau au-delà de `?` / `F1` : le clavier réservé de la ligne scène attend un
+second produit de scène (`SCENE.md`), et `Espace`, `F` et `Échap` y sont notées
+comme candidates. Rien n'a été lié « pour se conformer ».
 
 
 ---
@@ -651,7 +711,7 @@ c'est là que passe le geste.
 | `Espace` | lecture / pause du deck **sous la souris** | `ui/panels.cpp:2093-2099` | `IsWindowHovered(ChildWindows)` et `!WantTextInput` | **conforme** — `ERGONOMIE.md:250`, et couche 1 de `MAISON.md:47` (« unanime »). Le choix du deck survolé est écrit et motivé : `:2091-2092`, « in a set nobody aims at a 28 px button with the other hand on a fader » |
 | `F` | image seule (masque toute l'interface) | `ui/panels.cpp:4688` | `!WantTextInput` | **conforme** — `F` est l'une des quatre lettres que `ERGONOMIE.md:260-265` interdit à la **réservation de suite**, donc libre pour le produit ; `MAISON.md:101` et `:138` le confirment. L'effet est celui que `ERGONOMIE.md:253` donne à `Tab` |
 | `B` | replier le rail de bibliothèque | `ui/panels.cpp:4689` | `!WantTextInput` | **conforme** — `B` n'est ni dans la table réservée (`ERGONOMIE.md:245-258`) ni dans les quatre lettres interdites ; aucune règle ne s'y oppose |
-| `Échap` | 1. quitte « image seule » ; 2. sinon ferme la fenêtre de sortie ; 3. sinon **quitte l'application** | `ui/main_ui.cpp:663-675` | `!WantTextInput` | **ouvert (phase 4)** — verdict SCRATCHVJ-15 reçu (tranché, source modifiée) : le rang qui quitte l'application se supprime, l'événement se consomme au premier rang qui s'applique, le rang 6 n'est jamais facultatif (`ERGONOMIE.md`, « La pile de priorité d'`Échap` ») |
+| `Échap` | 1. quitte « image seule » ; 2. sinon ferme la fenêtre de sortie ; 3. sinon **quitte l'application** | `ui/main_ui.cpp:663-675` | `!WantTextInput` | **fermé** (`9b88327`, phase 4, SCRATCHVJ-15) — le gestionnaire SDL ne traite plus `Échap` du tout : c'est le rang 6. Les trois rangs sont partis — celui qui quittait « image seule » (`F` s'en charge, `MAISON.md`), celui qui fermait la sortie (aucun rang de la pile ne le porte ; l'écran SORTIE le fait) et celui qui quittait l'application. Le seul rang qui ait un objet ici est le popup ouvert, et ImGui le ferme : l'événement se consomme une fois |
 
 `Tab` n'est lié à rien par le produit. ImGui s'en sert pour la navigation entre
 champs ; le produit n'y touche pas.
@@ -686,9 +746,9 @@ le rang 6 (« ne rien faire ») est remplacé par « quitter ».
 | Touche | Exigée par | Liée ? | État |
 |---|---|---|---|
 | `Espace` | `MAISON.md:101`, `ERGONOMIE.md:250` | oui | **conforme** |
-| `Échap`, selon la pile | `MAISON.md:101`, `ERGONOMIE.md:275-285` | oui, mais fausse | **ouvert (phase 4)** — verdict SCRATCHVJ-15 reçu, voir 5.1 |
+| `Échap`, selon la pile | `MAISON.md:101`, `ERGONOMIE.md:275-285` | oui, et juste | **fermé** (`9b88327`, phase 4, SCRATCHVJ-15) — voir 5.1 |
 | `Ctrl`+`Z` / `Ctrl`+`Maj`+`Z` | `MAISON.md:101`, `ERGONOMIE.md:257` | **non** | **fermé** (verdict SCRATCHVJ-15, rien à écrire) — **sans objet** : « une touche réservée n'est exigible que d'un produit qui a la chose qu'elle manipule » (`ERGONOMIE.md`, encadré sous « Le clavier réservé à la suite », réécrit sur cette remontée). Le produit n'a pas d'annulation : il ne détient aucun état réversible au sens de `04-frontieres.md:19-23`, et la scène « ne produit aucun fichier » (`secteurs.html:191-193`) |
-| `?` / `F1` | `MAISON.md:101`, `ERGONOMIE.md:255` | **non** | **ouvert (phase 4)** — le produit lie quatre touches, donc la clause « un produit qui ne lie aucune touche n'en lie pas pour se conformer » (`ERGONOMIE.md:233-238`, tranchée par `DIORAMA-06`) ne le dispense pas |
+| `?` / `F1` | `MAISON.md:101`, `ERGONOMIE.md:255` | **oui** | **fermé** (`9b88327`, phase 4) — une carte du clavier en popup non modal, ouverte par `F1` ou par le caractère `?` (lu dans la file de caractères, pour être atteignable sur AZERTY comme sur QWERTY). Elle porte les cinq gestes du clavier et dit que le reste se joue sur les plateaux |
 | `Tab` | `MAISON.md:101`, `ERGONOMIE.md:253` | **non** | **fermé** (verdict SCRATCHVJ-15, rien à écrire) — l'effet est sur `F`, l'une des quatre lettres libres ; et `Tab` est rouvert par la suite elle-même (`ERGONOMIE.md`, « La touche qui masque l'interface est rouverte ») |
 
 ## 5.4 Le reste du clavier réservé de l'atelier
@@ -1008,10 +1068,10 @@ définition.
 |---|---|---|---|
 | angle | une décimale, signe explicite (`:161`) | `%+.0f°` — `ui/panels.cpp:2253` ; `"%.0f°"` sur les curseurs — `:2279-2283` | **fermé** (`b025d6a`, SCRATCHVJ-14) — `%+.1f°` sur le résumé et les trois curseurs d'angle, `%.1f°` sur le champ ; le zoom, qui n'est pas un angle, garde `%.2f` |
 | timecode | `hh:mm:ss:ff` (`:165`) | `mm:ss.d` — `clock_of()`, `ui/panels.cpp:67-74` ; `mm:ss` — `short_clock()`, `:76-81` | **remonté SCRATCHVJ-14** — *reporté*. Ce qui manque : le repère temporel de la ligne scène (tempo, horloge audio ou position du plateau). Qui doit le produire : le fondateur, sur la recommandation que la phase 3 de ce produit a écrite — `docs/repere.md`, rendue le 2026-09-10. `mm:ss.d` reste tel quel ; le format est une conséquence du repère, pas un sujet à part, et il attend la décision |
-| durée | `h min s`, jamais de décimales (`:166`) | `%.1f s` — `ui/panels.cpp:4593` | **ouvert (phase 4)** |
+| durée | `h min s`, jamais de décimales (`:166`) | `%.1f s` — la longueur de l'anneau live, en trois sites | **hors périmètre** — la ligne de la source dit « durée d'un **travail** ». Ces trois nombres sont la **longueur d'un tampon** en secondes, la grandeur qu'on scratche : « 4 s d'historique » écrit sans décimale perdrait la mesure, et en `h min s` la rendrait illisible. Requalifié, pas corrigé |
 | chemin | tronqué **par le milieu** (`:167`) | jamais tronqué : `ui/panels.cpp:1229, 1449, 1450, 1591` affichent le chemin entier | **conforme** — la règle porte sur un chemin *tronqué* ; aucun ne l'est. `pad_word()` (`:873-878`) coupe un **nom**, pas un chemin |
 | résolution | `×` cadratin, espaces fines (`:164`) | `%ux%u` — `ui/tools/xr_check.cpp:178` | **hors périmètre** — un outil de contrôle en console, pas l'interface |
-| unité jamais dans le libellé | `:136-139` | deux infractions : `"porteuse (Hz)"` — `ui/panels.cpp:1682` ; « lacet (degrés) » — `core/destinations.cpp:17-18` | **ouvert (phase 4)** — deux sites, tous deux nommés |
+| unité jamais dans le libellé | `:136-139` | quatre sites, tous corrigés | **fermé** (`9b88327`, phase 4) — « Porteuse » avec `Hz` passé au format de la valeur ; « lacet », « tangage », « champ » dans le registre des destinations perdent « (degrés) ». `ERGONOMIE.md`, « La ligne de paramètre » : l'unité change avec la valeur, le libellé non |
 
 Les nombres sont des mesures et non des scénarios (`secteurs.html:372-374`) : le
 BPM à une décimale (`ui/panels.cpp:607`), la mémoire vidéo calculée depuis la
@@ -1039,10 +1099,10 @@ Le contenu, en revanche, ne dit pas toujours les trois choses de
 | Erreur | Nomme la valeur ? | Nomme la réparation ? | État |
 |---|---|---|---|
 | `app/analyze.cpp:40` — « ffprobe a échoué — ffmpeg est-il installé et dans le PATH ? » | oui | **oui** | **conforme** |
-| `ui/main_ui.cpp:797` — « aucun écran ne correspond à `--output` … » | oui | non | **ouvert (phase 4)** |
-| `ui/main_ui.cpp:888` — « <nom> : cache illisible » | oui | non | **ouvert (phase 4)** |
-| `ui/main_ui.cpp:765` — « rien d'ouvrable dans ce qui a été déposé » | **non** | non | **ouvert (phase 4)** |
-| `ui/main_ui.cpp:377` — « `mapping.json` : inconnu : <id> » | oui | non | **ouvert (phase 4)** |
+| `ui/main_ui.cpp` — « aucun écran ne correspond à `--output` … » | oui | **oui** | **fermé** (`9b88327`, phase 4) — les écrans vus sont énumérés, et l'action est « choisissez-en un dans SORTIE » |
+| `ui/main_ui.cpp` — « <nom> : cache illisible » | oui | **oui** | **fermé** (`9b88327`, phase 4) — relancer l'analyse depuis BIBLIOTHÈQUE, ou supprimer le `.svcache` et réimporter la source |
+| `ui/main_ui.cpp` — « rien d'ouvrable dans … » | **oui** | **oui** | **fermé** (`9b88327`, phase 4) — les fichiers déposés sont nommés (par leur nom, jamais par un chemin coupé par la fin), et la phrase dit ce qui s'ouvre |
+| `ui/main_ui.cpp` — « `mapping.json` : destination inconnue : <id> » | oui | **oui** | **fermé** (`9b88327`, phase 4) — corriger ou retirer la liaison ; les destinations valides sont dans TABLE |
 
 ## 10.3 La progression · `ERGONOMIE.md:323-326`, `MAISON.md:182`
 
@@ -1052,8 +1112,13 @@ Deux affichages de progression, tous deux **en pourcentage seul** :
 - `ui/panels.cpp:1360` — la même chaîne, dans la liste de la bibliothèque.
 
 Ni la fraction faite, ni l'étape nommée, ni le temps restant.
-**Ouvert (phase 4)** — l'analyse est le seul travail long de ce produit, et la
-définition de fini (`MAISON.md:182`) l'exige sans réserve de salle.
+**Hors périmètre — au carnet du produit**, et c'est la maison qui l'y a rangé :
+`SCRATCHVJ-20` classe « aucun pourcentage seul » comme un **ajout** — il faut
+produire l'étape nommée et le temps restant, dont ni l'un ni l'autre n'existe
+dans `app/analyze` — et « ajouter ne l'est que si une phase le porte ». Aucune
+phase du talon ne le porte. L'entrée est écrite dans `docs/roadmap.md`, avec son
+coût : trois étapes à déclarer et à remonter par `AnalysisReport`, un débit de
+frames à mesurer et à lisser, deux sites d'affichage.
 
 À côté, `ui/panels.cpp:634-640` affiche bien « analyse en cours · N en
 attente » : la fraction y est. Les états canoniques d'`ERGONOMIE.md`, « Le travail long » — `pending`,
@@ -1072,9 +1137,14 @@ l'infobulle. La plupart portent les chiffres qu'un voyant ne montre pas — ce q
 drawer or a tooltip, not on the bar », ce qui suit
 `DIRECTION-ARTISTIQUE.md:218-223`.
 
-Trois font exception et décrivent un bouton évident : `:2084` (« retour au
-début »), `:2101` (« lecture (espace) »), `:2105` (« stop : pause et retour au
-début »). **Ouvert (phase 4)** pour ces trois ; **conforme** pour le reste.
+Trois décrivaient un bouton dont le glyphe est déjà la convention du métier —
+« retour au début », « lecture (espace) », « stop : pause et retour au début ».
+**Fermé** (`9b88327`, phase 4) : les trois sont supprimées. Le test de
+`DIRECTION-ARTISTIQUE.md` les condamne — nommer un glyphe de transport est
+exactement la décision que prendrait quelqu'un qui n'a jamais joué — et la seule
+chose que le glyphe ne portait pas, le raccourci, vit désormais dans la carte du
+clavier de `?` / `F1`. **Conforme** pour les 61 autres, qui portent les chiffres
+qu'un voyant ne montre pas.
 
 ## 10.5 Ce qui manque exprès · `secteurs.html:375-376`
 
