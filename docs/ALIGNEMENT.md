@@ -150,7 +150,7 @@ table, et « Fisheye » désigne déjà une projection de fichier) et `SCRATCHVJ
 
 ---
 
-## Phase 3 — le repère temporel · 2026-09-10 · `68f0ad7`
+## Phase 3 — le repère temporel · 2026-09-10 · `9f1bc14`
 
 **Écrit, pas tranché.** `docs/repere.md` existe : la question en une phrase, les
 trois candidats tels qu'ils sont dans le code, les trois endroits où ils se
