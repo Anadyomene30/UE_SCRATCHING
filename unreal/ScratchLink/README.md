@@ -1,12 +1,12 @@
 # ScratchLink — le plugin Unreal
 
-Unreal est un **client** de `scratchvj`, pas son cœur. Ce plugin lit le flux de
+Unreal est un **client** de Filoscope, pas son cœur. Ce plugin lit le flux de
 contrôle UDP de l'app (port **7331**, format décrit dans
 [`docs/protocole.md`](../../docs/protocole.md)) sur un thread dédié, et l'expose
 aux Blueprints. Le mix vidéo, lui, arrive par **Spout** — via un plugin Spout
 tiers (Off World Live ou équivalent), pas par celui-ci.
 
-Le plugin ne lie **aucun code de scratchvj**. Cette frontière est juridique
+Le plugin ne lie **aucun code de Filoscope**. Cette frontière est juridique
 autant qu'architecturale : l'app sera GPL-3 par le décodeur de xwax, le plugin
 reste indépendant par construction.
 

@@ -2,7 +2,7 @@
 
 Relevé le **2026-09-09**, en lecture seule, branche `claude/scratch-video-unreal-0oi7dv`
 à **`75eee2f`**. Les remontées sont dans
-[`../REMONTEES-SCRATCHVJ.md`](../REMONTEES-SCRATCHVJ.md).
+[`REMONTEES.md`](REMONTEES.md).
 
 **Ce document a cessé d'être un relevé de phase 0 le 2026-09-10.** Les verdicts du
 tour 01 ont été appliqués, puis les phases 1 à 6 du talon, et chaque ligne porte
@@ -25,7 +25,7 @@ ce qu'un relevé daté est.
 
 ## Application des verdicts du tour 01 — 2026-09-10
 
-Les vingt verdicts (`../REPONSES-SCRATCHVJ-01.md`, rendus le 2026-09-09) ont été
+Les vingt verdicts (`Suite 360\remontees\filoscope.md`, lus sur place, rendus le 2026-09-09) ont été
 appliqués le 2026-09-10, sur la même branche, à partir de `9ea2eba` — l'état
 avant application. Chaque ligne du relevé qui portait « remonté SCRATCHVJ-NN »
 porte désormais l'état qui en résulte ; ce tableau en est l'index. Un seul état
@@ -67,7 +67,7 @@ ambre ni en vert ; le voyant et la figure du lien de platine qui faiblit sont
 89,9°.
 
 **Ce que l'application a révélé, et qui monte au tour 02**
-(`../REMONTEES-SCRATCHVJ.md`, « Tour 02 ») :
+(`REMONTEES.md`, « Tour 02 ») :
 
 1. la valeur chaude de `warn`, produite par dérivation — et sa teinte à 4° de
    l'accent candidat (`SCRATCHVJ-21`) ;

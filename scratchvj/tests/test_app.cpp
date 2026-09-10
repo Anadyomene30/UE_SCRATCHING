@@ -157,7 +157,7 @@ SVJ_TEST("dashboard: a frame renders without ansi and names what it shows") {
     DeckView b{"DECK B", &tracker.state(), &gestures, &transport, &window, &clip};
 
     const std::string frame = render_dashboard(view, a, b, surface, mapping, false);
-    CHECK(frame.find("scratchvj") != std::string::npos);
+    CHECK(frame.find("Filoscope") != std::string::npos);
     CHECK(frame.find("DECK A") != std::string::npos);
     CHECK(frame.find("SURFACE") != std::string::npos);
     CHECK(frame.find("essai") != std::string::npos);

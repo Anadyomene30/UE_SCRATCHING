@@ -1,6 +1,11 @@
-# scratchvj
+# Filoscope
 
 A scratchable video DJ instrument for turntablists, driven by DVS timecode.
+
+**Filoscope is the name the product shows; `scratchvj` is what it is made of.**
+The directory, the executable, the CMake targets, the `svj::` namespaces and the
+Spout sender keep the old name: what is mechanical is never renamed. Read a
+`scratchvj` below as a path or a command, never as the product's name.
 
 Load any video onto a deck, scratch it with the platters, mix on the crossfader,
 queue clips, drive every parameter from the mixer's knobs and buttons, play and

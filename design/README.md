@@ -1,6 +1,6 @@
 # Maquette de l'interface
 
-Les artboards de l'interface de `scratchvj`, en fichiers de travail. Ce sont eux
+Les artboards de l'interface de Filoscope, en fichiers de travail. Ce sont eux
 qui font foi : le canvas publié est régénéré à partir d'eux, jamais l'inverse.
 
 Cette version est la **refonte de septembre 2026** (voir la section « Refonte de

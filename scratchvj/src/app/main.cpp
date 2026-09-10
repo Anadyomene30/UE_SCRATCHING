@@ -27,7 +27,7 @@ constexpr double kDemoBpm = 124.0;
 
 void usage() {
     std::cout <<
-        "scratchvj — a scratchable video DJ instrument\n"
+        "Filoscope — a scratchable video DJ instrument\n"
         "\n"
         "  scratchvj demo [--seconds N] [--fps N] [--plain] [--record FILE]\n"
         "        Runs a scripted performance through the whole engine and draws it.\n"
@@ -422,7 +422,7 @@ int main(int argc, char** argv) {
     if (command == "layout") return run_layout();
     if (command == "profile") return run_profile(argc, argv);
     if (command == "version") {
-        std::cout << "scratchvj 0.1.0 — socle, sans audio ni vidéo réels\n";
+        std::cout << "Filoscope 0.1.0 — socle, sans audio ni vidéo réels\n";
         return 0;
     }
     usage();

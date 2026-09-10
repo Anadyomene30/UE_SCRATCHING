@@ -578,7 +578,7 @@ void draw_status(Engine& engine, Frame& frame) {
         draw->AddRectFilled(at, ImVec2(at.x + kAccentCap, at.y + ImGui::GetWindowHeight()), kAccent);
     }
     ImGui::Dummy(ImVec2(0.0f, 2.0f));
-    text_c(kInk, "scratchvj");
+    text_c(kInk, "Filoscope");
 
     // The platter link, as a light. Sage: locked and confident on every deck
     // that follows a platter. Warn: a platter is read but not locked, or its

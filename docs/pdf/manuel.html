@@ -2,14 +2,14 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<title>scratchvj — Manuel</title>
+<title>Filoscope — Manuel</title>
 <link rel="stylesheet" href="_style.css">
 </head>
 <body>
 
 <section class="cover">
   <div>
-    <p class="mark">scratchvj</p>
+    <p class="mark">Filoscope</p>
     <h1>Manuel de l'instrument</h1>
     <p class="sub">Instrument DJ vidéo scratchable, piloté au timecode DVS.
     Installation, câblage, jeu, effets appairés, 360, mapping, sorties et dépannage.</p>
@@ -26,7 +26,7 @@
 <h2 class="cont"><span class="n">SOMMAIRE</span>Ce que contient ce manuel</h2>
 
 <div class="toc">
-  <div><span class="t">1</span> &nbsp;Ce qu'est scratchvj<span class="s">Le principe, l'état réel de la version, ce qui n'existe pas encore</span></div>
+  <div><span class="t">1</span> &nbsp;Ce qu'est Filoscope<span class="s">Le principe, l'état réel de la version, ce qui n'existe pas encore</span></div>
   <div><span class="t">2</span> &nbsp;Installation<span class="s">Compiler le noyau, l'interface, le décodeur DVS optionnel</span></div>
   <div><span class="t">3</span> &nbsp;Prise en main sans matériel<span class="s">La démo, le tableau de bord, enregistrer une prise</span></div>
   <div><span class="t">4</span> &nbsp;Préparer les clips<span class="s">La passe d'analyse, le format .svcache, le budget VRAM</span></div>
@@ -57,16 +57,16 @@
   fait pas est pire qu'un manuel incomplet.</p>
 </div>
 
-<h2><span class="n">SECTION 1</span>Ce qu'est scratchvj</h2>
+<h2><span class="n">SECTION 1</span>Ce qu'est Filoscope</h2>
 
-<p class="lead">scratchvj est un instrument : il joue de la vidéo comme une platine
+<p class="lead">Filoscope est un instrument : il joue de la vidéo comme une platine
 joue un disque. Deux decks, un crossfader, des boucles, des hot cues, un rack
 d'effets — mais l'objet manipulé est une image, et la main qui la manipule est
 sur un plateau de platine vinyle.</p>
 
 <p>La différence avec un logiciel de VJ tient en une phrase : ici, l'image n'est
 pas <em>lue</em>, elle est <em>indexée</em>. Un lecteur vidéo avance dans un flux et
-sait mal reculer ; scratchvj adresse une frame par sa position, exactement comme un
+sait mal reculer ; Filoscope adresse une frame par sa position, exactement comme un
 tableau. Reculer ne coûte donc rien, et un backspin est une opération aussi
 ordinaire qu'une lecture normale.</p>
 
@@ -75,7 +75,7 @@ ordinaire qu'une lecture normale.</p>
 <p><strong>1. Tout ce qui doit être scratchable est une fonction de la position,
 jamais un intégrateur.</strong> Une horloge qui accumule (<code>pos += vitesse × dt</code>)
 ne se scratche pas, ne se rejoue pas à l'identique et dérive sur la durée d'un set.
-Toute position dans scratchvj est une forme close : <code>pos = origine + taux·(t − t₀)</code>,
+Toute position dans Filoscope est une forme close : <code>pos = origine + taux·(t − t₀)</code>,
 où un changement de vitesse rebase l'origine au lieu d'accumuler. Trois heures plus
 tard la position est encore exacte.</p>
 
@@ -121,7 +121,7 @@ différents, et le tableau ci-dessous dit lequel, module par module.</p>
 </table>
 
 <div class="note">
-  <span class="label">Ce que scratchvj ne fera pas</span>
+  <span class="label">Ce que Filoscope ne fera pas</span>
   <p>Ces exclusions sont des décisions, pas des oublis. <strong>Pas de mapping
   multi-projecteurs</strong> (edge blending, slices) : on sort en Spout ou NDI vers
   Resolume ou MadMapper pour ces cas. <strong>Pas de compositing à N couches</strong>
@@ -276,7 +276,7 @@ codec moderne reconstruit une image à partir des précédentes, donc reculer d'
 frame peut coûter le décodage de plusieurs dizaines. C'est l'erreur classique, et
 même les lecteurs conçus pour le scrubbing la subissent.</p>
 
-<p>scratchvj sort donc du décodage temps réel. FFmpeg décode le clip <strong>une
+<p>Filoscope sort donc du décodage temps réel. FFmpeg décode le clip <strong>une
 seule fois</strong>, hors ligne, chaque frame est compressée en blocs — le format
 natif du GPU — et écrite dans un <code>.svcache</code>. Ensuite, plus jamais de
 décodage : lire la frame <em>n</em> est une multiplication d'offset.</p>
@@ -366,14 +366,14 @@ directement dans une interface ligne quelconque, sans toucher au mixeur.</p>
 <tr><th style="width:30%">Usage</th><th>Câblage</th></tr>
 <tr><td>Vidéo seule</td><td>Récepteur Phase → RCA → entrées ligne de n'importe quelle interface. Pas de table.</td></tr>
 <tr><td>Vidéo + surface de contrôle</td><td>Pareil, plus l'Elite en USB comme simple surface MIDI — aucun routage audio.</td></tr>
-<tr><td>Serato + vidéo (mode suiveur)</td><td>Récepteur → RCA → entrées <strong>LINE</strong> de l'Elite ; Serato sur USB-B1, scratchvj sur USB-B2. La table n'intervient que parce que Serato doit lire le même signal.</td></tr>
+<tr><td>Serato + vidéo (mode suiveur)</td><td>Récepteur → RCA → entrées <strong>LINE</strong> de l'Elite ; Serato sur USB-B1, Filoscope sur USB-B2. La table n'intervient que parce que Serato doit lire le même signal.</td></tr>
 </table>
 
 <div class="note warn">
   <span class="label">Le mode HID du Phase ne convient pas — et c'est important</span>
   <p>Le récepteur Phase a deux modes qui s'excluent. En <strong>HID</strong>, il se
   branche en USB au laptop, Serato règle le deck sur « WIR », et il n'y a
-  <strong>aucun câble RCA, donc aucun signal analogique à lire</strong> : scratchvj
+  <strong>aucun câble RCA, donc aucun signal analogique à lire</strong> : Filoscope
   ne voit rien du tout. En <strong>DVS/RCA</strong>, le récepteur est alimenté en USB,
   ses RCA vont aux entrées LINE, et deux lecteurs peuvent décoder le même signal en
   parallèle. C'est le mode qu'il faut.</p>
@@ -407,7 +407,7 @@ C'est là que se décide ce qui part vers l'ordinateur.</li>
 <li>Decks virtuels en <strong>REL</strong> (relatif). Ce n'est pas un détail : le
 timecode synthétisé par le Phase n'a pas de position absolue significative, il avance
 depuis un point arbitraire. <strong>Un needle drop absolu n'existe pas dans cette
-chaîne</strong>, et scratchvj se comporte de la même façon.</li>
+chaîne</strong>, et Filoscope se comporte de la même façon.</li>
 <li>Settings → Audio → cliquer sur <strong>CDJ</strong> (prescription du constructeur
 pour l'Elite).</li>
 </ul>
@@ -446,7 +446,7 @@ l'ouvrir. Quatre issues, par ordre de préférence :</p>
 
 <table>
 <tr><th style="width:26%">Voie</th><th style="width:44%">Détail</th><th>Verdict</th></tr>
-<tr><td>2ᵉ port USB de l'Elite</td><td>L'Elite est une double interface 10×10 : Serato sur USB-B1, scratchvj sur USB-B2, les deux reçoivent les mêmes entrées.</td><td>Matériel déjà possédé, à essayer en premier — un câble de distance.</td></tr>
+<tr><td>2ᵉ port USB de l'Elite</td><td>L'Elite est une double interface 10×10 : Serato sur USB-B1, Filoscope sur USB-B2, les deux reçoivent les mêmes entrées.</td><td>Matériel déjà possédé, à essayer en premier — un câble de distance.</td></tr>
 <tr><td>Split RCA passif</td><td>Sortie du Phase dupliquée vers une petite interface d'entrée dédiée.</td><td>Fonctionne toujours, ~50 €.</td></tr>
 <tr><td>WASAPI partagé</td><td>Ouvrir la même entrée en mode partagé pendant que Serato tourne.</td><td><strong>Constaté fonctionnel</strong> sur ce bureau : le pilote Ploytec de l'Elite est multi-client, et Serato parle à l'Elite en HID, pas en MIDI — les ports MIDI restent libres.</td></tr>
 <tr><td>Deux machines</td><td>Laptop Serato + PC vidéo.</td><td>Le repli qui marche toujours.</td></tr>
@@ -595,7 +595,7 @@ Ce sont des <strong>sources de modulation de plein droit</strong> (section 9.4) 
 
 <h3>7.2 &nbsp;Le mode suiveur et l'ancrage</h3>
 
-<p>En mode suiveur, Serato joue et scratche le son, scratchvj ne fait que la vidéo.
+<p>En mode suiveur, Serato joue et scratche le son, Filoscope ne fait que la vidéo.
 Comme les deux lisent le <strong>même</strong> timecode, une fois alignés ils le
 restent : l'ancrage n'est que l'offset entre la position sur le disque et la position
 dans le clip. On le pose d'un coup de pad, au moment voulu.</p>
@@ -734,7 +734,7 @@ cette boucle à l'aveugle irait contre la règle du projet.</p>
 
 <p class="lead">Trente-deux effets : seize paires audio/vidéo et seize effets vidéo
 qui n'ont pas d'équivalent sonore. C'est le rack qui distingue le plus nettement
-scratchvj d'un logiciel de VJ.</p>
+Filoscope d'un logiciel de VJ.</p>
 
 <h3>8.1 &nbsp;Le principe des paires</h3>
 
@@ -1260,7 +1260,7 @@ Tout en petit-boutien, octet par octet.</p>
 
 <h2><span class="n">ANNEXE E</span>Licences</h2>
 
-<p><strong>scratchvj est sous GPL-3, et c'est une décision, pas un accident</strong>
+<p><strong>Filoscope est sous GPL-3, et c'est une décision, pas un accident</strong>
 (tranchée le 9 septembre 2026). Le décodeur de disque de contrôle d'xwax reste, donc
 le disque de contrôle reste, et le binaire distribué est GPL-3.</p>
 

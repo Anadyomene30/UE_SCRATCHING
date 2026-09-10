@@ -1,0 +1,519 @@
+/* ============================================================================
+   suite.css — la feuille unique des manuels et des documents commerciaux.
+
+   VERSION 4 — 2026-09-09
+
+   Un produit livré porte une COPIE de cette feuille dans son dossier de
+   documentation, comme il porte une copie des jetons : jamais un lien hors
+   dépôt, sinon le document ne s'ouvre pas chez l'acheteur.
+
+   Une copie vieillit. Pour savoir si la sienne a vieilli, un produit compare
+   CETTE LIGNE DE VERSION — jamais les fichiers. Un `diff` ne sert à rien ici :
+   la source est en CRLF, une copie faite par un outil peut être en LF, et le
+   diff annonce alors que tout a changé quand rien n'a bougé. Mesuré le
+   2026-09-09 sur la copie de Diorama : 536 lignes signalées, 18 réellement
+   différentes. Relevé par Lacuna.
+
+   La version monte dès que la feuille change, même d'une valeur. Une copie sans
+   ligne de version est antérieure à la numérotation : elle se remplace sans
+   l'examiner.
+
+   Les produits avaient trois chartes documentaires sans parenté (indigo sur
+   Segoe, bleu pétrole sur Georgia sérif, une troisième) — alors que le manuel
+   est ce que l'acheteur lit AVANT d'installer quoi que ce soit. Cette feuille
+   les remplace toutes.
+
+   Ce n'est pas l'interface. Un document se lit sur fond clair, en corps de
+   16px, avec des marges. Ce qui traverse depuis l'application :
+     — le couple de fontes, et sa règle : les mots en Archivo, toute valeur en
+       Fragment Mono ;
+     — l'échelle typographique 11 / 12 / 13 / 16 / 28, EN PIXELS, y compris à
+       l'impression, et rien d'autre nulle part. Une échelle qui change d'unité
+       selon le support n'est plus une échelle : c'est cinq nombres qu'on
+       retraduit, et chaque produit en tirera sa propre traduction ;
+     — les filets fins, jamais deux adjacents ;
+     — l'accent du produit employé exactement comme dans l'interface : un
+       filet, jamais un aplat.
+
+   PAS DE @font-face ICI, ET C'EST VOLONTAIRE. Un @font-face à chemin relatif
+   dans une feuille recopiée dans plusieurs dépôts est une promesse qu'aucun ne
+   tiendra. Pire : Chrome applique le CORS aux fontes MÊME en file://, donc un
+   chemin relatif échoue en silence et le document sort en Times sans prévenir.
+   Les fontes s'injectent au moment de composer le PDF, par le mécanisme du
+   produit, jamais par cette feuille. Relevé par Georama, qui a le seul chaînage
+   PDF éprouvé de l'atelier.
+
+   Emploi : <link rel="stylesheet" href="suite.css"> puis, sur <html> ou
+   <body>, la classe du produit — p. ex. class="p-mutoscope". Valeurs de
+   référence : ../design/tokens.json.
+
+   Révisée le 2026-09-09 (DIORAMA-07) : la couverture et le sommaire d'un
+   manuel, qui manquaient et que chaque produit aurait réinventés dans son coin
+   — soit l'écart 22 refait par un autre bout.
+
+   VERSION 4, le 2026-09-09 — deuxième tour de composants, sur les relevés de
+   Lacuna (LACUNA-04, -05), d'Anamorphe (ANAMORPHE-16, -17, -18) et de Georama.
+   Ce qui entre : td.k / th[scope=row], .internal, .note-dim, .subhead,
+   .caption, .small, .nobreak, .newpage, et les deux accents manquants de
+   Georama. Ce qui n'entre pas est écrit plus bas, avec la raison — voir « Ce
+   qui a été demandé et refusé », en fin de fichier.
+
+   LA RÈGLE QUI DÉCIDE CE QUI ENTRE ICI, écrite une fois pour qu'on cesse de la
+   redécouvrir : une classe entre quand DEUX documents d'origines différentes en
+   ont besoin, ou quand elle est le SÉLECTEUR MANQUANT d'un jeton que la feuille
+   déclare déjà. Une classe qu'un seul document demande reste chez lui. C'est la
+   règle de recevabilité des jetons (../design/tokens.json), transposée au
+   papier : une feuille commune qui grossit à chaque demande particulière cesse
+   d'être commune, et redevient les trois chartes qu'elle a remplacées.
+   ========================================================================= */
+
+:root{
+  /* la version de la feuille, lisible par une page : getComputedStyle(document
+     .documentElement).getPropertyValue("--suite-css-version") */
+  --suite-css-version: 4;
+
+  /* le papier — un neutre légèrement verdi, de la même famille que la craie
+     de l'interface, pour que le manuel et l'application se ressemblent sans
+     que le manuel soit sombre */
+  --paper:      #F6F7F4;
+  --paper-sunk: #EDEFEA;   /* encadrés, code, cellules d'en-tête */
+  --ink:        #141815;
+  --ink-dim:    #5C635B;
+  --ink-off:    #8D958C;
+  --rule:       #D6DAD3;
+
+  /* signalisation — mêmes rôles que dans l'application, assombris pour le
+     fond clair afin de garder un contraste lisible */
+  --running:#8A6E12; --done:#4C7A38; --warn:#8A5C22; --fail:#A6382C;
+
+  /* l'accent est posé par la classe produit ; ce défaut n'est jamais employé
+     tel quel dans un document publié */
+  --accent: #5C635B;
+
+  --words: "Archivo", "Archivo Narrow", system-ui, -apple-system, sans-serif;
+  --vals:  "Fragment Mono", Consolas, "SF Mono", "DejaVu Sans Mono", monospace;
+
+  --unit: 4px;
+  --measure: 66ch;   /* la longueur de ligne, jamais dépassée en texte courant */
+}
+
+/* les accents des produits — identiques à ../design/tokens.json.
+   Georama en porte trois, et c'est l'exception assumée de la suite : photo /
+   solve / entraînement, trois étapes machine. Un manuel qui a un chapitre par
+   étape les emploie comme l'application le fait — en filet, jamais en aplat.
+   La feuille n'en donnait qu'un jusqu'au 2026-09-09 : elle contredisait sa
+   propre source. */
+.p-georama      { --accent:#D9584B; --accent-2:#7FB069; --accent-3:#4C7FD4; }
+.p-diorama      { --accent:#4C7FD4; }
+.p-anamorphe    { --accent:#C4556F; }
+.p-lacuna       { --accent:#B07FC4; }
+.p-lacuna-motion{ --accent:#C48A4B; }
+.p-relief       { --accent:#4BA8B0; }
+.p-vigie        { --accent:#7FB069; }
+.p-mutoscope    { --accent:#8E9BC4; }
+
+/* ---------------------------------------------------------------- socle -- */
+*{ box-sizing:border-box; }
+html{ background:var(--paper); }
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--words); font-variation-settings:"wdth" 100; font-weight:450;
+  font-size:16px; line-height:1.62;
+  -webkit-font-smoothing:antialiased;
+  font-variant-numeric:tabular-nums;
+}
+.page{ max-width:880px; margin:0 auto; padding:56px 32px 120px; }
+
+/* --------------------------------------------------------- typographie -- */
+h1,h2,h3{ margin:0; text-wrap:balance; }
+h1{
+  font-size:28px; font-weight:300; font-variation-settings:"wdth" 62;
+  letter-spacing:-.015em; line-height:1.12;
+}
+h2{
+  font-size:16px; font-weight:600; font-variation-settings:"wdth" 125;
+  text-transform:uppercase; letter-spacing:.12em; color:var(--ink-dim);
+  margin:44px 0 14px; padding-bottom:7px; border-bottom:1px solid var(--rule);
+}
+h3{
+  font-size:13px; font-weight:600; font-variation-settings:"wdth" 112;
+  margin:26px 0 8px;
+}
+p{ margin:0 0 14px; max-width:var(--measure); }
+p.lede{ font-size:16px; color:var(--ink-dim); }
+strong{ font-weight:600; }
+a{ color:var(--ink); text-decoration:none; border-bottom:1px solid var(--accent); }
+a:hover{ border-bottom-width:2px; }
+a:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+
+/* le sur-titre : le nom du produit, derrière son filet d'accent de 2px —
+   c'est le capuchon de la barre haute, transposé sur le papier */
+.eyebrow{
+  display:flex; align-items:center; gap:11px;
+  font-family:var(--vals); font-size:11px; text-transform:uppercase;
+  letter-spacing:.12em; color:var(--ink-off); margin:0 0 16px;
+}
+.eyebrow::before{ content:""; width:2px; height:14px; background:var(--accent); }
+
+/* la ligne descriptive — c'est elle qui porte les mots-clés que l'acheteur
+   tape, puisqu'un nom propre n'est pas trouvable en recherche */
+.tagline{
+  font-size:16px; color:var(--ink-dim); max-width:var(--measure);
+  margin:10px 0 0;
+}
+
+/* ------------------------------------------------------------- valeurs -- */
+/* toute valeur, tout chemin, tout nom de fichier, tout raccourci */
+code, kbd, samp, .val{
+  font-family:var(--vals); font-size:13px; font-variant-numeric:tabular-nums;
+}
+code{ background:var(--paper-sunk); padding:1px 5px; border-radius:3px; }
+kbd{
+  display:inline-block; padding:1px 6px; border:1px solid var(--rule);
+  border-radius:3px; background:var(--paper); font-size:12px; line-height:1.5;
+}
+pre{
+  font-family:var(--vals); font-size:13px; line-height:1.55;
+  background:var(--paper-sunk); border-left:2px solid var(--accent);
+  padding:14px 16px; overflow-x:auto; margin:0 0 18px;
+}
+pre code{ background:none; padding:0; }
+
+/* ------------------------------------------------------------- tableau -- */
+.tablewrap{ overflow-x:auto; margin:0 0 20px; }
+table{ border-collapse:collapse; width:100%; font-size:13px; }
+th,td{
+  text-align:left; padding:8px 14px 8px 0; border-bottom:1px solid var(--rule);
+  vertical-align:top;
+}
+th{
+  font-size:11px; font-weight:600; font-variation-settings:"wdth" 125;
+  text-transform:uppercase; letter-spacing:.1em; color:var(--ink-dim);
+  white-space:nowrap;
+}
+td.n, td .val{ font-family:var(--vals); font-variant-numeric:tabular-nums; }
+tr:last-child td{ border-bottom:0; }
+
+/* la clé d'un tableau à deux colonnes — table de raccourcis, glossaire, fiche
+   technique, tableau de paramètres. C'est le pendant de td.n, qui porte les
+   valeurs numériques : la feuille en avait déjà l'autre moitié.
+
+   Une clé est un MOT : elle reste en Archivo. Quand la clé est elle-même une
+   valeur — une touche, un chemin, un nom de jeton — le document l'enveloppe
+   dans <kbd>, <code> ou .val, qui sont déjà là.
+
+   th[scope=row] reçoit la même règle, pour qu'un document qui marque sa clé
+   sémantiquement ne soit pas puni par la casse d'un en-tête de colonne.
+   (LACUNA-05) */
+td.k, th[scope="row"]{
+  font-family:var(--words); font-size:13px; font-weight:600;
+  color:var(--ink-dim); white-space:nowrap;
+  text-transform:none; letter-spacing:0;
+  padding-right:20px; width:1%;
+}
+
+/* ------------------------------------------------------------- listes --- */
+ul,ol{ margin:0 0 16px; padding-left:20px; max-width:var(--measure); }
+li{ margin-bottom:5px; }
+li::marker{ color:var(--ink-off); }
+
+/* --------------------------------------------------- notes et encadrés -- */
+/* un seul encadré, quatre tons — jamais d'aplat coloré, jamais d'icône */
+.note{
+  border-left:2px solid var(--accent); background:var(--paper-sunk);
+  padding:13px 16px; margin:0 0 20px; max-width:var(--measure);
+  font-size:13px;
+}
+.note.warn{ border-left-color:var(--warn); }
+.note.fail{ border-left-color:var(--fail); }
+.note.done{ border-left-color:var(--done); }
+.note > :last-child{ margin-bottom:0; }
+.note b{ font-weight:600; }
+
+/* Le ton neutre « pour aller plus loin » N'EST PAS une classe de plus : c'est
+   .note sans modificateur, qui porte déjà le filet d'accent du produit. La
+   feuille a quatre tons, pas trois. Écrit ici parce que deux produits ont
+   demandé un .tip qui existait déjà sous un autre nom. */
+
+/* ------------------------------------------------- ne pas diffuser ------- */
+/* Un document interne devient une surface de marque le jour où il sort, et ce
+   jour-là personne ne décide qu'il sort : il part en pièce jointe
+   (../design/DIRECTION-ARTISTIQUE.md). L'encadré qui dit « ceci ne sort pas »
+   est la réponse à ce risque, et il vaut mieux qu'il soit dessiné une fois que
+   dans chaque dossier commercial.
+
+   Un filet sur les quatre côtés — la seule différence avec .note, qui n'en
+   porte qu'un — et aucun aplat. Le libellé est écrit par le document, jamais
+   par la feuille : elle ne parle aucune langue.
+   (LACUNA-05, sur la règle posée par DIORAMA-08) */
+.internal{
+  border:1px solid var(--fail);
+  padding:13px 16px; margin:0 0 20px; max-width:var(--measure);
+  font-size:13px;
+}
+.internal > :last-child{ margin-bottom:0; }
+.internal .eyebrow{ color:var(--fail); }
+.internal .eyebrow::before{ background:var(--fail); }
+
+/* ------------------------------------------- les rôles de texte nommés --- */
+/* Trois documents écrivaient des hexadécimales en ligne pour des rôles que la
+   feuille savait teinter mais ne savait pas SÉLECTIONNER : --ink-dim et
+   --ink-off étaient déclarés, et rien ne permettait de les poser sur un bout de
+   texte. Une règle qui dit « ajoute des classes, jamais des hexadécimales »
+   n'est applicable que si les classes existent, et elles vivent dans un fichier
+   qu'un produit n'a pas le droit de modifier. On répare en donnant les
+   sélecteurs, pas en reprochant les hexadécimales. (ANAMORPHE-17)
+
+   Ce ne sont pas des composants : ce sont les sélecteurs manquants de jetons
+   déjà déclarés. C'est pour cela qu'ils entrent sur la demande d'un seul
+   document, là où un composant demande deux. */
+
+/* la note atténuée — une remarque entre parenthèses dans un tableau, une unité
+   rappelée, une précision qu'on lit en second */
+.note-dim{ color:var(--ink-dim); }
+
+/* le sous-titre d'une section — accroché sous un h2 ou un h3, jamais à la place
+   d'un titre. Pris dans l'échelle, et jamais en gras : c'est ce qui le
+   distingue du titre qu'il accompagne. */
+.subhead{
+  font-size:13px; font-weight:450; color:var(--ink-dim);
+  margin:-6px 0 14px; max-width:var(--measure);
+}
+
+/* -------------------------------- les niveaux de l'échelle, nommés ------- */
+/* Un manuel de référence a besoin de plus de niveaux qu'une interface :
+   tableaux imbriqués, légendes, mentions. Un produit qui n'a pas de nom pour
+   ces niveaux en invente — l'un d'eux en avait trente-quatre, tous en points.
+   La réponse n'est pas d'ajouter des nombres, c'est de NOMMER les niveaux une
+   fois, tous pris dans les cinq. (ANAMORPHE-18) */
+.caption{ font-size:12px; color:var(--ink-dim); }
+.small  { font-size:11px; color:var(--ink-off); }
+
+/* ------------------------------------------------------------- images --- */
+figure{ margin:0 0 24px; }
+figure img{
+  display:block; width:100%; height:auto;
+  border:1px solid var(--rule);      /* un filet, jamais une ombre portée */
+}
+figcaption{
+  font-size:12px; color:var(--ink-dim); margin-top:8px; max-width:var(--measure);
+}
+
+/* -------------------------------------------- pied et mentions légales -- */
+.colophon{
+  margin-top:56px; padding-top:16px; border-top:1px solid var(--rule);
+  font-family:var(--vals); font-size:11px; color:var(--ink-off);
+  display:flex; gap:16px; flex-wrap:wrap;
+}
+.colophon .sep{ flex:1; }
+
+/* ----------------------------------------------- couverture et sommaire -- */
+/* Un manuel commence par une couverture et une table des matières. Elles sont
+   ici, une fois pour les huit, parce que huit couvertures réinventées en style
+   local seraient l'écart 22 refait sous une feuille commune qui ne les voit
+   pas.
+
+   Rien de nouveau n'y est inventé : la couverture est le sur-titre .eyebrow
+   agrandi à la page — un filet d'accent de 2px, un nom, une ligne descriptive.
+   Le titre reste à 28px, plafond de l'échelle ; ce qui lui donne son échelle
+   est l'axe de largeur d'Archivo (wdth 62), pas le corps. Aucun aplat, aucune
+   ombre, aucun fond sombre : un document d'atelier se lit et s'imprime sur du
+   clair. */
+
+.cover{
+  min-height:78vh;
+  display:flex; flex-direction:column; justify-content:flex-end;
+  padding-bottom:40px; margin-bottom:56px;
+  border-bottom:1px solid var(--rule);
+}
+.cover .eyebrow{ margin-bottom:24px; }
+.cover h1{ font-size:28px; font-variation-settings:"wdth" 62; margin:0; }
+.cover .tagline{ margin-top:14px; }
+
+/* le filet d'accent de la couverture : le capuchon de la barre haute, en
+   pleine hauteur de page — 2px, comme partout ailleurs */
+.cover.ruled{ position:relative; padding-left:24px; }
+.cover.ruled::before{
+  content:""; position:absolute; left:0; top:0; bottom:40px;
+  width:2px; background:var(--accent);
+}
+
+/* la ligne de pied de couverture : version, date, mention — jamais un slogan */
+.cover .imprint{
+  font-family:var(--vals); font-size:11px; color:var(--ink-off);
+  display:flex; gap:16px; flex-wrap:wrap; margin-top:32px;
+}
+
+/* le sommaire — des filets fins, les numéros en chasse fixe, aucun point de
+   conduite : une table des matières n'est pas un menu de restaurant */
+.toc{ margin:0 0 44px; max-width:var(--measure); }
+.toc ol{ list-style:none; margin:0; padding:0; max-width:none; counter-reset:toc; }
+.toc li{ margin:0; border-bottom:1px solid var(--rule); }
+.toc li:last-child{ border-bottom:0; }
+.toc a{
+  display:flex; align-items:baseline; gap:14px;
+  padding:9px 0; border-bottom:0; color:var(--ink);
+}
+.toc a::before{
+  counter-increment:toc; content:counter(toc, decimal-leading-zero);
+  font-family:var(--vals); font-size:11px; color:var(--ink-off);
+  min-width:22px;
+}
+.toc a:hover{ color:var(--ink); }
+.toc a:hover .t{ border-bottom:1px solid var(--accent); }
+.toc .t{ flex:1; font-size:13px; }
+.toc .p{ font-family:var(--vals); font-size:11px; color:var(--ink-off); }
+/* un second niveau, s'il en faut un — décalé, jamais numéroté */
+.toc li li a{ padding-left:36px; }
+.toc li li a::before{ content:""; counter-increment:none; min-width:0; }
+.toc li li .t{ font-size:12px; color:var(--ink-dim); }
+
+/* ------------------------------------------------------------ document -- */
+/* les deux utilitaires de pagination — nommés une fois plutôt qu'une par
+   document. La feuille pose déjà break-inside sur les figures, les encadrés et
+   les lignes de sommaire ; ces deux-là couvrent le reste, et évitent autant de
+   variantes locales du même page-break. Ils vivent hors du bloc @media print
+   pour être lisibles à l'écrit ; ils n'ont d'effet qu'à l'impression. */
+.nobreak{ break-inside:avoid; page-break-inside:avoid; }
+.newpage{ break-before:page; page-break-before:always; }
+
+@media print{
+  @page{ size:A4; margin:18mm 20mm; }
+  html,body{ background:#fff; }
+  .page{ max-width:none; padding:0; }
+  h2{ break-after:avoid; page-break-after:avoid; }
+  h3, .subhead{ break-after:avoid; page-break-after:avoid; }
+  figure, .note, .internal, tr, .toc li{ break-inside:avoid; page-break-inside:avoid; }
+  /* la couverture et le sommaire tiennent chacun leur page */
+  .cover{ min-height:0; height:100%; break-after:page; page-break-after:always; }
+  .toc{ break-after:page; page-break-after:always; }
+  .toc a{ color:var(--ink); }
+  a{ border-bottom:0; }
+  a[href^="http"]::after{
+    content:" (" attr(href) ")"; font-family:var(--vals); font-size:11px;
+    color:var(--ink-off);
+  }
+
+  /* PAS DE PIED DE PAGE NUMÉROTÉ ICI, et ce n'est pas un oubli.
+     Un pied de page paginé demande les boîtes de marge de @page
+     (@bottom-center, counter(page)), que le moteur d'impression employé par la
+     maison ne sait pas produire. Une feuille commune qui déclarerait un pied
+     invisible chez tout le monde serait pire que pas de pied : chacun croirait
+     l'avoir.
+
+     LA RÈGLE DE REPLI, pour que personne ne la réinvente : le pied de page
+     reste dans le générateur de PDF du produit — un tableau à en-tête et pied
+     répétés, ou l'option de pagination du moteur — et il lit ses trois valeurs
+     (fonte, corps, teinte) dans le FICHIER UNIQUE DE JETONS de ce produit,
+     jamais en clair dans le générateur. Corps 11px, --vals, --ink-off : les
+     mêmes que .colophon et .cover .imprint, qui sont juste au-dessus.
+     (ANAMORPHE-16) */
+}
+
+/* Pas de thème sombre ici — et ce n'est pas un interdit universel.
+
+   C'est la valeur *atelier* d'une variable de cadran : un document d'atelier se
+   lit et s'imprime sur du clair, le sombre appartient à l'application où il y a
+   une image à juger.
+
+   La ligne scène a l'autre valeur. Un document de scène se lit en coulisse, sur
+   un téléphone, dans le noir (docs/secteurs.html § 5.2, variable 6). Le papier
+   sombre correspondant n'est pas encore écrit : tant qu'il ne l'est pas, un
+   produit de scène garde sa feuille propre plutôt que d'en fabriquer une
+   troisième.
+
+   Corrigé le 2026-09-09 : cette ligne écrivait l'interdit sans réserve, alors
+   que le verdict DIORAMA-08 en avait déjà fait une variable de cadran. Seule
+   l'autre occurrence avait été reprise. Relevé par scratchvj, premier produit
+   de la scène.
+
+   CE QU'IL DEVRA PORTER, SPÉCIFIÉ ET NON ÉCRIT — pour que la spécification ne
+   se reperde pas entre deux tours :
+
+     — SA FORME : un bloc de redéfinition de variables sous une classe de ligne,
+       .line-scene { --paper: …; --ink: …; }, et PAS une seconde feuille. Tout
+       le reste du code reste littéralement le même : structure, échelle,
+       filets, tableaux, encadrés, couverture, sommaire. C'est ce qui rend « une
+       feuille, deux papiers » vrai plutôt que déclaratif — le jour où le
+       sommaire change, il change pour les deux salles.
+     — LES JETONS À INVERSER : --paper, --paper-sunk, --ink, --ink-dim,
+       --ink-off, --rule, et les quatre signaux.
+     — DEUX POINTS QUI NE SE DÉDUISENT PAS DE L'INVERSION. --paper-sunk doit
+       être PLUS SOMBRE que --paper, pas plus clair : sur du clair comme sur du
+       sombre, un encadré s'enfonce en s'assombrissant, et l'inverser
+       mécaniquement produit un encadré qui saille. Et les quatre signaux
+       s'ÉCLAIRCISSENT pour le fond sombre, pour la même raison qu'ils
+       s'assombrissent ici.
+     — L'IMPRESSION, qui est le vrai obstacle : un PDF à fond noir plein bord ne
+       s'imprime pas — selon le moteur, l'encre coule ou chaque page sort avec
+       un liséré blanc. La réponse est dans la variable elle-même : un document
+       de scène se lit sur un téléphone, en coulisse ; personne ne l'imprime.
+       LE PAPIER SOMBRE DÉCLARE QU'IL N'EST PAS IMPRIMABLE et n'écrit que pour
+       l'écran — un @media print qui rend le papier clair, ou rien.
+     — CE QUE L'INVERSION DONNE GRATUITEMENT : la couverture. .cover ne contient
+       aucune valeur de couleur, et tient sur fond sombre sans une ligne de
+       plus.
+
+   IL ATTEND DEUX DÉCISIONS, ET AUCUNE N'EST UN GOÛT : la famille de chasse fixe
+   de la ligne scène, et la luminance commune des deux châssis. Écrire --paper
+   et --vals avant elles, c'est graver un accident — et un accident qu'on ne
+   nomme pas devient une convention en six mois. (SCRATCHVJ-17, verdict
+   *reporté*.) */
+
+/* ============================================================================
+   CE QUI A ÉTÉ DEMANDÉ ET REFUSÉ, avec la raison — pour qu'on ne le redemande
+   pas, et pour que le produit qui le garde en local sache que c'est légitime.
+
+   .fx / .fx-head / .tag / .tags — le bloc de fiche d'un catalogue de référence
+     (nom, badges, tableau de paramètres). Le plus employé de tous les
+     composants demandés, et le seul document qui l'emploie est un catalogue
+     d'effets. La forme ne transfère pas : un manuel de réglages n'a pas de
+     fiches, un studio n'a pas de catalogue. RESTE LOCAL. La moitié utile — le
+     tableau de paramètres — est couverte par td.k et les styles de tableau.
+     À reprendre le jour où un second document de catalogue le redemande.
+
+   .badge — DEUX PRODUITS L'ONT DEMANDÉ ET LES DEUX VERDICTS SE CONTREDISENT :
+     l'un comme niveau typographique nommé, l'autre le supprimant parce que sa
+     mise en œuvre était un aplat coloré avec du texte blanc dessus, c'est-à-dire
+     l'écart 20 déplacé dans un document. ARBITRÉ : le nom n'entre pas, le besoin
+     entre sous .small. Un nom qu'une moitié de la maison lit comme « pastille
+     remplie » ne peut pas vivre dans une feuille qui interdit les aplats.
+
+   .caveat — la réserve de rédaction (« à confirmer avant d'en faire un argument
+     public »). Un seul document, un seul emploi. RESTE LOCAL : un besoin à une
+     occurrence dans toute la maison échoue au test de recevabilité. S'il en
+     apparaît un second, c'est une variante de .internal, pas une couleur de
+     texte.
+
+   .dots — les points de conduite d'un sommaire. Refusés nommément en composant
+     .toc : une table des matières n'est pas un menu de restaurant.
+
+   .zebra — une ligne sur deux remplie est un aplat, et la direction artistique
+     l'interdit. Les tableaux de cette feuille se tiennent par des filets.
+
+   .tip, .mono, .intro — la feuille les fait déjà : .note sans modificateur, .val
+     ou <code>, et p.lede. Ce sont des substitutions, pas des manques.
+
+   .step / .n — un pas-à-pas numéroté est un <ol>, que la feuille stylise déjà,
+     marqueur compris.
+
+   h1 .num — le numéro de chapitre est porté par le sommaire (.toc a::before, en
+     decimal-leading-zero et en chasse fixe). Un seul document numérote ses
+     titres, et un seul document ne fait pas une règle.
+
+   .cards / .card / .why — des figures d'argumentaire, pas des objets de suite.
+     RESTENT LOCALES. Et une réserve à porter dans le relevé du produit plutôt
+     qu'un verdict : la direction artistique nomme « une grille de cartes
+     égales » comme le premier marqueur d'une mise en page générée.
+
+   .kpi / .pillar / .pillars / .proof / .price / .quote / .chk / .amt, et les
+     planches comparées .grid2 / .grid3 — composants commerciaux. Ils attendent
+     un second document commercial qui les demande. Les faire entrer sur la
+     demande d'un seul, c'est concevoir au lieu de spécifier.
+
+   Un @font-face — voir l'en-tête : le CORS sur file:// le fait échouer en
+     silence, et le document sort en Times sans prévenir.
+
+   Un pied de page paginé — voir @media print : le moteur ne sait pas le
+     produire, et la règle de repli y est écrite.
+   ========================================================================= */

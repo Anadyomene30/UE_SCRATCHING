@@ -1,6 +1,6 @@
 # Protocole réseau
 
-`scratchvj` diffuse l'état de la surface et des platines vers Unreal (et vers tout
+Filoscope diffuse l'état de la surface et des platines vers Unreal (et vers tout
 autre client : TouchDesigner, Resolume) par UDP.
 
 ## Pourquoi pas le plugin OSC natif d'Unreal

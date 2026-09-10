@@ -1,4 +1,9 @@
-# Remontées — scratchvj, tour 01
+# Remontées — Filoscope, tour 01
+
+> La maison lit ce fichier **sur place**, à cette adresse —
+> `C:\Users\dimit\Documents\GitHub\UE_SCRATCHING\docs\REMONTEES.md` — et il
+> n'en existe aucune copie ailleurs. Les verdicts déjà rendus se lisent de même
+> à la leur, dans `Suite 360\remontees\filoscope.md`.
 
 Vingt points relevés le **2026-09-09** dans le dépôt `UE_SCRATCHING` (branche
 `claude/scratch-video-unreal-0oi7dv`, commit `75eee2f`), pendant la phase 0 de

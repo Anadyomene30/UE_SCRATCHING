@@ -1,0 +1,17 @@
+# Fins de ligne — déclarées, pas converties rétroactivement.
+#
+# `text=auto` normalise en LF dans le dépôt et rend à chacun la fin de ligne de
+# sa plateforme au checkout. Rien n'est renormalisé d'un coup : les fichiers
+# existants prennent la règle quand on les touche. Le dépôt est déjà en LF dans
+# l'index — cette déclaration le dit au lieu de le laisser dépendre du
+# `core.autocrlf` de la machine.
+* text=auto
+
+# Binaires : jamais touchés.
+*.png binary
+*.jpg binary
+*.pdf binary
+*.ttf binary
+*.otf binary
+*.woff2 binary
+*.exr binary

@@ -23,7 +23,7 @@ réel branché. Deux corrections sur ce qui était supposé avant :
   analogique.
 - **Mode DVS/RCA** : le récepteur est alimenté en USB (5 V), ses RCA vont aux
   entrées LINE de l'Elite, les voies restent sur USB A/B, USB OUT ROUTING sur
-  CD, et Serato lit le timecode. C'est **le mode qu'il faut à scratchvj** : un
+  CD, et Serato lit le timecode. C'est **le mode qu'il faut à Filoscope** : un
   signal analogique existe, et deux lecteurs peuvent le décoder en parallèle.
 
 **Réglages Serato officiels pour cette chaîne** (doc MWM) : decks virtuels en
@@ -33,7 +33,7 @@ Elite**, etc.), you need to go to Serato settings > Audio tab > Click on CDJ. »
 > **REL n'est pas un détail : c'est une propriété du signal.** Le timecode
 > synthétisé par le Phase n'a pas de position absolue significative — il avance
 > depuis un point arbitraire. Serato le prescrit donc en mode relatif, et
-> `scratchvj` doit faire pareil : c'est exactement ce que le profil `wireless`
+> Filoscope doit faire pareil : c'est exactement ce que le profil `wireless`
 > de `core/timecode` anticipe, et ça confirme que l'ancrage par fraîcheur (et
 > non par position absolue) était le bon choix. Un needle drop absolu n'existe
 > pas dans cette chaîne.
@@ -47,7 +47,7 @@ studio par exemple, sans toucher à l'Elite. Trois câblages selon l'usage :
 |---|---|
 | Vidéo seule | Récepteur Phase → RCA → entrées ligne de n'importe quelle interface (MOTU). Pas de table. |
 | Vidéo seule + surface de contrôle | Pareil, plus l'Elite en USB comme simple surface MIDI — aucun routage audio. |
-| Serato + vidéo (mode suiveur) | Récepteur → RCA → LINE de l'Elite ; Serato sur USB-B1, scratchvj sur USB-B2. La table ne sert au timecode que parce que Serato doit lire le même signal. |
+| Serato + vidéo (mode suiveur) | Récepteur → RCA → LINE de l'Elite ; Serato sur USB-B1, Filoscope sur USB-B2. La table ne sert au timecode que parce que Serato doit lire le même signal. |
 
 (Le « zéro câble » serait le mode HID, mais son protocole est fermé — ouvert par
 MWM à Serato et rekordbox seulement. Le lire relèverait de la rétro-ingénierie :
@@ -77,7 +77,7 @@ projet à part, résultat non garanti, et le RCA marche aujourd'hui.)
 > **Ce que le Phase en HID met donc sur ses RCA : direction et vitesse, pas de
 > position.** La position est justement ce que la modulation d'amplitude encode.
 >
-> Conséquence : pour que scratchvj lise une position, **le récepteur doit être en
+> Conséquence : pour que Filoscope lise une position, **le récepteur doit être en
 > mode DVS**, c'est-à-dire alimenté par un chargeur 5 V et *non* relié en USB à
 > l'ordinateur (c'est exactement ce que dit la procédure MWM : « Power your Phase
 > Receiver via USB to any power supply (5V) »). Serato repasse alors en REL.
@@ -147,7 +147,7 @@ projet à part, résultat non garanti, et le RCA marche aujourd'hui.)
 > **Le récepteur émet-il encore sur ses RCA pendant qu'il est en HID ?** La doc MWM présente HID et DVS comme
 > des alternatives, sans dire que le HID coupe les RCA. Si les deux coexistent,
 > la meilleure configuration suiveur devient : **Serato en HID** (son intégration
-> native, sans REL) **+ scratchvj sur les RCA** (vers la MOTU, sans toucher à la
+> native, sans REL) **+ Filoscope sur les RCA** (vers la MOTU, sans toucher à la
 > table). Test : Phase en HID avec Serato, RCA dans la MOTU, remote qui tourne,
 > `audio_probe all 3` — si `<<< TIMECODE` apparaît, cette variante remplace la
 > ligne « Serato + vidéo » du tableau ci-dessus.
@@ -176,7 +176,7 @@ double mode peu coûteux — à condition de l'avoir conçu dès le départ.
 
 ### Mode suiveur (Serato joue le son)
 
-Serato fait le DVS ; `scratchvj` ne fait que la vidéo. Comme les deux lisent le
+Serato fait le DVS ; Filoscope ne fait que la vidéo. Comme les deux lisent le
 **même** timecode, la position vidéo suit la position audio.
 
 - **Ancrage** par deck : `offset = position_timecode − position_vidéo`, posé d'un
@@ -212,7 +212,7 @@ n'a aucun équivalent dans Serato.
 ## Le problème du partage d'entrée sous Windows
 
 En mode suiveur, sur Windows, les pilotes ASIO DJ sont généralement **mono-client** :
-si Serato tient le périphérique, `scratchvj` ne peut pas l'ouvrir. Quatre issues,
+si Serato tient le périphérique, Filoscope ne peut pas l'ouvrir. Quatre issues,
 par ordre de préférence :
 
 | Voie | Détail | Verdict |

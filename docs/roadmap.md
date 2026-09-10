@@ -592,7 +592,7 @@ Elite : faders, EQ, filtres, FX, 16 pads ──USB MIDI────┤
 RP-8000 MK2 : 8 pads x 3 couches ─────────USB MIDI─────┤
                                                        v
                                     ┌──────────────────────────────────┐
-                                    │       scratchvj (C++20)          │
+                                    │       Filoscope (C++20)          │
                                     │  surface + mapping engine        │
                                     │  timecode  ->  position          │
                                     │  moteur audio DVS                │
@@ -1001,7 +1001,7 @@ fenêtre ou la résolution d'analyse.
 
 ## Licence
 
-`timecoder.c` est **GPL-3** : `scratchvj` sera donc GPL-3 s'il est distribué.
+`timecoder.c` est **GPL-3** : Filoscope sera donc GPL-3 s'il est distribué.
 FFmpeg est LGPL en lien dynamique ; bgfx, SDL3, Dear ImGui, miniaudio et RtMidi
 sont permissifs. Le **plugin Unreal reste sous la licence de ton choix** puisqu'il
 ne fait que lire un socket UDP et une texture partagée — la frontière entre les

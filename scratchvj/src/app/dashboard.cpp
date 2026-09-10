@@ -192,7 +192,7 @@ std::string render_dashboard(const DashboardView& view, const DeckView& a, const
 
     if (ansi) out << "\033[H\033[J";  // home, then clear
 
-    out << p(kBright) << "scratchvj" << p(kReset) << p(kDim) << "  demo" << p(kReset) << "   "
+    out << p(kBright) << "Filoscope" << p(kReset) << p(kDim) << "  demo" << p(kReset) << "   "
         << clock_of(view.elapsed_s) << "   " << p(kAmber) << view.phase << p(kReset) << "\n";
 
     out << p(kDim) << "mode " << p(kReset) << (view.follower_mode ? "SERATO" : "AUTONOME")

@@ -1,7 +1,13 @@
-# scratchvj
+# Filoscope
 
 Instrument DJ vidéo scratchable, piloté par timecode DVS (MWM Phase, Reloop
 Elite, RP-8000 MK2). Unreal Engine est un **client** de cette app, pas son cœur.
+
+**Filoscope est le nom que le produit affiche ; `scratchvj` est ce dont il est
+fait.** Le dossier, l'exécutable, les cibles CMake, les espaces de noms `svj::`
+et le sender Spout gardent l'ancien nom : ce qui est mécanique ne se renomme
+jamais. Un `scratchvj` ci-dessous est un chemin ou une commande, jamais le nom
+du produit.
 
 **Avant de faire quoi que ce soit, lire [`docs/roadmap.md`](docs/roadmap.md)** :
 c'est le document qui fait foi sur l'état d'avancement, ce qui reste à faire, et
@@ -291,3 +297,16 @@ Ne pas commencer une nouvelle brique sans avoir lu la section correspondante du
 roadmap — plusieurs choix (le profil `wireless` du timecode, la fraîcheur plutôt
 que la dérive côté ancrage, la courbe de crossfader) viennent de raisons non
 évidentes qu'il serait facile de défaire par inadvertance.
+
+## La maison
+
+La loi commune, les sources et les verdicts vivent dans **`C:\Users\dimit\Documents\CODE\Suite 360`**, et **se lisent là-bas, jamais ici**. Ce dépôt n'en contient aucune copie, pas même un résumé.
+
+- `Suite 360\maison\` — les six documents de la loi, à lire en une fois.
+- `Suite 360\maison\produits\filoscope.md` — ce que la maison attend de ce dépôt.
+- `Suite 360\remontees\filoscope.md` — les verdicts déjà rendus, tour par tour.
+- `Suite 360\PROTOCOLE.md` — comment une question monte d'ici, et le prompt à copier.
+
+Ce qui monte d'ici s'écrit dans `docs/REMONTEES.md` ; l'état de chaque ligne est dans `docs/ALIGNEMENT.md`.
+
+**Le fichier de jetons de ce dépôt est écrit par `Suite 360\tools\distribute.py`** entre deux marqueurs. Ce qui est entre les marqueurs ne s'édite pas — la prochaine exécution écrase la correction ; si une valeur est fausse, c'est `design/tokens.json` qui a tort. Ce qui suit le marqueur de fin appartient à ce produit.

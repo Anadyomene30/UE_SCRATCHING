@@ -5,7 +5,7 @@
 **Ce document ne tranche pas, et c'est sa consigne.** La question est au
 fondateur : `maison/04-CE-QUI-EST-OUVERT.md` range le repère temporel de la ligne
 scène parmi ce qui ne se décide pas dans un dépôt, et le registre de la maison
-l'inscrit déjà comme ouvert, « sur recommandation de scratchvj ». Ce qui suit est
+l'inscrit déjà comme ouvert, « sur recommandation de Filoscope ». Ce qui suit est
 donc la recommandation : les options, leurs conséquences mesurées sur ce code, et
 un avis argumenté. Rien n'a été implémenté sur la foi de cet avis.
 

@@ -138,7 +138,7 @@ bool OutputWindow::open(std::uint32_t display_id, std::uint16_t clear_view,
     // Created at the display's own size and moved onto it BEFORE going
     // fullscreen: asking for fullscreen on a window the compositor still
     // thinks belongs to the primary screen puts the picture on the wrong one.
-    window_ = SDL_CreateWindow("scratchvj — sortie", bounds.w, bounds.h,
+    window_ = SDL_CreateWindow("Filoscope — sortie", bounds.w, bounds.h,
                                SDL_WINDOW_BORDERLESS | SDL_WINDOW_HIGH_PIXEL_DENSITY);
     if (window_ == nullptr) {
         error_ = std::string("fenêtre de sortie : ") + SDL_GetError();

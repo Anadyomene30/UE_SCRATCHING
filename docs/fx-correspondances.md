@@ -1,6 +1,6 @@
 # Correspondances audio → vidéo
 
-Le rack d'effets de `scratchvj` n'est pas une collection d'effets vidéo posée à
+Le rack d'effets de Filoscope n'est pas une collection d'effets vidéo posée à
 côté d'une collection d'effets audio. **Une unité d'effet est une paire** : un DSP
 audio et son implémentation visuelle, pilotés par les mêmes paramètres. Le lien est
 actif par défaut et se coupe unité par unité.
