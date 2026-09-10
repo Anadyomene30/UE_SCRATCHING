@@ -203,10 +203,17 @@ void draw_icon(ImDrawList* draw, Icon icon, ImVec2 centre, float size, ImU32 col
 }
 
 constexpr float kControlHeight = 28.0f;
+// `rhythm.radius_control` of design/tokens.json: 3 on a control, 0 on a panel.
+// The house cites the value rather than paraphrasing it -- "minimal" had
+// already produced four different radii across the catalogue (SCRATCHVJ-12).
+constexpr float kControlRadius = 3.0f;
 
-// An action. `primary` fills it with the accent: one per panel, the thing
-// this panel is FOR. `tint` colours the word (a deck's colour says where a
-// clip goes). Returns true on the click.
+// An action. `primary` fills it with the accent -- and the fill is an aplat,
+// which the stage cadran (design/SCENE.md, variable 2) allows once per panel
+// and only for a STATE: what the control shows, never what it does. A button
+// that merely performs an action stays unfilled (SCRATCHVJ-11). `tint`
+// colours the word (a deck's colour says where a clip goes). Returns true on
+// the click.
 bool button(const char* label, Icon icon = Icon::None, bool primary = false,
             float width = 0.0f, ImU32 tint = kInk, bool enabled = true) {
     const ImVec2 text = label != nullptr && label[0] != '\0'
@@ -227,8 +234,8 @@ bool button(const char* label, Icon icon = Icon::None, bool primary = false,
     ImDrawList* draw = ImGui::GetWindowDrawList();
     const ImVec2 corner(origin.x + w, origin.y + kControlHeight);
     const ImU32 fill = primary ? (held ? kAmber : kAccent) : (held || hovered ? kHair : kWell);
-    draw->AddRectFilled(origin, corner, fill, 1.0f);
-    draw->AddRect(origin, corner, primary ? kAccent : kHair, 1.0f);
+    draw->AddRectFilled(origin, corner, fill, kControlRadius);
+    draw->AddRect(origin, corner, primary ? kAccent : kHair, kControlRadius);
     const ImU32 ink = !enabled ? kFaint : primary ? kGround : tint;
     float x = origin.x + (w - text.x - icon_w - gap) * 0.5f;
     if (icon != Icon::None) {
@@ -287,7 +294,7 @@ bool segmented(const char* id, const char* const* labels, int count, int& value,
         if (vertical) y += kControlHeight; else x += w;
     }
     const ImVec2 extent = vertical ? ImVec2(origin.x + widest, y) : ImVec2(x, origin.y + kControlHeight);
-    draw->AddRect(origin, extent, kHair, 1.0f);
+    draw->AddRect(origin, extent, kHair, kControlRadius);
     ImGui::SetCursorScreenPos(origin);
     ImGui::Dummy(ImVec2(extent.x - origin.x, extent.y - origin.y));
     ImGui::PopID();
@@ -662,8 +669,9 @@ void draw_status(Engine& engine, Frame& frame) {
         ImGui::PopID();
         ImDrawList* draw = ImGui::GetWindowDrawList();
         draw->AddRectFilled(at, ImVec2(at.x + w, at.y + 24.0f),
-                            frame.take_recording ? kAlert : hovered ? kHair : kWell, 1.0f);
-        draw->AddRect(at, ImVec2(at.x + w, at.y + 24.0f), frame.take_recording ? kAlert : kAlert, 1.0f);
+                            frame.take_recording ? kAlert : hovered ? kHair : kWell, kControlRadius);
+        draw->AddRect(at, ImVec2(at.x + w, at.y + 24.0f), frame.take_recording ? kAlert : kAlert,
+                      kControlRadius);
         // A drawn dot rather than the glyph: the interface font has no U+25CF.
         draw->AddCircleFilled(ImVec2(at.x + 12.0f, at.y + 12.0f), 4.0f,
                               frame.take_recording ? kGround : kAlert);
@@ -818,8 +826,9 @@ void send_to_buttons(Engine& engine, Frame& frame, ClipId id, bool compact) {
         const bool hovered = ImGui::IsItemHovered();
         ImGui::PopID();
         ImDrawList* draw = ImGui::GetWindowDrawList();
-        draw->AddRectFilled(origin, ImVec2(origin.x + w, origin.y + h), hovered ? kHair : kWell, 1.0f);
-        draw->AddRect(origin, ImVec2(origin.x + w, origin.y + h), kHair, 1.0f);
+        draw->AddRectFilled(origin, ImVec2(origin.x + w, origin.y + h), hovered ? kHair : kWell,
+                            kControlRadius);
+        draw->AddRect(origin, ImVec2(origin.x + w, origin.y + h), kHair, kControlRadius);
         draw->AddText(ImVec2(origin.x + (w - text.x) * 0.5f, origin.y + (h - text.y) * 0.5f), tint, label);
         return pressed;
     };
@@ -4723,8 +4732,8 @@ void apply_style() {
     ImGuiStyle& style = ImGui::GetStyle();
     style.WindowRounding = 0.0f;
     style.ChildRounding = 0.0f;
-    style.FrameRounding = 1.0f;
-    style.GrabRounding = 1.0f;
+    style.FrameRounding = kControlRadius;
+    style.GrabRounding = kControlRadius;
     style.ScrollbarRounding = 0.0f;
     style.WindowBorderSize = 0.0f;
     style.ChildBorderSize = 1.0f;
