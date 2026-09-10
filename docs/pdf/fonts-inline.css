@@ -79,9 +79,18 @@
    CE QUI RESTE EN REPLI, et qui ne se repare pas ici :
 
      - U+03C0 dans FRAGMENT MONO. La fonte des valeurs perd « pi » elle aussi,
-       et sa fonte complete n'est pas sur cette machine — seuls ses deux
-       sous-ensembles y sont. Reparer demanderait de la telecharger, donc une
-       decision de dependance, pas un geste d'outil.
+       et sa fonte complete n'est pas sur cette machine.
+
+       ATTENTION A NE PAS EN CONCLURE QU'UNE FONTE COMPLETE REPARERAIT TOUT.
+       DMMono-Regular.ttf, l'ancetre de Fragment Mono, EST sur cette machine :
+       elle porte « pi », la racine, « environ » et les comparateurs — et
+       AUCUNE des quatre fleches (mesure de VIGIE, 2026-09-10). Telecharger la
+       fonte complete rendrait donc « pi » et probablement pas les fleches.
+
+       C'est pourquoi ARCHIVO DANS LA PILE `--vals` de docs/suite.css n'est pas
+       un contournement en attendant mieux : c'est la seule reponse possible
+       pour les fleches, et elle garde le texte dans la maison au lieu de le
+       laisser partir en fonte systeme.
      - U+2610, la case a cocher, qu'aucune des deux familles ne porte.
      - U+1D49, le « e » en exposant, absent d'Archivo.
 
