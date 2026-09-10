@@ -116,9 +116,15 @@ d'une autre forme reçoit des **bandes noires**, jamais une image étirée : un
 masque ou un corner pin calé sur une image déformée serait faux d'exactement
 cette déformation. L'écran est retenu **par son nom** dans
 `settings.json` (les index changent dès qu'on branche quelque chose) ; `--output`
-est un remplacement ponctuel qui n'écrit pas le fichier. Échap ferme d'abord la
-sortie, puis quitte : sortir sur un bureau devant une salle est ce que cet ordre
-évite.
+est un remplacement ponctuel qui n'écrit pas le fichier. La sortie se ferme
+depuis l'écran SORTIE — **Échap n'y touche pas**, et ne quitte pas : il suit la
+pile de priorité de la maison, dont le dernier rang est de ne rien faire (phase 4).
+
+**Le clavier tient en cinq gestes**, et `?` ou `F1` en affiche la carte :
+`Espace` (lecture/pause du deck sous la souris), `F` (image seule), `B` (rail),
+`?` / `F1` (la carte), `Échap` (ferme ce qui est ouvert, et rien d'autre).
+`Ctrl`+`Z` n'est pas liée et n'a pas à l'être : le produit ne détient aucun état
+réversible.
 
 **L'interface démarre sans démo.** Les decks sont vides, la liaison Phase dit
 « aucune entrée » plutôt qu'un pourcentage inventé, et rien ne prétend être du

@@ -14,9 +14,9 @@ const std::vector<DestinationSpec>& destination_catalogue() {
         {"mix.fader.a.reverse", Dest::MixFaderAReverse, false, "fader de voie 1 inversé"},
         {"mix.fader.b.reverse", Dest::MixFaderBReverse, false, "fader de voie 2 inversé"},
 
-        {"deck.a.yaw", Dest::DeckAYaw, false, "regard 360 du deck A : lacet (degrés)"},
-        {"deck.a.pitch", Dest::DeckAPitch, false, "regard 360 du deck A : tangage (degrés)"},
-        {"deck.a.fov", Dest::DeckAFov, false, "champ du deck A (degrés)"},
+        {"deck.a.yaw", Dest::DeckAYaw, false, "regard 360 du deck A : lacet"},
+        {"deck.a.pitch", Dest::DeckAPitch, false, "regard 360 du deck A : tangage"},
+        {"deck.a.fov", Dest::DeckAFov, false, "champ du deck A"},
         {"deck.a.zoom", Dest::DeckAZoom, false, "zoom little planet / fisheye view du deck A"},
 
         {"deck.a.cue.1", Dest::DeckACue1, true, "saut au hot cue 1 du deck A"},

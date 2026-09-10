@@ -1715,7 +1715,7 @@ void draw_settings_screen(Engine& engine, Frame& frame) {
     }
     double carrier = desk.carrier_hz;
     ImGui::SetNextItemWidth(120.0f);
-    if (ImGui::InputDouble("porteuse (Hz)", &carrier, 100.0, 500.0, "%.0f")) {
+    if (ImGui::InputDouble("Porteuse", &carrier, 100.0, 500.0, "%.0f Hz")) {
         if (carrier > 0.0) {
             desk.carrier_hz = carrier;
             frame.settings_dirty = true;
@@ -2119,7 +2119,6 @@ void draw_deck(Deck& deck, Engine& engine, Frame& frame, void* texture,
         const DeckSource source = deck.clock.source();
         const bool on_platter = source == DeckSource::Timecode;
         if (button("", Icon::SkipStart, false, kControlHeight, kInk, loaded)) deck.stop(now_s);
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("retour au d\xC3\xA9""but");
         ImGui::SameLine(0.0f, 6.0f);
         // One button, two faces: it shows what pressing it DOES. On a platter
         // deck the record decides the motion, so the button offers a pause --
@@ -2135,12 +2134,8 @@ void draw_deck(Deck& deck, Engine& engine, Frame& frame, void* texture,
             space) {
             if (running) deck.pause(now_s); else deck.play(now_s);
         }
-        if (ImGui::IsItemHovered()) {
-            ImGui::SetTooltip(running ? "pause  (espace)" : "lecture  (espace)");
-        }
         ImGui::SameLine(0.0f, 6.0f);
         if (button("", Icon::Stop, false, kControlHeight, kInk, loaded)) deck.stop(now_s);
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("stop : pause et retour au d\xC3\xA9""but");
 
         ImGui::SameLine(0.0f, 12.0f);
         {
@@ -4831,6 +4826,65 @@ void apply_style() {
     c[ImGuiCol_TitleBgActive] = rgba(kGround);
 }
 
+// The keyboard map, on `?` and F1 -- the pair the suite reserves for it
+// (ERGONOMIE.md, "Le clavier reserve a la suite"). The clause that excuses a
+// product binding no key does not excuse this one: it binds four, and a
+// performer who has to guess them in the dark has nowhere to look.
+//
+// It is a popup and not a screen, because it must open over whatever is on
+// screen without taking the set off it -- and it is not modal: it blocks
+// nothing, and Escape closes it, which is rank 1 of the priority stack.
+void draw_key_map() {
+    bool asked = false;
+    if (!ImGui::GetIO().WantTextInput) {
+        asked = ImGui::IsKeyPressed(ImGuiKey_F1, false);
+        // `?` by the character rather than by the physical key: it is Shift+/
+        // on QWERTY and Shift+, on AZERTY, and the suite requires a reserved
+        // key to be reachable on both without a dead key.
+        for (const ImWchar c : ImGui::GetIO().InputQueueCharacters) {
+            if (c == '?') asked = true;
+        }
+    }
+    if (asked) ImGui::OpenPopup("keys");
+
+    if (!ImGui::BeginPopup("keys")) return;
+    eyebrow("CARTE DU CLAVIER");
+    ImGui::Dummy(ImVec2(0.0f, 6.0f));
+
+    struct Row {
+        const char* key;
+        const char* effect;
+    };
+    static const Row rows[] = {
+        {"Espace", "Lecture ou pause du deck sous la souris"},
+        {"F", "Image seule : le programme, et rien d'autre"},
+        {"B", "Rail de biblioth\xC3\xA8que"},
+        {"? \xC2\xB7 F1", "Cette carte"},
+        {"\xC3\x89" "chap", "Ferme ce qui est ouvert \xC2\xB7 ne ferme jamais la fen\xC3\xAAtre"},
+    };
+    if (ImGui::BeginTable("keymap", 2, ImGuiTableFlags_SizingFixedFit)) {
+        for (const Row& row : rows) {
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            push_mono();
+            text_c(kInk, "%s", row.key);
+            pop_font();
+            ImGui::TableNextColumn();
+            ImGui::Dummy(ImVec2(14.0f, 1.0f));
+            ImGui::SameLine(0.0f, 0.0f);
+            text_c(kMuted, "%s", row.effect);
+        }
+        ImGui::EndTable();
+    }
+
+    ImGui::Dummy(ImVec2(0.0f, 8.0f));
+    push_small();
+    text_c(kFaint, "L'instrument se joue sur les plateaux et sur la table.");
+    text_c(kFaint, "Le clavier ne porte que ces cinq gestes.");
+    pop_font();
+    ImGui::EndPopup();
+}
+
 void draw(Engine& engine, Frame& frame) {
     const ImGuiViewport* viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(viewport->WorkPos);
@@ -4840,6 +4894,7 @@ void draw(Engine& engine, Frame& frame) {
                      ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
 
     draw_status(engine, frame);
+    draw_key_map();
 
     // Six screens, one row. JOUER is the one a set lives in; the others are
     // preparation and configuration, which is why they can afford to be

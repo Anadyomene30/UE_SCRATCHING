@@ -774,6 +774,37 @@ Link sans le coût d'en écrire une source.
 
 ---
 
+### La progression de l'analyse — l'étape nommée et le temps restant
+
+*Au carnet le 2026-09-10, phase 4. Ce n'est pas un manquement d'alignement : la
+maison l'a rangé ici elle-même (`SCRATCHVJ-20`, verdict du tour 01), parce que
+c'est un **ajout** et qu'aucune phase du talon ne le porte.*
+
+Les deux affichages de progression de l'analyse — sur la vignette d'un clip et
+dans la liste de la bibliothèque — écrivent un **pourcentage seul**
+(`ui/panels.cpp`, `analyse %.0f %%`). `ERGONOMIE.md`, « Le travail long », en
+demande trois : la fraction faite, l'étape courante **nommée**, et le temps
+restant estimé. « 47 % » ne dit pas si ça avance.
+
+**Ce que ça coûte**, et c'est pour ça que c'est un ajout et non un retrait :
+
+- **L'étape nommée n'existe pas.** La passe d'analyse (`app/analyze`) pilote
+  ffmpeg et rapporte une fraction ; elle ne déclare aucune étape. Il en faudrait
+  au moins trois — sonder la source, décoder et compresser, écrire l'en-tête et
+  la vignette — remontées par `AnalysisReport` jusqu'à `ClipEntry`.
+- **Le temps restant n'existe pas non plus.** Il se dérive d'un débit de frames
+  observé, qu'il faut mesurer et lisser ; une estimée qui saute est pire
+  qu'aucune, et un nombre inventé est exactement ce que `core/anchor` refuse
+  ailleurs dans ce dépôt.
+- **Deux sites d'affichage**, plus la ligne de la barre haute qui dit déjà
+  « analyse en cours · N en attente » et qui, elle, porte bien une fraction.
+
+**Quand.** Avec le prochain travail sur `app/analyze`, jamais seul : la mesure du
+débit se fait là où les frames passent. Et une remarque de salle : l'analyse est
+un travail de **préparation**, faite avant le set, jamais pendant —
+`design/SCENE.md` range le travail long parmi ce qui est sans objet à la scène
+pour cette raison exacte. C'est ce qui rend l'ajout utile et non urgent.
+
 ## Écarts avec Serato et Resolume
 
 Un instrument qui fait une chose inédite mais à qui manquent les gestes de base

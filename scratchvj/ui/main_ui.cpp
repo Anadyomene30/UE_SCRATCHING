@@ -374,7 +374,9 @@ int main(int argc, char** argv) {
             config_apply(surface_config, engine.surface());
             if (!surface_config.mappings.empty()) {
                 for (const std::string& id : engine.install_mappings(surface_config.mappings)) {
-                    startup_error = "mapping.json : inconnu : " + id;
+                    startup_error = "mapping.json : destination inconnue : " + id +
+                                    " - corrigez ou retirez cette liaison ; les "
+                                    "destinations valides sont dans TABLE";
                 }
             }
         }
@@ -663,19 +665,19 @@ int main(int argc, char** argv) {
                     running = false;
                 }
             }
-            if (event.type == SDL_EVENT_KEY_DOWN && event.key.key == SDLK_ESCAPE &&
-                !ImGui::GetIO().WantTextInput) {
-                // One escape gets the picture off the projector; a second ends
-                // the set. Quitting straight to a desktop in front of a room
-                // is the thing this ordering exists to prevent.
-                if (view.full_frame) {
-                    view.full_frame = false;
-                } else if (output.ready()) {
-                    output_wanted = false;
-                } else {
-                    running = false;
-                }
-            }
+            // Escape is NOT handled here, and the absence is the rule rather
+            // than an omission (SCRATCHVJ-15, ERGONOMIE.md, "La pile de
+            // priorite d'Echap"). Of the six ranks this product has one with an
+            // object -- an open popup -- and the library closes that itself, so
+            // the event is consumed at the first rank that applies instead of
+            // being handled twice. Every other rank is rank 6: do nothing.
+            //
+            // What was here before did three things the stack forbids: it left
+            // "image seule" (F owns that), it closed the output, and on the
+            // third press it ended the set -- landing on a desktop in front of
+            // a room, which is exactly what its own comment said the ordering
+            // existed to prevent. The output is closed from the SORTIE screen,
+            // and the window from its own close button.
             // Files dropped on the window go through the same door as the
             // picker's: scanned and merged at the frame boundary below.
             if (event.type == SDL_EVENT_DROP_FILE && event.drop.data != nullptr) {
@@ -765,7 +767,17 @@ int main(int argc, char** argv) {
                 }
             }
             if (found.empty()) {
-                view.last_error = "rien d'ouvrable dans ce qui a ete depose";
+                // The value at fault is what was dropped, so it is named --
+                // by file name, never by a path cut at the end.
+                std::string names;
+                for (const std::string& item : pending_imports) {
+                    if (!names.empty()) names += ", ";
+                    names += std::filesystem::path(item).filename().string();
+                }
+                view.last_error =
+                    "rien d'ouvrable dans " + names +
+                    " - deposez une video, une image, une sequence numerotee "
+                    "(frame_%04d.png) ou un dossier qui en contient";
             }
             pending_imports.clear();
         }
@@ -797,7 +809,15 @@ int main(int argc, char** argv) {
                         }
                     }
                     if (wanted == 0) {
-                        view.output_error = "aucun ecran ne correspond a --output " + output_argument;
+                        std::string known;
+                        for (const svj::ui::DisplayInfo& screen : screens) {
+                            if (!known.empty()) known += ", ";
+                            known += screen.name;
+                        }
+                        view.output_error =
+                            "aucun ecran ne correspond a --output " + output_argument +
+                            " - ecrans vus : " + known +
+                            " ; choisissez-en un dans SORTIE";
                         output_argument.clear();
                         output_wanted = desk.output_open;
                     }
@@ -888,7 +908,10 @@ int main(int argc, char** argv) {
             if (report.state == AnalysisState::Ready) {
                 if (!describe_cache(*entry)) {
                     entry->state = AnalysisState::Failed;
-                    view.last_error = entry->name + " : cache illisible";
+                    view.last_error =
+                        entry->name +
+                        " : cache illisible - relancez l'analyse depuis "
+                        "BIBLIOTHEQUE, ou supprimez le .svcache et reimportez la source";
                 } else {
                     view.library_dirty = true;
                 }
