@@ -90,8 +90,8 @@ int main() {
     std::vector<std::uint8_t> pixels(kViewW * kViewH * 4);
 
     SphereView cases[4];
-    cases[0].projection = Projection::Perspective;  // dead ahead, the identity case
-    cases[1].projection = Projection::Perspective;
+    cases[0].projection = Projection::Rectilinear;  // dead ahead, the identity case
+    cases[1].projection = Projection::Rectilinear;
     cases[1].yaw_deg = 35.0;
     cases[1].pitch_deg = -20.0;
     cases[1].roll_deg = 10.0;
@@ -99,11 +99,11 @@ int main() {
     cases[2].projection = Projection::LittlePlanet;
     cases[2].yaw_deg = 120.0;
     cases[2].planet_zoom = 0.8;
-    cases[3].projection = Projection::Fisheye;
+    cases[3].projection = Projection::FisheyeView;
     cases[3].pitch_deg = 30.0;
     cases[3].planet_zoom = 1.2;
-    const char* names[4] = {"perspective 0", "perspective tourne", "little planet",
-                            "fisheye"};
+    const char* names[4] = {"rectiligne 0", "rectiligne tourne", "little planet",
+                            "fisheye view"};
 
     int failures = 0;
     for (int c = 0; c < 4; ++c) {

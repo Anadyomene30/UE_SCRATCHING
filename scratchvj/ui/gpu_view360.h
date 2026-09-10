@@ -1,7 +1,7 @@
 // scratchvj — the 360 view pass.
 //
 // Renders one deck's equirectangular texture into a flat view -- perspective,
-// little planet or fisheye -- with fs_view360.sc, the GPU transcription of
+// little planet or fisheye view -- with fs_view360.sc, the GPU transcription of
 // core/sphere that tools/sphere_check holds to its reference. The output is an
 // ordinary RGBA target the compositor and the interface consume like any other
 // deck picture: downstream, a 360 deck IS a flat deck, which is what lets the

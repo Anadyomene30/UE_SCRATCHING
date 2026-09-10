@@ -28,10 +28,15 @@ struct Vec3 {
     double z = 0.0;
 };
 
+// The three reprojections a viewer computes from the sphere. The names are the
+// canonical ones of spec/00-vocabulaire.md, "Les modes de vue, ou
+// reprojections" (SCRATCHVJ-02): `rectilinear` rather than `perspective`, and
+// `fisheye_view` rather than `fisheye`, which already names a FILE projection
+// with its own parameters. A view is not a file format.
 enum class Projection {
-    Perspective,    // the ordinary flat view
+    Rectilinear,    // the default view of a viewer
     LittlePlanet,   // stereographic, looking down: the whole sphere in one disc
-    Fisheye,        // equidistant, a very wide circular view
+    FisheyeView,    // equidistant, a very wide circular view
 };
 
 // `viewer.geometry.pitch_deg_clamp` of design/tokens.json: the pitch is bounded
@@ -44,10 +49,10 @@ struct SphereView {
     double yaw_deg = 0.0;       // positive turns the view to the right
     double pitch_deg = 0.0;     // bounded by kPitchClampDeg wherever it is set
     double roll_deg = 0.0;
-    double fov_deg = 90.0;      // horizontal, for Perspective
+    double fov_deg = 90.0;      // horizontal, for Rectilinear
     double aspect = 16.0 / 9.0;
-    Projection projection = Projection::Perspective;
-    double planet_zoom = 1.0;   // LittlePlanet and Fisheye framing
+    Projection projection = Projection::Rectilinear;
+    double planet_zoom = 1.0;   // LittlePlanet and FisheyeView framing
 };
 
 Vec3 normalise(const Vec3& v);

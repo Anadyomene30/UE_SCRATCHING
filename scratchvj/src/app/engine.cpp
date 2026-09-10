@@ -274,7 +274,10 @@ void Engine::configure(double bpm, DemoContent demo) {
         return;
     }
     const int all = library_.create_crate("Tous les clips");
-    const int spherical = library_.create_crate("360\xC2\xB0");
+    // The crate name is written to library.json, so it holds the long form:
+    // a short form is bounded by the place it is displayed in, and never
+    // goes into a file (ERGONOMIE.md, "Le langage").
+    const int spherical = library_.create_crate("\xC3\x89quirectangulaire 360");
     const int loops = library_.create_crate("Loops & textures");
 
     const auto add = [&](const char* path, const char* name, double duration, unsigned w,

@@ -28,7 +28,7 @@ En-tête :
 |---|---|---|
 | magic | u32 | `SVC1` |
 | version | u16 | rejetée si inconnue |
-| flags | u16 | bit 0 alpha, bit 1 équirectangulaire (360) |
+| flags | u16 | bit 0 alpha, bit 1 `equirect_360` |
 | width, height | u32 ×2 | |
 | frame_count | u32 | réécrit à la fermeture, quand il est enfin connu |
 | fps_num, fps_den | u32 ×2 | rationnel, pour que 29,97 soit exact |
@@ -92,9 +92,9 @@ de la tête de lecture y est maintenue et réalimentée depuis le `.svcache` par
 lecture disque brute, sans décodage.
 
 **Elle est dimensionnée par un budget de VRAM, pas par une durée fixe.** C'est ce
-choix seul qui fait tenir la 2D et la 360 dans le même mécanisme : le même
+choix seul qui fait tenir la rectiligne et la 360 dans le même mécanisme : le même
 gigaoctet contient environ 36 secondes de 720p ou environ 4 secondes de 4K
-équirectangulaire, sans cas particulier.
+équirectangulaire 360, sans cas particulier.
 
 **Règle anti-battement : la fenêtre n'est recentrée que lorsque la tête de lecture
 approche d'un bord**, jamais parce que le sens a changé. Un scratch travaille

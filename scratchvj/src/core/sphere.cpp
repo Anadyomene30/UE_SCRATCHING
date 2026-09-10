@@ -70,7 +70,7 @@ Vec3 view_direction(const SphereView& view, const Vec2& uv) {
     Vec3 camera;
 
     switch (view.projection) {
-        case Projection::Perspective: {
+        case Projection::Rectilinear: {
             // A planar projection cannot reach 180 degrees, so the field of view
             // is clamped short of it rather than blowing up to infinity.
             const double fov = std::fmin(std::fmax(view.fov_deg, 1.0), 170.0);
@@ -80,7 +80,7 @@ Vec3 view_direction(const SphereView& view, const Vec2& uv) {
             camera = normalise(Vec3{x, y, -1.0});
             break;
         }
-        case Projection::Fisheye: {
+        case Projection::FisheyeView: {
             // Equidistant: distance from the centre is proportional to the angle
             // away from the axis, so a full hemisphere and more fits in the disc.
             const double zoom = std::fmax(view.planet_zoom, 1e-6);

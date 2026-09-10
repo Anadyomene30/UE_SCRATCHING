@@ -38,7 +38,7 @@ void usage() {
         "\n"
         "  scratchvj analyze VIDEO [--out FILE.svcache] [--max-width N]\n"
         "        Decodes a video once, through ffmpeg, into a scratchable .svcache.\n"
-        "        Alpha sources become BC3; a 2:1 picture is flagged equirect.\n"
+        "        Alpha sources become BC3; a 2:1 picture is flagged equirect_360.\n"
         "        [--sequence START --fps N] reads a numbered image pattern (frame_%04d.png);\n"
         "        [--still] holds one picture as a one-frame clip.\n"
         "\n"
@@ -293,7 +293,7 @@ int run_analyze(int argc, char** argv) {
     std::cout << "\r  " << result.frames << " frames  " << result.width << "x"
               << result.height << "  " << result.fps << " fps"
               << (result.has_alpha ? "  alpha (BC3)" : "")
-              << (result.equirect ? "  equirect 360" : "") << "\n";
+              << (result.equirect ? "  equirect_360" : "") << "\n";
     return 0;
 }
 
@@ -338,7 +338,8 @@ int run_info(int argc, char** argv) {
                                                                      : "BC7")
               << "\n"
               << "  alpha       " << (h.has_alpha() ? "oui" : "non") << "\n"
-              << "  360         " << (h.is_equirect() ? "équirectangulaire" : "non") << "\n"
+              << "  projection  " << (h.is_equirect() ? "équirectangulaire 360" : "rectiligne")
+              << "\n"
               << "  par frame   " << reader.frame_bytes() << " octets\n"
               << "  métadonnées " << reader.metadata().size() << " octets\n";
     return 0;

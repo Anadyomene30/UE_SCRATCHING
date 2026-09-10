@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <fstream>
 #include <sstream>
+#include <string>
 #include <utility>
 
 #include <nlohmann/json.hpp>
@@ -15,27 +16,63 @@ using json = nlohmann::json;
 
 constexpr int kFormatVersion = 1;
 
-constexpr std::array<std::pair<ProjectionOverride, const char*>, 3> kProjections{{
-    {ProjectionOverride::Auto, "auto"},
+// The canonical words of spec/00-vocabulaire.md, and they are what is written
+// (SCRATCHVJ-01, SCRATCHVJ-02). Two things change at once, in one migration,
+// because they touch the same field of the same file:
+//
+//   "equirect" -> "equirect_360"     the canonical form names the domain;
+//   "auto"     -> the key is absent  "ce qui n'est pas declare ne s'ecrit pas".
+//
+// Both old spellings are still READ, so a library.json written before this
+// build keeps every decision the performer made; the first save rewrites it in
+// the new form. An unknown string is still refused by name -- an absent key
+// means "not forced, infer", an unknown one means the file is wrong.
+constexpr std::array<std::pair<ProjectionOverride, const char*>, 2> kProjections{{
     {ProjectionOverride::Flat, "flat"},
+    {ProjectionOverride::Equirect, "equirect_360"},
+}};
+
+// Read only. The forms this product wrote before the vocabulary was applied.
+constexpr std::array<std::pair<ProjectionOverride, const char*>, 2> kLegacyProjections{{
+    {ProjectionOverride::Auto, "auto"},
     {ProjectionOverride::Equirect, "equirect"},
 }};
 
+// Auto has no name: it is the ABSENCE of the key, so this returns nullptr and
+// the writer omits the field.
 const char* projection_name(ProjectionOverride p) {
     for (const auto& entry : kProjections) {
         if (entry.first == p) return entry.second;
     }
-    return kProjections[0].second;
+    return nullptr;
 }
 
-bool projection_value(std::string_view name, ProjectionOverride& out) {
+bool projection_value(std::string_view name, ProjectionOverride& out, bool& legacy) {
     for (const auto& entry : kProjections) {
         if (name == entry.second) {
             out = entry.first;
             return true;
         }
     }
+    for (const auto& entry : kLegacyProjections) {
+        if (name == entry.second) {
+            out = entry.first;
+            legacy = true;
+            return true;
+        }
+    }
     return false;
+}
+
+// The crate this product creates for itself carried the projection in its name,
+// in a short form that a file may not hold: a short form is bounded by the
+// place it is displayed in and is never written to a file (ERGONOMIE.md, "Le
+// langage"). Only the three names this product wrote itself are repaired; a
+// name the performer typed is theirs.
+std::string migrated_crate_name(std::string name) {
+    if (name == "360\xC2\xB0" || name == "360") return "\xC3\x89quirectangulaire 360";
+    if (name == "2D") return "Rectiligne";
+    return name;
 }
 
 bool read_string(const json& node, const char* field, std::string& out, std::string& error,
@@ -60,7 +97,7 @@ std::string library_to_json(const LibraryFile& file) {
         node["source"] = clip.source;
         node["cache"] = clip.cache;
         node["name"] = clip.name;
-        node["projection"] = projection_name(clip.projection);
+        if (const char* word = projection_name(clip.projection)) node["projection"] = word;
         if (clip.is_sequence) node["sequence"] = true;
         if (clip.is_still) node["still"] = true;
         clips.push_back(node);
@@ -120,7 +157,7 @@ bool library_from_json(std::string_view text, LibraryFile& out, std::string& err
             if (node.contains("projection")) {
                 if (!node.at("projection").is_string() ||
                     !projection_value(node.at("projection").get<std::string>(),
-                                      clip.projection)) {
+                                      clip.projection, parsed.migrated_on_read)) {
                     error = "clips.projection inconnue : " + node.at("projection").dump();
                     return false;
                 }
@@ -141,6 +178,9 @@ bool library_from_json(std::string_view text, LibraryFile& out, std::string& err
                 if (error.empty()) error = "chaque entree de 'crates' doit etre un objet";
                 return false;
             }
+            std::string canonical = migrated_crate_name(crate.name);
+            if (canonical != crate.name) parsed.migrated_on_read = true;
+            crate.name = std::move(canonical);
             for (const json& member : node.value("clips", json::array())) {
                 if (!member.is_string()) {
                     error = "crates.clips doit contenir des chemins";

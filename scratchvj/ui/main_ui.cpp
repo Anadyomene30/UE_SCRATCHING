@@ -586,7 +586,10 @@ int main(int argc, char** argv) {
             }
         }
         rescan();
-        view.library_dirty = false;  // what was just read back needs no writing
+        // What was just read back needs no writing -- unless it was read in a
+        // spelling this build no longer writes, in which case saving once here
+        // is what finishes the migration.
+        view.library_dirty = remembered.migrated_on_read;
     }
 
     // The GPU passes are sized from the clips, so loading a different clip has

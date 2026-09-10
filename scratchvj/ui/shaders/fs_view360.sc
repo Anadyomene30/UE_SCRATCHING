@@ -3,8 +3,8 @@ $input v_texcoord0
 // scratchvj — the 360 reprojection, on the GPU.
 //
 // A transcription of core/sphere.cpp, not a reinterpretation: for each output
-// pixel, build the ray its projection names (perspective, fisheye equidistant,
-// or stereographic little planet), rotate it by roll, pitch, then yaw -- yaw
+// pixel, build the ray its projection names (rectilinear, equidistant fisheye
+// view, or stereographic little planet), rotate it by roll, pitch, then yaw -- yaw
 // negated so a knob turned clockwise pans RIGHT -- and read where that
 // direction lands on the equirectangular frame. tools/sphere_check holds this
 // shader to the CPU reference, pixel for pixel, through every projection.
@@ -18,7 +18,7 @@ $input v_texcoord0
 SAMPLER2D(s_equirect, 0);
 
 // x: yaw (radians), y: pitch, z: roll, w: projection mode
-// (0 perspective, 1 little planet, 2 fisheye -- core/sphere's Projection).
+// (0 rectilinear, 1 little planet, 2 fisheye view -- core/sphere's Projection).
 uniform vec4 u_gaze;
 // x: tan(fov/2) for perspective, 1/zoom otherwise; y: aspect.
 uniform vec4 u_frame;
@@ -43,7 +43,7 @@ void main()
 	vec3 cam;
 	if (mode < 0.5)
 	{
-		// Perspective: a plane one unit ahead, spanned by the field of view.
+		// Rectilinear: a plane one unit ahead, spanned by the field of view.
 		float half_span = u_frame.x;
 		float x = (u - 0.5) * 2.0 * half_span;
 		float y = (0.5 - v) * 2.0 * half_span / aspect;
@@ -65,7 +65,7 @@ void main()
 		}
 		else
 		{
-			// Fisheye: equidistant, r proportional to the angle off axis; r = 1
+			// Fisheye view: equidistant, r proportional to the angle off axis; r = 1
 			// reaches straight behind.
 			float theta = r * 3.14159265358979;
 			float sin_t = sin(theta);

@@ -404,7 +404,7 @@ void picture_well(const Deck& deck, void* texture, float aspect_override, float 
     if (deck.clip.frame_count > 0) {
         char detail[96];
         std::snprintf(detail, sizeof(detail), "%ux%u  %s", deck.clip.width, deck.clip.height,
-                      deck.clip.is_equirect() ? "equirect 360" : "plan 2D");
+                      deck.clip.is_equirect() ? "360" : "Rectiligne");
         const ImVec2 detail_size = ImGui::CalcTextSize(detail);
         draw->AddText(ImVec2(origin.x + (width - detail_size.x) * 0.5f,
                              origin.y + height * 0.5f + 4.0f),
@@ -770,14 +770,17 @@ bool chip(const char* label, bool selected, ImU32 accent = kAccent) {
     return pressed;
 }
 
+// The canonical states of a job, in the words of ERGONOMIE.md, "Le travail
+// long": `pending`, `running`, `failed`. A clip nobody has asked for yet is not
+// a job and has no canonical state, so it says what it is in its own words.
 const char* state_text(const ClipEntry& clip) {
     switch (clip.state) {
         case AnalysisState::Ready: return nullptr;  // said by the buttons, not by a word
-        case AnalysisState::Queued: return "en attente";
-        case AnalysisState::Analysing: return "analyse";
-        case AnalysisState::Failed: return "\xC3\xA9" "chec";
+        case AnalysisState::Queued: return "En attente";
+        case AnalysisState::Analysing: return "En cours";
+        case AnalysisState::Failed: return "\xC3\x89" "chou\xC3\xA9";
         case AnalysisState::Unanalysed:
-        default: return "non analys\xC3\xA9";
+        default: return "Non analys\xC3\xA9";
     }
 }
 
@@ -880,7 +883,7 @@ void send_to_buttons(Engine& engine, Frame& frame, ClipId id, bool compact) {
 }
 
 const char* projection_word(const ClipEntry& clip) {
-    return clip.shown_equirect() ? "360\xC2\xB0" : "2D";
+    return clip.shown_equirect() ? "360" : "Rectiligne";
 }
 
 // Reloads every layer showing `id`, keeping its position: the projection of
@@ -1179,7 +1182,7 @@ void draw_pad_banks(Engine& engine, Frame& frame, float height) {
     }
     if (ImGui::IsItemHovered()) ImGui::SetTooltip("une banque de plus");
     ImGui::SameLine(0.0f, 14.0f);
-    row_label("ce que le mode Clips des pads d\xC3\xA9""clenche \xC2\xB7 glisser un clip dans une case");
+    row_label("Ce que le mode Clips des pads d\xC3\xA9""clenche \xC2\xB7 glisser un clip dans une case");
     ImGui::SameLine(ImGui::GetContentRegionAvail().x - 200.0f);
     if (button("Vider la banque")) {
         matrix.clear_bank(matrix.current());
@@ -1226,7 +1229,7 @@ void draw_library_screen(Engine& engine, Frame& frame) {
     ImGui::InputTextWithHint("##search", "chercher un clip\xE2\x80\xA6", frame.library_search,
                              sizeof(frame.library_search));
     ImGui::SameLine(0.0f, 12.0f);
-    static const char* const kFilters[] = {"Tous", "2D", "360\xC2\xB0", "Alpha"};
+    static const char* const kFilters[] = {"Tous", "Rectiligne", "360", "Alpha"};
     segmented("filter", kFilters, 4, frame.library_filter);
     ImGui::SameLine(ImGui::GetContentRegionAvail().x - 420.0f);
     if (button("Importer\xE2\x80\xA6")) frame.import_files_request = true;
@@ -1497,8 +1500,9 @@ void draw_library_screen(Engine& engine, Frame& frame) {
         ImGui::Dummy(ImVec2(0.0f, 2.0f));
         {
             char auto_label[24];
-            std::snprintf(auto_label, sizeof(auto_label), "Auto (%s)", clip->equirect ? "360\xC2\xB0" : "2D");
-            const char* const labels[] = {auto_label, "2D", "360\xC2\xB0"};
+            std::snprintf(auto_label, sizeof(auto_label), "Auto (%s)",
+                          clip->equirect ? "360" : "Rectiligne");
+            const char* const labels[] = {auto_label, "Rectiligne", "360"};
             int which = clip->projection == ProjectionOverride::Auto ? 0
                         : clip->projection == ProjectionOverride::Flat ? 1 : 2;
             if (segmented("projection", labels, 3, which)) {
@@ -1508,7 +1512,7 @@ void draw_library_screen(Engine& engine, Frame& frame) {
                 reload_where_shown(frame, id);
             }
             if (ImGui::IsItemHovered()) {
-                ImGui::SetTooltip("auto : un ratio 2:1 est pris pour une sph\xC3\xA8re.\nForcer recharge les decks qui le jouent.");
+                ImGui::SetTooltip("Rectiligne, ou \xC3\xA9quirectangulaire 360.\nAuto : un ratio 2:1 est pris pour une sph\xC3\xA8re.\nForcer recharge les decks qui le jouent.");
             }
         }
 
@@ -2049,7 +2053,7 @@ void draw_deck(Deck& deck, Engine& engine, Frame& frame, void* texture,
     const ClipId on_deck = is_a ? frame.clip_on_a : frame.clip_on_b;
     const double now_s = frame.elapsed_s;
 
-    // --- header: letter, name, definition, 2D | 360 ---------------------------
+    // --- header: letter, name, definition, rectiligne | 360 -------------------
     {
         const float y = ImGui::GetCursorPosY();
         const float dy = (kControlHeight - ImGui::GetTextLineHeight()) * 0.5f;
@@ -2070,7 +2074,7 @@ void draw_deck(Deck& deck, Engine& engine, Frame& frame, void* texture,
         // The projection selector, on the header where the eye is. It writes
         // the library entry and asks for the reload; a clip the library does
         // not know (the demo's) shows its shape as a word instead.
-        static const char* const kShapes[] = {"2D", "360\xC2\xB0"};
+        static const char* const kShapes[] = {"Rectiligne", "360"};
         const float sel_w = ImGui::CalcTextSize(kShapes[0]).x + ImGui::CalcTextSize(kShapes[1]).x + 40.0f;
         ImGui::SameLine(inner - sel_w);
         ImGui::SetCursorPosY(y);
@@ -2087,8 +2091,8 @@ void draw_deck(Deck& deck, Engine& engine, Frame& frame, void* texture,
                 }
             }
             if (ImGui::IsItemHovered()) {
-                ImGui::SetTooltip("comment lire ce clip : image plane, ou sph\xC3\xA8re "
-                                  "\xC3\xA9quirectangulaire projet\xC3\xA9""e.\n"
+                ImGui::SetTooltip("comment lire ce clip : Rectiligne, ou sph\xC3\xA8re "
+                                  "\xC3\xA9quirectangulaire 360 projet\xC3\xA9""e.\n"
                                   "Retenu dans la biblioth\xC3\xA8que pour ce clip.");
             }
         } else if (loaded) {
@@ -2161,13 +2165,13 @@ void draw_deck(Deck& deck, Engine& engine, Frame& frame, void* texture,
         // Placed from what the row has actually used, so it never lands on
         // the time.
         const float rate_w = 90.0f;
-        const float label_w = ImGui::CalcTextSize("VITESSE").x * 0.8f + 8.0f;
+        const float label_w = ImGui::CalcTextSize("Vitesse").x * 0.8f + 8.0f;
         const float used = ImGui::GetItemRectMax().x - ImGui::GetWindowPos().x -
                            ImGui::GetWindowContentRegionMin().x;
         const float rate_x = inner - rate_w;
         if (rate_x - label_w > used + 16.0f) {
             ImGui::SameLine(rate_x - label_w);
-            row_label("VITESSE");
+            row_label("Vitesse");
             ImGui::SameLine(rate_x);
             if (on_platter || source == DeckSource::Hand) {
                 const float dy = (kControlHeight - ImGui::GetTextLineHeight()) * 0.5f;
@@ -2213,7 +2217,7 @@ void draw_deck(Deck& deck, Engine& engine, Frame& frame, void* texture,
         const bool enabled[3] = {platter_here, true, true};
         const DeckSource source = deck.clock.source();
         int which = source == DeckSource::Timecode ? 0 : source == DeckSource::TempoLocked ? 2 : 1;
-        row_label("SOURCE");
+        row_label("Source");
         ImGui::SameLine(0.0f, 8.0f);
         if (segmented("source", kSources, 3, which, enabled)) {
             if (which == 0) {
@@ -2236,7 +2240,7 @@ void draw_deck(Deck& deck, Engine& engine, Frame& frame, void* texture,
         static const char* const kModes[] = {"Boucle", "Aller-retour", "Une fois"};
         const ClipPlayMode mode = deck.clock.mode();
         int which_mode = mode == ClipPlayMode::Loop ? 0 : mode == ClipPlayMode::PingPong ? 1 : 2;
-        float modes_w = ImGui::CalcTextSize("LECTURE").x + 8.0f;
+        float modes_w = ImGui::CalcTextSize("Lecture").x + 8.0f;
         for (const char* label : kModes) modes_w += ImGui::CalcTextSize(label).x + 20.0f;
         // After an item the cursor sits at the start of the next line, so the
         // item's right edge minus the cursor is exactly what the row has used.
@@ -2246,7 +2250,7 @@ void draw_deck(Deck& deck, Engine& engine, Frame& frame, void* texture,
         } else {
             ImGui::Dummy(ImVec2(0.0f, 4.0f));
         }
-        row_label("LECTURE");
+        row_label("Lecture");
         ImGui::SameLine(0.0f, 8.0f);
         if (segmented("mode", kModes, 3, which_mode)) {
             deck.clock.set_mode(which_mode == 0   ? ClipPlayMode::Loop
@@ -2259,7 +2263,7 @@ void draw_deck(Deck& deck, Engine& engine, Frame& frame, void* texture,
         }
         if (deck.played.reversed) {
             ImGui::SameLine(0.0f, 12.0f);
-            row_label("\xE2\x86\x90 retour");
+            row_label("\xE2\x86\x90 Retour");
         }
     }
 
@@ -2267,16 +2271,20 @@ void draw_deck(Deck& deck, Engine& engine, Frame& frame, void* texture,
     if (is_a && deck.clip.is_equirect()) {
         ImGui::Dummy(ImVec2(0.0f, 8.0f));
         SphereView& gaze = engine.view_a();
-        static const char* const kProjections[] = {"Perspective", "Little planet", "Fisheye"};
-        int which = gaze.projection == Projection::Perspective     ? 0
+        // The reprojections, in the canonical words of spec/00-vocabulaire.md
+        // (SCRATCHVJ-02). "Rectiligne" is the ERGONOMIE.md label "Vue
+        // rectiligne" shortened by the room this row has; the row already
+        // says "Vue 360".
+        static const char* const kProjections[] = {"Rectiligne", "Little planet", "Fisheye"};
+        int which = gaze.projection == Projection::Rectilinear     ? 0
                     : gaze.projection == Projection::LittlePlanet ? 1
                                                                   : 2;
-        row_label("VUE 360");
+        row_label("Vue 360");
         ImGui::SameLine(0.0f, 8.0f);
         if (segmented("projection", kProjections, 3, which, nullptr, kSlate)) {
-            gaze.projection = which == 0   ? Projection::Perspective
+            gaze.projection = which == 0   ? Projection::Rectilinear
                               : which == 1 ? Projection::LittlePlanet
-                                           : Projection::Fisheye;
+                                           : Projection::FisheyeView;
         }
         ImGui::SameLine(0.0f, 14.0f);
         {
@@ -2286,7 +2294,7 @@ void draw_deck(Deck& deck, Engine& engine, Frame& frame, void* texture,
             ImGui::PushStyleColor(ImGuiCol_Text, rgba(kMuted));
             // Angles at one decimal with an explicit sign, the display precision
             // of ERGONOMIE.md; the zoom is a ratio, not an angle.
-            if (gaze.projection == Projection::Perspective) {
+            if (gaze.projection == Projection::Rectilinear) {
                 ImGui::Text("lacet %+.1f\xC2\xB0 \xC2\xB7 tangage %+.1f\xC2\xB0 \xC2\xB7 champ %.1f\xC2\xB0",
                             gaze.yaw_deg, gaze.pitch_deg, gaze.fov_deg);
             } else {
@@ -2314,14 +2322,14 @@ void draw_deck(Deck& deck, Engine& engine, Frame& frame, void* texture,
                 }
             };
             eyebrow("REGARD");
-            slider("lacet", gaze.yaw_deg, -180.0f, 180.0f, "%+.1f\xC2\xB0");
-            slider("tangage", gaze.pitch_deg, -static_cast<float>(kPitchClampDeg),
+            slider("Lacet", gaze.yaw_deg, -180.0f, 180.0f, "%+.1f\xC2\xB0");
+            slider("Tangage", gaze.pitch_deg, -static_cast<float>(kPitchClampDeg),
                    static_cast<float>(kPitchClampDeg), "%+.1f\xC2\xB0");
-            slider("roulis", gaze.roll_deg, -180.0f, 180.0f, "%+.1f\xC2\xB0");
-            if (gaze.projection == Projection::Perspective) {
-                slider("champ", gaze.fov_deg, 20.0f, 170.0f, "%.1f\xC2\xB0");
+            slider("Roulis", gaze.roll_deg, -180.0f, 180.0f, "%+.1f\xC2\xB0");
+            if (gaze.projection == Projection::Rectilinear) {
+                slider("Champ", gaze.fov_deg, 20.0f, 170.0f, "%.1f\xC2\xB0");
             } else {
-                slider("zoom", gaze.planet_zoom, 0.2f, 3.0f, "%.2f");
+                slider("Zoom", gaze.planet_zoom, 0.2f, 3.0f, "%.2f");
             }
             ImGui::Dummy(ImVec2(0.0f, 8.0f));
             eyebrow("SOURCE \xC3\x89QUIRECTANGULAIRE \xE2\x80\x94 cadre de vis\xC3\xA9""e");
@@ -2352,7 +2360,7 @@ void draw_deck(Deck& deck, Engine& engine, Frame& frame, void* texture,
     {
         DeckCommands& commands = is_a ? frame.commands_a : frame.commands_b;
         const Loop& loop = deck.transport.loop();
-        row_label("BOUCLE");
+        row_label("Boucle");
         ImGui::SameLine(0.0f, 8.0f);
         static const char* const kBeats[] = {"1", "2", "4", "8"};
         const double beats_of[] = {1.0, 2.0, 4.0, 8.0};
@@ -2384,7 +2392,7 @@ void draw_deck(Deck& deck, Engine& engine, Frame& frame, void* texture,
         {
             const float used = ImGui::GetItemRectMax().x - ImGui::GetWindowPos().x -
                                ImGui::GetWindowContentRegionMin().x;
-            const float need = ImGui::CalcTextSize("SAUT").x + 6.0f + 2.0f * kControlHeight + 4.0f +
+            const float need = ImGui::CalcTextSize("Saut").x + 6.0f + 2.0f * kControlHeight + 4.0f +
                                14.0f + 18.0f + ImGui::CalcTextSize("Quantis\xC3\xA9").x + 24.0f;
             if (inner - used - 14.0f >= need) {
                 ImGui::SameLine(0.0f, 14.0f);
@@ -2392,7 +2400,7 @@ void draw_deck(Deck& deck, Engine& engine, Frame& frame, void* texture,
                 ImGui::Dummy(ImVec2(0.0f, 4.0f));
             }
         }
-        row_label("SAUT");
+        row_label("Saut");
         ImGui::SameLine(0.0f, 6.0f);
         if (button("\xE2\x88\x92", Icon::None, false, kControlHeight, kInk, loaded)) commands.beat_jump_beats = -1.0;
         ImGui::SameLine(0.0f, 4.0f);
@@ -2405,7 +2413,7 @@ void draw_deck(Deck& deck, Engine& engine, Frame& frame, void* texture,
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("cues et boucles cal\xC3\xA9s sur le temps le plus proche");
         if (deck.transport.slip()) {
             ImGui::SameLine(0.0f, 10.0f);
-            row_label("SLIP");
+            row_label("Slip");
         }
     }
 
@@ -3769,7 +3777,7 @@ void draw_mapping_list(Engine& engine, Frame& frame) {
     bool changed = false;
     ImGui::Dummy(ImVec2(0.0f, 4.0f));
 
-    row_label("CONTR\xC3\x94LE");
+    row_label("Contr\xC3\xB4le");
     ImGui::SameLine(0.0f, 8.0f);
     {
         const float dy = (kControlHeight - ImGui::GetTextLineHeight()) * 0.5f;
@@ -3809,7 +3817,7 @@ void draw_mapping_list(Engine& engine, Frame& frame) {
     }
 
     ImGui::Dummy(ImVec2(0.0f, 4.0f));
-    row_label("DESTINATION");
+    row_label("Destination");
     ImGui::SameLine(0.0f, 8.0f);
     {
         const DestinationSpec* current = describe_destination(resolve_destination(row.destination.target));
@@ -3830,7 +3838,7 @@ void draw_mapping_list(Engine& engine, Frame& frame) {
     }
 
     ImGui::Dummy(ImVec2(0.0f, 4.0f));
-    row_label("COURBE");
+    row_label("Courbe");
     ImGui::SameLine(0.0f, 8.0f);
     {
         static const char* const kCurves[] = {"Lin\xC3\xA9""aire", "Expo", "Log", "Courbe S"};
@@ -3851,7 +3859,7 @@ void draw_mapping_list(Engine& engine, Frame& frame) {
     pop_font();
 
     ImGui::Dummy(ImVec2(0.0f, 4.0f));
-    row_label("ZONE MORTE");
+    row_label("Zone morte");
     ImGui::SameLine(0.0f, 8.0f);
     ImGui::SetNextItemWidth(120.0f);
     {
@@ -3863,12 +3871,12 @@ void draw_mapping_list(Engine& engine, Frame& frame) {
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("la part de la course, au centre, qui vaut le milieu : un potard crant\xC3\xA9 tient au neutre");
     }
     ImGui::SameLine(0.0f, 12.0f);
-    row_label("LISSAGE");
+    row_label("Lissage");
     ImGui::SameLine(0.0f, 8.0f);
     ImGui::SetNextItemWidth(120.0f);
     if (ImGui::SliderFloat("##sm", &row.transform.smoothing_ms, 0.0f, 500.0f, "%.0f ms")) changed = true;
     ImGui::SameLine(0.0f, 12.0f);
-    row_label("SORTIE");
+    row_label("Sortie");
     ImGui::SameLine(0.0f, 8.0f);
     ImGui::SetNextItemWidth(70.0f);
     if (ImGui::InputFloat("##lo", &row.transform.out_lo, 0.0f, 0.0f, "%.2f")) changed = true;
@@ -4013,7 +4021,7 @@ void draw_output_screen(Engine& engine, Frame& frame) {
     {
         static const char* const kTools[] = {"Coins", "Grille", "Masque"};
         int tool = frame.output_tool;
-        row_label("SURFACE");
+        row_label("Surface");
         ImGui::SameLine(0.0f, 8.0f);
         if (segmented("tool", kTools, 3, tool)) {
             frame.output_tool = tool;
@@ -4026,7 +4034,7 @@ void draw_output_screen(Engine& engine, Frame& frame) {
         }
         ImGui::SameLine(0.0f, 14.0f);
         row_label(engine.pin().is_identity() && !mesh_on && mask.empty()
-                      ? "rien n'est appliqué : l'é""cran de sortie reçoit l'image telle quelle"
+                      ? "Rien n'est appliqué : l'é""cran de sortie reçoit l'image telle quelle"
                       : "appliqué sur l'é""cran de sortie · Spout reçoit l'image avant");
     }
     ImGui::Dummy(ImVec2(0.0f, 6.0f));
@@ -4222,7 +4230,7 @@ void draw_output_screen(Engine& engine, Frame& frame) {
         }
         pop_font();
         ImGui::Dummy(ImVec2(0.0f, 8.0f));
-        row_label("ADOUCIR");
+        row_label("Adoucir");
         ImGui::SameLine(0.0f, 8.0f);
         ImGui::SetNextItemWidth(160.0f);
         {
@@ -4587,12 +4595,12 @@ void draw_program_strip(Engine& engine, Frame& frame, float height) {
                           "une texture \xE2\x80\x94 hors crossfader");
     }
     ImGui::SameLine(0.0f, 14.0f);
-    row_label("OPACIT\xC3\x89");
+    row_label("Opacit\xC3\xA9");
     ImGui::SameLine(0.0f, 8.0f);
     ImGui::SetNextItemWidth(120.0f);
     ImGui::SliderFloat("##overlay.opacity", &overlay.opacity, 0.0f, 1.0f, "%.2f");
     ImGui::SameLine(0.0f, 14.0f);
-    row_label("SOURCE");
+    row_label("Source");
     ImGui::SameLine(0.0f, 8.0f);
     {
         // The overlay is the layer that can take a live source: it has no
@@ -4606,7 +4614,7 @@ void draw_program_strip(Engine& engine, Frame& frame, float height) {
         }
     }
     ImGui::SameLine(0.0f, 14.0f);
-    row_label("FUSION");
+    row_label("Fusion");
     ImGui::SameLine(0.0f, 8.0f);
     {
         // How the overlay sits on the mix. Alpha for a logo or a mask with a
@@ -4648,7 +4656,7 @@ void draw_program_strip(Engine& engine, Frame& frame, float height) {
 
     // --- the rack, in one line ----------------------------------------------
     ImGui::Dummy(ImVec2(0.0f, 8.0f));
-    row_label("RACK");
+    row_label("Rack");
     for (std::size_t i = 0; i < engine.rack().size(); ++i) {
         const EffectUnit& unit = engine.rack().at(i);
         const EffectDescriptor* info = describe(unit.type);
@@ -4682,7 +4690,7 @@ void draw_program_strip(Engine& engine, Frame& frame, float height) {
         ImGui::PopID();
     }
     ImGui::SameLine(0.0f, 12.0f);
-    row_label("vert : audio et vid\xC3\xA9o li\xC3\xA9s \xC2\xB7 rouge : d\xC3\xA9li\xC3\xA9s");
+    row_label("Vert : audio et vid\xC3\xA9o li\xC3\xA9s \xC2\xB7 rouge : d\xC3\xA9li\xC3\xA9s");
 
     // --- the mix, read --------------------------------------------------------
     ImGui::Dummy(ImVec2(0.0f, 10.0f));

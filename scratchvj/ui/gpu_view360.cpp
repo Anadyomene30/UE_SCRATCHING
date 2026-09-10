@@ -142,12 +142,12 @@ void View360Gpu::render(std::uint16_t equirect, const SphereView& view) {
     };
 
     float mode = 0.0f;
-    // Perspective spans by tan(fov/2), the disc projections by 1/zoom -- the
+    // Rectilinear spans by tan(fov/2), the disc projections by 1/zoom -- the
     // derived numbers are computed here once rather than per fragment, and the
     // clamps mirror the reference exactly.
     float span = 1.0f;
     switch (view.projection) {
-        case Projection::Perspective: {
+        case Projection::Rectilinear: {
             const double fov = std::clamp(view.fov_deg, 1.0, 170.0);
             span = static_cast<float>(std::tan(fov * kPi / 360.0));
             mode = 0.0f;
@@ -157,7 +157,7 @@ void View360Gpu::render(std::uint16_t equirect, const SphereView& view) {
             span = static_cast<float>(1.0 / std::max(view.planet_zoom, 1e-6));
             mode = 1.0f;
             break;
-        case Projection::Fisheye:
+        case Projection::FisheyeView:
             span = static_cast<float>(1.0 / std::max(view.planet_zoom, 1e-6));
             mode = 2.0f;
             break;

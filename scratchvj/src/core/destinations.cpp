@@ -17,7 +17,7 @@ const std::vector<DestinationSpec>& destination_catalogue() {
         {"deck.a.yaw", Dest::DeckAYaw, false, "regard 360 du deck A : lacet (degrés)"},
         {"deck.a.pitch", Dest::DeckAPitch, false, "regard 360 du deck A : tangage (degrés)"},
         {"deck.a.fov", Dest::DeckAFov, false, "champ du deck A (degrés)"},
-        {"deck.a.zoom", Dest::DeckAZoom, false, "zoom little planet / fisheye du deck A"},
+        {"deck.a.zoom", Dest::DeckAZoom, false, "zoom little planet / fisheye view du deck A"},
 
         {"deck.a.cue.1", Dest::DeckACue1, true, "saut au hot cue 1 du deck A"},
         {"deck.a.cue.2", Dest::DeckACue2, true, "saut au hot cue 2 du deck A"},

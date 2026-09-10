@@ -60,6 +60,61 @@ SVJ_TEST("library_io: an unknown projection word is named rather than defaulted"
     CHECK(error.find("sphere") != std::string::npos);
 }
 
+SVJ_TEST("library_io: the old projection words are still read, the new ones written") {
+    // The migration of SCRATCHVJ-01 and SCRATCHVJ-02, and the reason it has a
+    // test rather than a note: a rename without a migration silently loses
+    // every decision a performer already made about a clip.
+    LibraryFile file;
+    std::string error;
+    CHECK(library_from_json(R"({"clips": [
+            {"cache": "a.svcache", "projection": "auto"},
+            {"cache": "b.svcache", "projection": "flat"},
+            {"cache": "c.svcache", "projection": "equirect"}]})",
+                            file, error));
+    CHECK_EQ(file.clips.size(), std::size_t{3});
+    CHECK(file.clips[0].projection == ProjectionOverride::Auto);
+    CHECK(file.clips[1].projection == ProjectionOverride::Flat);
+    CHECK(file.clips[2].projection == ProjectionOverride::Equirect);
+
+    // What it writes back: the canonical word, and NO key for Auto -- "ce qui
+    // n'est pas declare ne s'ecrit pas".
+    const std::string out = library_to_json(file);
+    CHECK(out.find("\"equirect_360\"") != std::string::npos);
+    CHECK(out.find("\"equirect\"") == std::string::npos);
+    CHECK(out.find("\"auto\"") == std::string::npos);
+    CHECK(out.find("\"flat\"") != std::string::npos);
+
+    // And the new form reads back to the same three decisions.
+    LibraryFile again;
+    CHECK(library_from_json(out, again, error));
+    CHECK(again.clips[0].projection == ProjectionOverride::Auto);
+    CHECK(again.clips[1].projection == ProjectionOverride::Flat);
+    CHECK(again.clips[2].projection == ProjectionOverride::Equirect);
+
+    // And the reader says it had to accept an old spelling, which is what makes
+    // the front end write the file back once instead of waiting for an edit.
+    CHECK(file.migrated_on_read);
+    CHECK(!again.migrated_on_read);
+}
+
+SVJ_TEST("library_io: a crate named after a projection takes the long form") {
+    // A short form is bounded by the place it is shown in and never goes into a
+    // file (ERGONOMIE.md, "Le langage"). Only the names this product wrote for
+    // itself are repaired; one the performer typed is left alone.
+    LibraryFile file;
+    std::string error;
+    // Not a raw literal: the old name carries a degree sign, and this file
+    // spells non-ASCII with escapes so it reads the same in every editor.
+    CHECK(library_from_json("{\"crates\": [{\"name\": \"360\xC2\xB0\"}, "
+                            "{\"name\": \"2D\"}, {\"name\": \"Set 12 sept.\"}]}",
+                            file, error));
+    CHECK_EQ(file.crates.size(), std::size_t{3});
+    CHECK_EQ(file.crates[0].name, std::string("\xC3\x89quirectangulaire 360"));
+    CHECK_EQ(file.crates[1].name, std::string("Rectiligne"));
+    CHECK_EQ(file.crates[2].name, std::string("Set 12 sept."));
+    CHECK(file.migrated_on_read);
+}
+
 SVJ_TEST("library_io: a missing file is an empty library, not an error") {
     LibraryFile file;
     file.clips.push_back(LibraryFile::Clip{});

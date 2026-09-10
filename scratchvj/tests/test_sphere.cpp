@@ -121,7 +121,7 @@ SVJ_TEST("sphere: pitching all the way up lands on the pole") {
 
 SVJ_TEST("sphere: every pixel of every projection yields a unit direction") {
     for (const Projection projection :
-         {Projection::Perspective, Projection::LittlePlanet, Projection::Fisheye}) {
+         {Projection::Rectilinear, Projection::LittlePlanet, Projection::FisheyeView}) {
         SphereView view;
         view.projection = projection;
         view.yaw_deg = 23.0;
@@ -170,7 +170,7 @@ SVJ_TEST("sphere: a little planet reaches the horizon and beyond") {
 
 SVJ_TEST("sphere: a fisheye centre looks straight ahead and its edge looks behind") {
     SphereView view;
-    view.projection = Projection::Fisheye;
+    view.projection = Projection::FisheyeView;
     view.aspect = 1.0;
     check_direction(view_direction(view, kCentre), Vec3{0.0, 0.0, -1.0}, 1e-9);
 

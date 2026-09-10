@@ -44,6 +44,13 @@ struct LibraryFile {
     std::vector<Crate> crates;
     std::vector<Bank> banks;
     int current_bank = 0;
+
+    // Set by the reader when it had to accept a spelling this build no longer
+    // writes -- "auto", "equirect", a crate named after a projection. It is
+    // what makes the migration finish: the front end saves once on start-up so
+    // the file stops being in the old form, instead of waiting for the first
+    // edit of a set. Never written to the file.
+    bool migrated_on_read = false;
 };
 
 std::string library_to_json(const LibraryFile& file);

@@ -5,7 +5,7 @@ $input v_texcoord0
 // A transcription of core/headset.cpp, the way fs_view360.sc transcribes
 // core/sphere.cpp, and tools/eye_check holds it to that reference pixel for
 // pixel. It is a separate shader from fs_view360 rather than another branch in
-// it because a headset never wants little planet or fisheye, and never wants a
+// it because a headset never wants little planet or a fisheye view, and never wants a
 // symmetric field of view -- sharing the code would mean the flat view paying
 // per fragment for a case it does not have.
 //
