@@ -150,6 +150,36 @@ table, et « Fisheye » désigne déjà une projection de fichier) et `SCRATCHVJ
 
 ---
 
+## Phase 3 — le repère temporel · 2026-09-10 · `68f0ad7`
+
+**Écrit, pas tranché.** `docs/repere.md` existe : la question en une phrase, les
+trois candidats tels qu'ils sont dans le code, les trois endroits où ils se
+rencontrent déjà, trois options avec leurs conséquences, une recommandation
+argumentée, et la liste de ce qui attend la décision. Le choix est au fondateur,
+et ce dépôt ne l'a pas pris.
+
+**Ce que la phase a mesuré, et qui change la forme de la question.** Le tempo est
+**une constante** — `kBpm` dans `ui/main_ui`, héritée par tout clip à son
+chargement, premier temps à zéro dans chaque grille. Il n'y a ni détection de
+tempo, ni saisie, ni tempo par clip. Le tempo ne peut donc pas diverger
+aujourd'hui : il ne suit rien. La divergence apparaîtra au premier tempo mesuré,
+et c'est pour ça que la règle se laisse écrire maintenant à peu de frais.
+
+**Les trois consommateurs sont nommés**, et ils ne prennent pas le même maître :
+la phase d'un LFO synchronisé suit **le plateau** (converti en temps musicaux) ;
+la division d'un effet synchronisé suit **le tempo** seul ; le suiveur
+d'enveloppe suit **l'horloge**, en secondes. Aucune ligne n'écrivait que c'était
+voulu.
+
+**Ce qui reste ouvert, et qui n'appartient pas à ce dépôt** : le choix lui-même,
+le nom du deck de référence pour le temps musical, la phrase vérifiable qui dit
+ce que fait un backspin, et — par conséquence directe — le format d'affichage
+d'un temps, que `SCRATCHVJ-14` a reporté pour cette raison exacte. `mm:ss.d`
+reste tel quel et la ligne reste *remontée*.
+
+
+---
+
 ## Le cadre
 
 **Git.** Le dépôt est sous git, tête `75eee2f`, arbre de travail propre : les
@@ -977,7 +1007,7 @@ définition.
 | Grandeur | Ce que dit la source | Ce que fait le code | État |
 |---|---|---|---|
 | angle | une décimale, signe explicite (`:161`) | `%+.0f°` — `ui/panels.cpp:2253` ; `"%.0f°"` sur les curseurs — `:2279-2283` | **fermé** (`b025d6a`, SCRATCHVJ-14) — `%+.1f°` sur le résumé et les trois curseurs d'angle, `%.1f°` sur le champ ; le zoom, qui n'est pas un angle, garde `%.2f` |
-| timecode | `hh:mm:ss:ff` (`:165`) | `mm:ss.d` — `clock_of()`, `ui/panels.cpp:67-74` ; `mm:ss` — `short_clock()`, `:76-81` | **remonté SCRATCHVJ-14** — *reporté*. Ce qui manque : le repère temporel de la ligne scène (tempo, horloge audio ou position du plateau). Qui doit le produire : le fondateur, sur la recommandation que la phase 3 de ce produit doit écrire. `mm:ss.d` reste tel quel ; le format se traitera en phase 3 comme une conséquence du repère, pas comme un sujet à part |
+| timecode | `hh:mm:ss:ff` (`:165`) | `mm:ss.d` — `clock_of()`, `ui/panels.cpp:67-74` ; `mm:ss` — `short_clock()`, `:76-81` | **remonté SCRATCHVJ-14** — *reporté*. Ce qui manque : le repère temporel de la ligne scène (tempo, horloge audio ou position du plateau). Qui doit le produire : le fondateur, sur la recommandation que la phase 3 de ce produit a écrite — `docs/repere.md`, rendue le 2026-09-10. `mm:ss.d` reste tel quel ; le format est une conséquence du repère, pas un sujet à part, et il attend la décision |
 | durée | `h min s`, jamais de décimales (`:166`) | `%.1f s` — `ui/panels.cpp:4593` | **ouvert (phase 4)** |
 | chemin | tronqué **par le milieu** (`:167`) | jamais tronqué : `ui/panels.cpp:1229, 1449, 1450, 1591` affichent le chemin entier | **conforme** — la règle porte sur un chemin *tronqué* ; aucun ne l'est. `pad_word()` (`:873-878`) coupe un **nom**, pas un chemin |
 | résolution | `×` cadratin, espaces fines (`:164`) | `%ux%u` — `ui/tools/xr_check.cpp:178` | **hors périmètre** — un outil de contrôle en console, pas l'interface |
