@@ -1,5 +1,7 @@
 #include "panels.h"
 
+#include "tokens.h"
+
 #include "config/warp_io.h"
 #include "core/videofx.h"
 #include "core/videotaps.h"
@@ -17,31 +19,37 @@ Fonts g_fonts;
 
 namespace {
 
-// The mockup's palette. Named by role rather than by hue, so a retune changes one
-// table instead of every call site.
-const ImU32 kGround = IM_COL32(0x14, 0x14, 0x12, 0xFF);
-const ImU32 kPanel = IM_COL32(0x1A, 0x19, 0x17, 0xFF);
-const ImU32 kWell = IM_COL32(0x0E, 0x0E, 0x0C, 0xFF);
-const ImU32 kHair = IM_COL32(0x2E, 0x2D, 0x28, 0xFF);
-const ImU32 kInk = IM_COL32(0xE9, 0xE6, 0xDF, 0xFF);
-const ImU32 kMuted = IM_COL32(0x8A, 0x86, 0x7C, 0xFF);
-const ImU32 kFaint = IM_COL32(0x60, 0x5D, 0x56, 0xFF);
-const ImU32 kAccent = IM_COL32(0xC9, 0x76, 0x2F, 0xFF);
-const ImU32 kSage = IM_COL32(0x7E, 0x94, 0x6B, 0xFF);
-const ImU32 kAmber = IM_COL32(0xC9, 0x9A, 0x2F, 0xFF);
-const ImU32 kAlert = IM_COL32(0xB5, 0x4B, 0x3A, 0xFF);
-const ImU32 kSlate = IM_COL32(0x6E, 0x86, 0x96, 0xFF);
-// `signal.warn` for the stage -- "still working, but drifting". The line
-// inherits all four signals and had only three (SCRATCHVJ-09); the house asked
-// this product to produce the warm value. Derived, not picked: the atelier
-// warn #C48A4B at the same hue, with its HSL lightness and saturation scaled
-// by the mean of the ratios this table already applies to done (#7FB069 ->
-// #7E946B) and fail (#D9584B -> #B54B3A): L x0.863, S x0.654. Relative
-// luminance lands at 0.684 of the atelier value, between done's 0.729 and
-// fail's 0.682. A candidate until tokens.json carries lines.scene.signal.warn.
-const ImU32 kWarn = IM_COL32(0x9C, 0x77, 0x4E, 0xFF);
+// The palette is not written here. It lives in ui/tokens.h, the product's one
+// token file, with its provenance and the version of design/tokens.json it was
+// transcribed from. Nothing below writes a colour: it borrows the names.
+using tok::kAccent;
+using tok::kAlert;
+using tok::kAmber;
+using tok::kFaint;
+using tok::kGround;
+using tok::kHair;
+using tok::kInk;
+using tok::kMuted;
+using tok::kPanel;
+using tok::kSage;
+using tok::kSlate;
+using tok::kWarn;
+using tok::kWell;
 
 ImVec4 rgba(ImU32 c) { return ImGui::ColorConvertU32ToFloat4(c); }
+
+// The colour of a MEASURED VALUE that has left its tolerance -- a balance in
+// dB, a phase error, a platter speed past 2.5x. It says "still working, but
+// drifting", which is exactly `signal.warn`; and it is no longer the amber,
+// which belongs to deck A and to nothing else (SCENE.md, variable 4).
+//
+// THE ONE PLACE THIS CHANGES. Half of SCRATCHVJ-23 is open: the sources say
+// `fail` is the only colour allowed to carry text, that a one- or
+// two-character source label is not text and that a phrase always is -- and a
+// NUMBER is neither. If the house answers that a number is text, these sites
+// return to chalk and the drift is said by the light beside them; it costs
+// this function and nothing else.
+ImU32 out_of_tolerance(bool within) { return within ? kInk : kWarn; }
 
 void push_mono() { if (g_fonts.mono != nullptr) ImGui::PushFont(g_fonts.mono, 0.0f); }
 void push_small() { if (g_fonts.small != nullptr) ImGui::PushFont(g_fonts.small, 0.0f); }
@@ -211,14 +219,11 @@ void draw_icon(ImDrawList* draw, Icon icon, ImVec2 centre, float size, ImU32 col
     }
 }
 
-constexpr float kControlHeight = 28.0f;
-// `rhythm.radius_control` of design/tokens.json: 3 on a control, 0 on a panel.
-// The house cites the value rather than paraphrasing it -- "minimal" had
-// already produced four different radii across the catalogue (SCRATCHVJ-12).
-constexpr float kControlRadius = 3.0f;
-// `rhythm.accent_cap`: the 2 px cap at the left of the top bar, the one place
-// the product's colour identifies it (ERGONOMIE.md, the top bar).
-constexpr float kAccentCap = 2.0f;
+using tok::kAccentCap;
+using tok::kChassisBar;
+using tok::kControlRadius;
+using tok::kHitTargetMin;
+using tok::kParamRow;
 
 // An action. `primary` fills it with the accent -- and the fill is an aplat,
 // which the stage cadran (design/SCENE.md, variable 2) allows once per panel
@@ -237,26 +242,26 @@ bool button(const char* label, Icon icon = Icon::None, bool primary = false,
     const ImVec2 origin = ImGui::GetCursorScreenPos();
     ImGui::PushID(label);
     if (!enabled) ImGui::BeginDisabled();
-    const bool pressed = ImGui::InvisibleButton("btn", ImVec2(w, kControlHeight));
+    const bool pressed = ImGui::InvisibleButton("btn", ImVec2(w, kParamRow));
     if (!enabled) ImGui::EndDisabled();
     const bool hovered = enabled && ImGui::IsItemHovered();
     const bool held = enabled && ImGui::IsItemActive();
     ImGui::PopID();
 
     ImDrawList* draw = ImGui::GetWindowDrawList();
-    const ImVec2 corner(origin.x + w, origin.y + kControlHeight);
+    const ImVec2 corner(origin.x + w, origin.y + kParamRow);
     const ImU32 fill = primary ? (held ? kAmber : kAccent) : (held || hovered ? kHair : kWell);
     draw->AddRectFilled(origin, corner, fill, kControlRadius);
     draw->AddRect(origin, corner, primary ? kAccent : kHair, kControlRadius);
     const ImU32 ink = !enabled ? kFaint : primary ? kGround : tint;
     float x = origin.x + (w - text.x - icon_w - gap) * 0.5f;
     if (icon != Icon::None) {
-        draw_icon(draw, icon, ImVec2(x + icon_w * 0.5f, origin.y + kControlHeight * 0.5f),
+        draw_icon(draw, icon, ImVec2(x + icon_w * 0.5f, origin.y + kParamRow * 0.5f),
                   11.0f, ink);
         x += icon_w + gap;
     }
     if (text.x > 0.0f) {
-        draw->AddText(ImVec2(x, origin.y + (kControlHeight - text.y) * 0.5f), ink, label);
+        draw->AddText(ImVec2(x, origin.y + (kParamRow - text.y) * 0.5f), ink, label);
     }
     return pressed;
 }
@@ -287,25 +292,25 @@ bool segmented(const char* id, const char* const* labels, int count, int& value,
         ImGui::SetCursorScreenPos(ImVec2(x, y));
         ImGui::PushID(i);
         if (!ok) ImGui::BeginDisabled();
-        if (ImGui::InvisibleButton("opt", ImVec2(w, kControlHeight)) && !on) {
+        if (ImGui::InvisibleButton("opt", ImVec2(w, kParamRow)) && !on) {
             value = i;
             changed = true;
         }
         if (!ok) ImGui::EndDisabled();
         const bool hovered = ok && ImGui::IsItemHovered();
         ImGui::PopID();
-        const ImVec2 corner(x + w, y + kControlHeight);
+        const ImVec2 corner(x + w, y + kParamRow);
         draw->AddRectFilled(ImVec2(x, y), corner, on ? accent : hovered ? kHair : kWell);
         if (i > 0) {
             if (vertical) draw->AddLine(ImVec2(x, y), ImVec2(corner.x, y), kHair);
             else draw->AddLine(ImVec2(x, y), ImVec2(x, corner.y), kHair);
         }
         draw->AddText(ImVec2(x + (vertical ? (w - text.x) * 0.5f : 10.0f),
-                             y + (kControlHeight - text.y) * 0.5f),
+                             y + (kParamRow - text.y) * 0.5f),
                       on ? kGround : !ok ? kFaint : kMuted, labels[i]);
-        if (vertical) y += kControlHeight; else x += w;
+        if (vertical) y += kParamRow; else x += w;
     }
-    const ImVec2 extent = vertical ? ImVec2(origin.x + widest, y) : ImVec2(x, origin.y + kControlHeight);
+    const ImVec2 extent = vertical ? ImVec2(origin.x + widest, y) : ImVec2(x, origin.y + kParamRow);
     draw->AddRect(origin, extent, kHair, kControlRadius);
     ImGui::SetCursorScreenPos(origin);
     ImGui::Dummy(ImVec2(extent.x - origin.x, extent.y - origin.y));
@@ -335,13 +340,13 @@ bool toggle(const char* label, bool on) {
     const float w = 10.0f + 8.0f + text.x;
     const ImVec2 origin = ImGui::GetCursorScreenPos();
     ImGui::PushID(label);
-    const bool pressed = ImGui::InvisibleButton("tog", ImVec2(w, kControlHeight));
+    const bool pressed = ImGui::InvisibleButton("tog", ImVec2(w, kParamRow));
     ImGui::PopID();
     ImDrawList* draw = ImGui::GetWindowDrawList();
-    const ImVec2 dot(origin.x + 5.0f, origin.y + kControlHeight * 0.5f);
+    const ImVec2 dot(origin.x + 5.0f, origin.y + kParamRow * 0.5f);
     draw->AddCircleFilled(dot, 5.0f, on ? kSage : kHair);
     draw->AddCircle(dot, 5.0f, on ? kSage : kFaint);
-    draw->AddText(ImVec2(origin.x + 18.0f, origin.y + (kControlHeight - text.y) * 0.5f),
+    draw->AddText(ImVec2(origin.x + 18.0f, origin.y + (kParamRow - text.y) * 0.5f),
                   on ? kInk : kMuted, label);
     return pressed;
 }
@@ -349,7 +354,7 @@ bool toggle(const char* label, bool on) {
 // An eyebrow sitting on the same row as a 28 px control, vertically centred.
 void row_label(const char* text) {
     push_small();
-    const float dy = (kControlHeight - ImGui::GetTextLineHeight()) * 0.5f;
+    const float dy = (kParamRow - ImGui::GetTextLineHeight()) * 0.5f;
     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + dy);
     ImGui::PushStyleColor(ImGuiCol_Text, rgba(kFaint));
     ImGui::TextUnformatted(text);
@@ -467,7 +472,7 @@ void filmstrip(Deck& deck, Frame& frame, float width, float height = 34.0f) {
         const float x0 = x_of(resident.first);
         const float x1 = std::max(x_of(resident.last()), x0 + 2.0f);
         draw->AddRectFilled(ImVec2(x0, origin.y), ImVec2(x1, origin.y + height),
-                            IM_COL32(0x6E, 0x86, 0x96, 0x28));
+                            tok::veil(kSlate, tok::kVeilResident));
         draw->AddLine(ImVec2(x0, origin.y), ImVec2(x0, origin.y + height), kSlate, 1.5f);
         draw->AddLine(ImVec2(x1, origin.y), ImVec2(x1, origin.y + height), kSlate, 1.5f);
     }
@@ -476,7 +481,7 @@ void filmstrip(Deck& deck, Frame& frame, float width, float height = 34.0f) {
         const float x0 = x_of(deck.clip.frame_at(deck.transport.loop().start_s));
         const float x1 = x_of(deck.clip.frame_at(deck.transport.loop().end_s));
         draw->AddRectFilled(ImVec2(x0, origin.y), ImVec2(x1, origin.y + height),
-                            IM_COL32(0xC9, 0x76, 0x2F, 0x33));
+                            tok::veil(kAccent, tok::kVeilLoop));
     }
 
     for (int i = 0; i < kHotCueCount; ++i) {
@@ -562,7 +567,7 @@ void filmstrip(Deck& deck, Frame& frame, float width, float height = 34.0f) {
 // ---------------------------------------------------------------------------
 
 void draw_status(Engine& engine, Frame& frame) {
-    ImGui::BeginChild("status", ImVec2(0.0f, 40.0f), ImGuiChildFlags_None,
+    ImGui::BeginChild("status", ImVec2(0.0f, kChassisBar), ImGuiChildFlags_None,
                       ImGuiWindowFlags_NoScrollbar);
     // The accent cap: a filet down the left of the bar, which is where the
     // product's colour identifies it. The name beside it is chalk -- colour on
@@ -620,7 +625,8 @@ void draw_status(Engine& engine, Frame& frame) {
         }
         const std::string word = connected == 0 ? std::string("Table \xC2\xB7 aucune")
                                                 : "Table \xC2\xB7 " + names;
-        light(connected == 0 ? kHair : connected < frame.rig.size() ? kAmber : kSage,
+        // Partly connected is a drift, not deck A: warn (SCENE.md, variable 4).
+        light(connected == 0 ? kHair : connected < frame.rig.size() ? kWarn : kSage,
               word.c_str());
         if (ImGui::IsItemHovered()) {
             ImGui::SetTooltip("%zu appareil%s sur %zu configur\xC3\xA9%s \xC2\xB7 %llu messages MIDI",
@@ -842,7 +848,7 @@ ClipId clip_drop_target() {
 // A DJ loading a clip has already decided which layer, and a "which one?"
 // step between the decision and the load is one beat too many.
 void send_to_buttons(Engine& engine, Frame& frame, ClipId id, bool compact) {
-    const float h = compact ? 24.0f : kControlHeight;
+    const float h = compact ? 24.0f : kParamRow;
     const auto small_button = [&](const char* label, ImU32 tint) {
         const ImVec2 text = ImGui::CalcTextSize(label);
         const float w = text.x + (compact ? 14.0f : 20.0f);
@@ -1115,7 +1121,7 @@ void draw_bank_cell(Engine& engine, Frame& frame, int bank, DeckTarget target, i
     ImDrawList* draw = ImGui::GetWindowDrawList();
     const ImVec2 corner(origin.x + size, origin.y + size);
     const bool holding = ImGui::GetDragDropPayload() != nullptr;
-    draw->AddRectFilled(origin, corner, holding && hovered ? IM_COL32(0xC9, 0x76, 0x2F, 0x30) : kWell, 2.0f);
+    draw->AddRectFilled(origin, corner, holding && hovered ? tok::veil(kAccent, tok::kVeilDropTarget) : kWell, 2.0f);
     draw->AddRect(origin, corner, holding ? kAccent : id != kNoClip ? accent : kHair, 2.0f,
                   0, holding && hovered ? 2.0f : 1.0f);
     if (id != kNoClip) {
@@ -1373,10 +1379,10 @@ void draw_library_screen(Engine& engine, Frame& frame) {
             draw->AddRectFilled(origin, ImVec2(origin.x + 2.0f, origin.y + row_h), kAccent);
         } else if (ImGui::IsItemHovered()) {
             draw->AddRectFilled(origin, ImVec2(origin.x + inner, origin.y + row_h),
-                                IM_COL32(0x1A, 0x19, 0x17, 0x80));
+                                tok::veil(kPanel, tok::kVeilRowHover));
         }
         draw->AddLine(ImVec2(origin.x, origin.y + row_h), ImVec2(origin.x + inner, origin.y + row_h),
-                      IM_COL32(0x23, 0x22, 0x20, 0xFF));
+                      tok::kRowLine);
         if (frame.library_cursor == id) {
             draw->AddRectFilled(ImVec2(origin.x - 4.0f, origin.y), ImVec2(origin.x - 2.0f, origin.y + row_h),
                                 kAccent);
@@ -1872,7 +1878,8 @@ void draw_platter_scope(const Frame& frame) {
     // no lock decision depends on them.
     const bool balanced = std::fabs(reading.balance_db) <= 1.0f &&
                           std::fabs(reading.phase_error_deg) <= 5.0f;
-    const ImU32 ink = !measured ? kFaint : (balanced ? kSage : kAmber);
+    // An unbalanced figure still reads, and still drifts: warn, not deck A.
+    const ImU32 ink = !measured ? kFaint : (balanced ? kSage : kWarn);
 
     ImDrawList* draw = ImGui::GetWindowDrawList();
     const ImVec2 origin = ImGui::GetCursorScreenPos();
@@ -1912,10 +1919,10 @@ void draw_platter_scope(const Frame& frame) {
         char value[16];
         std::snprintf(value, sizeof(value), "%+.2f", static_cast<double>(reading.balance_db));
         readout("BALANCE", value, "dB",
-                std::fabs(reading.balance_db) <= 1.0f ? kInk : kAmber);
+                out_of_tolerance(std::fabs(reading.balance_db) <= 1.0f));
         std::snprintf(value, sizeof(value), "%+.1f", static_cast<double>(reading.phase_error_deg));
         readout("PHASE", value, "\xC2\xB0",
-                std::fabs(reading.phase_error_deg) <= 5.0f ? kInk : kAmber);
+                out_of_tolerance(std::fabs(reading.phase_error_deg) <= 5.0f));
         std::snprintf(value, sizeof(value), "%+.3f %+.3f", static_cast<double>(reading.centre_x),
                       static_cast<double>(reading.centre_y));
         readout("CENTRE", value, nullptr, kInk);
@@ -1959,7 +1966,7 @@ void draw_deck_diagnostics(Deck& deck, Engine& engine, Frame& frame, bool is_a) 
         char v[16];
         std::snprintf(v, sizeof(v), "%.2f", deck.played.velocity);
         readout("VITESSE", v, "\xC3\x97",
-                std::fabs(deck.played.velocity) > 2.5 ? kAmber : kInk);
+                out_of_tolerance(std::fabs(deck.played.velocity) <= 2.5));
     }
     ImGui::SameLine(0.0f, 22.0f);
     {
@@ -2028,7 +2035,8 @@ void draw_deck_diagnostics(Deck& deck, Engine& engine, Frame& frame, bool is_a) 
         const float stale = engine.anchor().armed()
                                 ? engine.anchor().staleness(frame.elapsed_s, jumps)
                                 : 1.0f;
-        meter(1.0f - stale, 130.0f, stale > 0.6f ? kAmber : kSage, false);
+        // A stale anchor is the drift this instrument most needs to say.
+        meter(1.0f - stale, 130.0f, stale > 0.6f ? kWarn : kSage, false);
         ImGui::SameLine(0.0f, 10.0f);
         push_small();
         ImGui::PushStyleColor(ImGuiCol_Text, rgba(kFaint));
@@ -2056,7 +2064,7 @@ void draw_deck(Deck& deck, Engine& engine, Frame& frame, void* texture,
     // --- header: letter, name, definition, rectiligne | 360 -------------------
     {
         const float y = ImGui::GetCursorPosY();
-        const float dy = (kControlHeight - ImGui::GetTextLineHeight()) * 0.5f;
+        const float dy = (kParamRow - ImGui::GetTextLineHeight()) * 0.5f;
         ImGui::SetCursorPosY(y + dy);
         push_mono();
         text_c(accent, "%s", is_a ? "A" : "B");
@@ -2103,7 +2111,7 @@ void draw_deck(Deck& deck, Engine& engine, Frame& frame, void* texture,
             ImGui::PopStyleColor();
             pop_font();
         } else {
-            ImGui::Dummy(ImVec2(1.0f, kControlHeight));
+            ImGui::Dummy(ImVec2(1.0f, kParamRow));
         }
     }
 
@@ -2118,7 +2126,7 @@ void draw_deck(Deck& deck, Engine& engine, Frame& frame, void* texture,
     {
         const DeckSource source = deck.clock.source();
         const bool on_platter = source == DeckSource::Timecode;
-        if (button("", Icon::SkipStart, false, kControlHeight, kInk, loaded)) deck.stop(now_s);
+        if (button("", Icon::SkipStart, false, kParamRow, kInk, loaded)) deck.stop(now_s);
         ImGui::SameLine(0.0f, 6.0f);
         // One button, two faces: it shows what pressing it DOES. On a platter
         // deck the record decides the motion, so the button offers a pause --
@@ -2130,16 +2138,16 @@ void draw_deck(Deck& deck, Engine& engine, Frame& frame, void* texture,
         const bool space = loaded && ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows) &&
                            !ImGui::GetIO().WantTextInput &&
                            ImGui::IsKeyPressed(ImGuiKey_Space, false);
-        if (button("", running ? Icon::Pause : Icon::Play, running, 44.0f, kInk, loaded) ||
+        if (button("", running ? Icon::Pause : Icon::Play, running, kHitTargetMin, kInk, loaded) ||
             space) {
             if (running) deck.pause(now_s); else deck.play(now_s);
         }
         ImGui::SameLine(0.0f, 6.0f);
-        if (button("", Icon::Stop, false, kControlHeight, kInk, loaded)) deck.stop(now_s);
+        if (button("", Icon::Stop, false, kParamRow, kInk, loaded)) deck.stop(now_s);
 
         ImGui::SameLine(0.0f, 12.0f);
         {
-            const float dy = (kControlHeight - ImGui::GetTextLineHeight()) * 0.5f;
+            const float dy = (kParamRow - ImGui::GetTextLineHeight()) * 0.5f;
             const float y = ImGui::GetCursorPosY();
             ImGui::SetCursorPosY(y + dy);
             push_mono();
@@ -2169,10 +2177,10 @@ void draw_deck(Deck& deck, Engine& engine, Frame& frame, void* texture,
             row_label("Vitesse");
             ImGui::SameLine(rate_x);
             if (on_platter || source == DeckSource::Hand) {
-                const float dy = (kControlHeight - ImGui::GetTextLineHeight()) * 0.5f;
+                const float dy = (kParamRow - ImGui::GetTextLineHeight()) * 0.5f;
                 ImGui::SetCursorPosY(ImGui::GetCursorPosY() + dy);
                 push_mono();
-                text_c(std::fabs(deck.played.velocity) > 2.5 ? kAmber : kInk, "%+.2f\xC3\x97",
+                text_c(out_of_tolerance(std::fabs(deck.played.velocity) <= 2.5), "%+.2f\xC3\x97",
                        deck.played.velocity);
                 pop_font();
             } else {
@@ -2283,7 +2291,7 @@ void draw_deck(Deck& deck, Engine& engine, Frame& frame, void* texture,
         }
         ImGui::SameLine(0.0f, 14.0f);
         {
-            const float dy = (kControlHeight - ImGui::GetTextLineHeight()) * 0.5f;
+            const float dy = (kParamRow - ImGui::GetTextLineHeight()) * 0.5f;
             ImGui::SetCursorPosY(ImGui::GetCursorPosY() + dy);
             push_small();
             ImGui::PushStyleColor(ImGuiCol_Text, rgba(kMuted));
@@ -2387,7 +2395,7 @@ void draw_deck(Deck& deck, Engine& engine, Frame& frame, void* texture,
         {
             const float used = ImGui::GetItemRectMax().x - ImGui::GetWindowPos().x -
                                ImGui::GetWindowContentRegionMin().x;
-            const float need = ImGui::CalcTextSize("Saut").x + 6.0f + 2.0f * kControlHeight + 4.0f +
+            const float need = ImGui::CalcTextSize("Saut").x + 6.0f + 2.0f * kParamRow + 4.0f +
                                14.0f + 18.0f + ImGui::CalcTextSize("Quantis\xC3\xA9").x + 24.0f;
             if (inner - used - 14.0f >= need) {
                 ImGui::SameLine(0.0f, 14.0f);
@@ -2397,9 +2405,9 @@ void draw_deck(Deck& deck, Engine& engine, Frame& frame, void* texture,
         }
         row_label("Saut");
         ImGui::SameLine(0.0f, 6.0f);
-        if (button("\xE2\x88\x92", Icon::None, false, kControlHeight, kInk, loaded)) commands.beat_jump_beats = -1.0;
+        if (button("\xE2\x88\x92", Icon::None, false, kParamRow, kInk, loaded)) commands.beat_jump_beats = -1.0;
         ImGui::SameLine(0.0f, 4.0f);
-        if (button("+", Icon::None, false, kControlHeight, kInk, loaded)) commands.beat_jump_beats = 1.0;
+        if (button("+", Icon::None, false, kParamRow, kInk, loaded)) commands.beat_jump_beats = 1.0;
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("un temps en avant ; \xE2\x88\x92 un temps en arri\xC3\xA8re");
         ImGui::SameLine(0.0f, 14.0f);
         if (toggle("Quantis\xC3\xA9", deck.transport.quantise())) {
@@ -2421,7 +2429,7 @@ void draw_deck(Deck& deck, Engine& engine, Frame& frame, void* texture,
         DeckCommands& commands = is_a ? frame.commands_a : frame.commands_b;
         int& mode = is_a ? frame.pad_mode_a : frame.pad_mode_b;
         const DeckTarget target = is_a ? DeckTarget::A : DeckTarget::B;
-        const float pad = 44.0f;
+        const float pad = kHitTargetMin;
         const ImVec2 row_origin = ImGui::GetCursorScreenPos();
         ImDrawList* draw = ImGui::GetWindowDrawList();
         const bool shift = ImGui::GetIO().KeyShift;
@@ -3315,7 +3323,7 @@ void draw_table_screen(Engine& engine, Frame& frame) {
             push_small();
             ImGui::PushID(i);
             {
-                const float dy = (kControlHeight - ImGui::GetTextLineHeight()) * 0.5f;
+                const float dy = (kParamRow - ImGui::GetTextLineHeight()) * 0.5f;
                 ImGui::SetCursorPosY(ImGui::GetCursorPosY() + dy);
                 text_c(pairs[i].accent, "%s", pairs[i].title);
                 ImGui::SetCursorPosY(ImGui::GetCursorPosY() - dy);
@@ -3393,12 +3401,12 @@ void draw_effect_card(Engine& engine, Frame& frame, std::size_t slot) {
         ImGui::PushID("link");
         const char* label = linked ? "Audio et vid\xC3\xA9o li\xC3\xA9s" : "D\xC3\xA9li\xC3\xA9s";
         const float w = ImGui::CalcTextSize(label).x + 34.0f;
-        const bool pressed = ImGui::InvisibleButton("l", ImVec2(w, kControlHeight));
+        const bool pressed = ImGui::InvisibleButton("l", ImVec2(w, kParamRow));
         ImGui::PopID();
         ImDrawList* draw = ImGui::GetWindowDrawList();
-        draw->AddCircleFilled(ImVec2(origin.x + 8.0f, origin.y + kControlHeight * 0.5f), 5.0f,
+        draw->AddCircleFilled(ImVec2(origin.x + 8.0f, origin.y + kParamRow * 0.5f), 5.0f,
                               linked ? kSage : kAlert);
-        draw->AddText(ImVec2(origin.x + 22.0f, origin.y + (kControlHeight - ImGui::GetTextLineHeight()) * 0.5f),
+        draw->AddText(ImVec2(origin.x + 22.0f, origin.y + (kParamRow - ImGui::GetTextLineHeight()) * 0.5f),
                       linked ? kInk : kAlert, label);
         if (pressed) {
             if (linked) unit.unlink(); else unit.relink();
@@ -3707,7 +3715,7 @@ void draw_mapping_list(Engine& engine, Frame& frame) {
                     frame.mappings_dirty = true;
                 }
                 draw->AddCircleFilled(ImVec2(at.x + 8.0f, at.y + ImGui::GetTextLineHeight() * 0.5f), 4.0f,
-                                      row.enabled ? (mapping.active(i) ? kSage : kAmber) : kHair);
+                                      row.enabled ? (mapping.active(i) ? kSage : kWarn) : kHair);
                 if (ImGui::IsItemHovered()) {
                     ImGui::SetTooltip(row.enabled ? (mapping.active(i) ? "active \xC2\xB7 clic : couper"
                                                                         : "activ\xC3\xA9""e mais sans valeur (contr\xC3\xB4le jamais touch\xC3\xA9 ?) \xC2\xB7 clic : couper")
@@ -3775,7 +3783,7 @@ void draw_mapping_list(Engine& engine, Frame& frame) {
     row_label("Contr\xC3\xB4le");
     ImGui::SameLine(0.0f, 8.0f);
     {
-        const float dy = (kControlHeight - ImGui::GetTextLineHeight()) * 0.5f;
+        const float dy = (kParamRow - ImGui::GetTextLineHeight()) * 0.5f;
         ImGui::SetCursorPosY(ImGui::GetCursorPosY() + dy);
         push_mono();
         if (row.source.kind == SourceKind::Control) {
@@ -4154,7 +4162,7 @@ void draw_output_screen(Engine& engine, Frame& frame) {
             for (std::size_t i = 0; i < points.size(); ++i) {
                 const Point& a = points[i];
                 const Point& b = points[(i + 1) % points.size()];
-                draw->AddLine(to_screen(a), to_screen(b), mask_tool ? kSlate : IM_COL32(0x6E, 0x86, 0x96, 0x60),
+                draw->AddLine(to_screen(a), to_screen(b), mask_tool ? kSlate : tok::veil(kSlate, tok::kVeilMaskIdle),
                               mask_tool ? 2.0f : 1.0f);
             }
         }
@@ -4763,19 +4771,19 @@ void draw_play_screen(Engine& engine, Frame& frame) {
 
 void apply_style() {
     ImGuiStyle& style = ImGui::GetStyle();
-    style.WindowRounding = 0.0f;
-    style.ChildRounding = 0.0f;
+    style.WindowRounding = tok::kPanelRadius;
+    style.ChildRounding = tok::kPanelRadius;
     style.FrameRounding = kControlRadius;
     style.GrabRounding = kControlRadius;
-    style.ScrollbarRounding = 0.0f;
+    style.ScrollbarRounding = tok::kPanelRadius;
     style.WindowBorderSize = 0.0f;
     style.ChildBorderSize = 1.0f;
     style.FrameBorderSize = 0.0f;
-    style.CellPadding = ImVec2(8.0f, 4.0f);
-    style.ItemSpacing = ImVec2(10.0f, 6.0f);
-    style.ItemInnerSpacing = ImVec2(6.0f, 4.0f);
-    style.WindowPadding = ImVec2(18.0f, 16.0f);
-    style.FramePadding = ImVec2(8.0f, 4.0f);
+    style.CellPadding = ImVec2(tok::kCellPadX, tok::kCellPadY);
+    style.ItemSpacing = ImVec2(tok::kItemSpaceX, tok::kItemSpaceY);
+    style.ItemInnerSpacing = ImVec2(tok::kItemInnerX, tok::kItemInnerY);
+    style.WindowPadding = ImVec2(tok::kWindowPadX, tok::kWindowPadY);
+    style.FramePadding = ImVec2(tok::kFramePadX, tok::kFramePadY);
 
     ImVec4* c = style.Colors;
     c[ImGuiCol_WindowBg] = rgba(kGround);
@@ -4813,8 +4821,15 @@ void apply_style() {
     c[ImGuiCol_TableBorderStrong] = rgba(kHair);
     c[ImGuiCol_TableBorderLight] = rgba(kHair);
     c[ImGuiCol_TableRowBg] = ImVec4(0, 0, 0, 0);
-    c[ImGuiCol_TableRowBgAlt] = ImVec4(1.0f, 1.0f, 1.0f, 0.015f);
-    c[ImGuiCol_TextSelectedBg] = ImVec4(0.79f, 0.46f, 0.18f, 0.35f);
+    c[ImGuiCol_TableRowBgAlt] = rgba(tok::kRowAlt);
+    {
+        // The accent, veiled: an opacity laid on a token is not a hard-coded
+        // value, but writing it out in floats made it a thirteenth token in
+        // disguise. It is expressed FROM the token now.
+        ImVec4 veil = rgba(kAccent);
+        veil.w = tok::kSelectionAlpha;
+        c[ImGuiCol_TextSelectedBg] = veil;
+    }
     c[ImGuiCol_NavCursor] = rgba(kAccent);
     c[ImGuiCol_DragDropTarget] = rgba(kAccent);
     c[ImGuiCol_ResizeGrip] = rgba(kHair);

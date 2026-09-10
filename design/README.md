@@ -40,8 +40,11 @@ décisions y sont visibles plutôt qu'écrites :
 - **Diagnostics en tiroir** — position, vitesse, confiance, scratch/s vivent
   sous « diagnostic platine », replié sauf quand la platine est en direct.
 
-Les jetons (couleurs, polices, hauteurs) sont ceux d'`apply_style` dans
-`scratchvj/ui/main_ui.cpp`, pas des arrondis. Les valeurs affichées sont un
+Les jetons (couleurs, polices, hauteurs) sont ceux de `scratchvj/ui/tokens.h`,
+le fichier unique de jetons du produit — pas des arrondis. *(Ce paragraphe a
+désigné `apply_style` dans `main_ui.cpp` : la fonction est dans `panels.cpp`, et
+depuis la phase 5 elle ne porte plus aucune valeur, seulement des noms de
+jetons.)* Les valeurs affichées sont un
 état de jeu plausible, pas des données réelles.
 
 ## Régénérer le canvas

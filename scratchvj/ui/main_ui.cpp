@@ -62,6 +62,7 @@
 #include <filesystem>
 #include "core/cachemeta.h"
 #include "panels.h"
+#include "tokens.h"
 #include "share.h"
 
 namespace {
@@ -222,9 +223,12 @@ int main(int argc, char** argv) {
         SDL_Quit();
         return 1;
     }
-    // The mockup's ground colour, painted by the clear rather than by a quad.
+    // The ground, painted by the clear rather than by a quad. The value is
+    // the SAME constant the interface paints with, in bgfx's notation: it was
+    // written a second time here, by hand, in a second file (ui/tokens.h).
     // View 1 is the backbuffer; view 0 belongs to the program compositor.
-    bgfx::setViewClear(8, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x141412ff, 1.0f, 0);
+    bgfx::setViewClear(8, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH,
+                       svj::ui::tok::kGroundClearRgba, 1.0f, 0);
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -251,14 +255,15 @@ int main(int argc, char** argv) {
     char* base = SDL_GetBasePath() != nullptr ? SDL_strdup(SDL_GetBasePath()) : nullptr;
     if (base != nullptr) {
         char path[1024];
-        // Sizes read off the mockup at its native 1440 width: body 15, labels
-        // 11.5, numbers 15. The interface is dense on purpose; big type was the
-        // single largest reason the first build did not look like the design.
-        std::snprintf(path, sizeof(path), "%sfonts/Archivo-Variable.ttf", base);
-        svj::ui::g_fonts.sans = io.Fonts->AddFontFromFileTTF(path, 15.0f * dpi);
-        svj::ui::g_fonts.small = io.Fonts->AddFontFromFileTTF(path, 11.5f * dpi);
-        std::snprintf(path, sizeof(path), "%sfonts/DMMono-Regular.ttf", base);
-        svj::ui::g_fonts.mono = io.Fonts->AddFontFromFileTTF(path, 15.0f * dpi);
+        // The two faces and the three sizes, all from the token file. The
+        // interface is dense on purpose; big type was the single largest
+        // reason the first build did not look like the design.
+        namespace tok = svj::ui::tok;
+        std::snprintf(path, sizeof(path), "%s%s", base, tok::kWordsFile);
+        svj::ui::g_fonts.sans = io.Fonts->AddFontFromFileTTF(path, tok::kBodyPx * dpi);
+        svj::ui::g_fonts.small = io.Fonts->AddFontFromFileTTF(path, tok::kLabelPx * dpi);
+        std::snprintf(path, sizeof(path), "%s%s", base, tok::kMonoFile);
+        svj::ui::g_fonts.mono = io.Fonts->AddFontFromFileTTF(path, tok::kValuePx * dpi);
         SDL_free(base);
     }
     if (svj::ui::g_fonts.sans == nullptr) {
