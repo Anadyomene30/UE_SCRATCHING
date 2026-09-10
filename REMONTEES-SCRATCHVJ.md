@@ -1697,3 +1697,122 @@ a levée, ni en phase 5 une attente déjà satisfaite. Recommandation : la ligne
 noyau se réécrit par le critère (« les touches réservées que le produit lie, et
 celles qu'il a la chose de lier »), avec `Ctrl`+`Z` **sans objet** pour ce
 produit ; l'en-tête des jetons prend la forme du verdict 07.
+
+---
+
+# Tour 03
+
+Deux points relevés le **2026-09-10** en faisant la **phase 2** du talon (le
+vocabulaire), sur la branche `claude/scratch-video-unreal-0oi7dv`, commit
+`ef3cbbc`. La numérotation continue après `SCRATCHVJ-26`. Aucun n'a été tranché
+dans le dépôt ; ce qui a été fait est dans `docs/ALIGNEMENT.md`, « Phase 2 — le
+vocabulaire ».
+
+| # | Objet | Portée | Ce que ça bloque |
+|---|---|---|---|
+| 27 | `little_planet` et `fisheye_view` n'ont de libellé dans aucune table, et « Fisheye » nomme déjà une projection de fichier | toute la maison | rien aujourd'hui ; le prochain viseur qui les affiche |
+| 28 | Un nom de caisse est un libellé de l'utilisateur **et** une chaîne écrite sur disque | ce produit, et tout produit qui laisse nommer un rangement | rien aujourd'hui ; la migration a dû trancher seule |
+
+---
+
+## SCRATCHVJ-27 — Deux reprojections sur trois n'ont pas de libellé
+
+**Portée : toute la maison.** Ne bloque rien aujourd'hui ; se paiera au prochain
+produit qui affiche ces modes.
+
+**Ce que disent les sources.** `spec/00-vocabulaire.md`, « Les modes de vue, ou
+reprojections », nomme les trois : `view: rectilinear`, `view: little_planet`,
+`view: fisheye_view` — c'est le verdict `SCRATCHVJ-02`. La table du langage
+d'`ERGONOMIE.md` porte les libellés FR et EN de tout ce qui se nomme, et elle en
+a **deux** pour cette famille : `view: rectilinear` → « Vue rectiligne » /
+« Rectilinear view », `view: source` → « Vue source » / « Source view ». Elle n'a
+rien pour `little_planet` ni pour `fisheye_view`, alors qu'elle a bien
+`fisheye` → « Fisheye » / « Fisheye », qui est la **projection d'un fichier**,
+paramétrée par `lens`, `fov_deg`, `center`, `radius`, `count`.
+
+`ERGONOMIE.md` dit de cette table qu'elle est la source des deux colonnes et
+qu'aucun produit n'y ajoute un mot de son cru. `maison/00-LIRE-DABORD.md` dit
+que ce qu'on ne peut pas citer n'est pas une règle. Les deux ensemble laissent ce
+produit sans issue écrite.
+
+**Ce que le produit a fait, et il faut le dire tel quel.** Le sélecteur écrit
+« Rectiligne », « Little planet », « Fisheye » (`scratchvj/ui/panels.cpp`, la
+ligne « Vue 360 » de l'en-tête de deck). Les deux derniers sont des **substituts
+notés**, au sens de `maison/01-LES-TROIS-COUCHES.md` : le nom canonique rendu
+lisible, faute de libellé. Le premier est la forme courte de « Vue rectiligne »,
+la ligne portant déjà le mot « Vue ».
+
+**Ce que ça produit, et c'est le vrai coût.** Dans ce produit, le mot
+« Fisheye » désigne maintenant **un mode de vue** dans le sélecteur, alors que la
+table de la maison le donne à **une projection de fichier**. C'est exactement la
+collision que `SCRATCHVJ-02` a fermée côté identifiants — `fisheye_view` plutôt
+que `fisheye` — et qui se rouvre côté libellés parce que la désambiguïsation n'a
+pas été portée jusqu'à la colonne FR. Un utilisateur qui voit « Fisheye » dans un
+menu de vue et « Fisheye » dans un menu de projection lit deux fois le même mot
+pour deux concepts que la maison a séparés exprès.
+
+**La question.** Quels sont les libellés FR et EN de `view: little_planet` et de
+`view: fisheye_view` ?
+
+**Ma recommandation : les deux lignes s'ajoutent à la table, sur le motif de
+celle qui existe déjà.** « Vue rectiligne » est construit *mot de vue + mot de la
+projection* ; les deux manquantes se construisent pareil — `view: little_planet`
+→ « Vue little planet » / « Little planet view », `view: fisheye_view` → « Vue
+fisheye » / « Fisheye view ». Le mot « Vue » est ce qui porte la
+désambiguïsation dans la colonne lisible, exactement comme le suffixe `_view` la
+porte dans la colonne canonique — et il rend la troncature légitime là où la
+place manque, puisqu'une forme courte est une troncature de la forme longue.
+*Little planet* reste en anglais dans les deux colonnes : c'est un nom de métier
+qui n'a pas de traduction employée, comme « Fisheye » que la table garde déjà tel
+quel.
+
+---
+
+## SCRATCHVJ-28 — Un nom de caisse est un libellé et une chaîne de disque à la fois
+
+**Portée : ce produit, et tout produit qui laisse l'utilisateur nommer un
+rangement.** Ne bloque rien : la migration est faite. Mais elle a été tranchée
+ici, ce qui est précisément ce que le protocole demande d'éviter.
+
+**Ce que disent les sources.** `spec/00-vocabulaire.md` en tête : « la chaîne
+écrite sur disque ou passée d'une application à l'autre est **toujours** la forme
+canonique », et son critère d'application est **la frontière** — « elle ne
+gouverne pas les clés d'un fichier qu'aucun autre programme ne lit ». Le verdict
+`SCRATCHVJ-03` dit de son côté que `2D` et « équirectangulaire » seul
+disparaissent « partout, y compris dans la sortie console **et dans le nom de
+caisse écrit sur disque** », et il qualifie ce dernier de **migration**.
+`ERGONOMIE.md`, « Le langage » : une forme courte n'est « jamais dans un fichier,
+une valeur ou une clé ».
+
+**Ce que fait le code.** `library.json` porte `crates[].name`. Trois de ces noms
+sont écrits par le produit lui-même (`app/engine.cpp` : « Tous les clips »,
+« 360° », « Loops & textures ») ; tous les autres sont **tapés par
+l'utilisateur**, dans un champ de saisie, et il peut renommer les trois premiers.
+
+**Le partage que ce dépôt a dû faire seul.** La migration ne répare que les trois
+formes que ce produit a écrites — `360°`, `360`, `2D` — et laisse intact tout
+autre nom. Un utilisateur qui tape « clips 2D » garde « clips 2D ».
+
+**La question, et elle a deux moitiés.**
+
+1. Le vocabulaire gouverne-t-il un libellé que **l'utilisateur** a écrit et que
+   le produit se contente de conserver ? Le critère de la frontière dit non — ce
+   fichier n'est lu par personne d'autre. Le verdict 03 dit oui — il nomme le nom
+   de caisse.
+2. Une migration a-t-elle le droit de **réécrire ce que l'utilisateur a tapé** ?
+
+**Ma recommandation : non aux deux, et la règle s'écrit une fois.** *Le
+vocabulaire gouverne ce que le produit écrit ; il ne gouverne pas ce que
+l'utilisateur écrit.* Un nom de caisse, un nom de banque, un nom de préréglage
+sont du **contenu**, pas du libellé : le produit les affiche sans les traduire,
+comme il affiche un nom de fichier. Ce qui reste vrai du verdict 03, et que ce
+dépôt a appliqué : **le produit ne fabrique plus de nom fautif**, et il répare
+ceux qu'il a fabriqués. C'est la même frontière que la maison a déjà tracée
+ailleurs — « le nom d'un paramètre que le produit doit atteindre chez un tiers
+n'est pas un libellé : c'est une adresse » — appliquée dans l'autre sens.
+
+Un effet de bord à noter, s'il fallait une raison de plus : la migration peut
+produire **deux caisses du même nom** quand un fichier porte déjà les deux formes
+(vérifié sur `library-03-mixte.json`). Ce n'est pas une faute — les caisses ne
+sont pas identifiées par leur nom — mais une migration qui touche du contenu en
+fabrique toujours, et c'est le signe qu'elle est du mauvais côté de la frontière.

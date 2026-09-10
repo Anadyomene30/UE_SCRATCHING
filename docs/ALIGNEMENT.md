@@ -18,9 +18,9 @@ verdict les débloquait.
 
 | # | Verdict | Ce que ça fait dans ce dépôt | État des lignes | Commit |
 |---|---|---|---|---|
-| 01 | tranché, source modifiée | `"auto"` devient l'absence de clé, même migration que `equirect` → `equirect_360` | ouvert (phase 2) ; les identifiants de code : fermé, rien demandé | — |
-| 02 | tranché, source modifiée | `rectilinear`, `little_planet`, `fisheye_view` | ouvert (phase 2) | — |
-| 03 | tranché, source modifiée | « 360 » là où 44 px ne tiennent pas plus ; `2D` et « équirectangulaire » seul disparaissent | ouvert (phase 2) — **bloqué en partie** par « Plate » / « Rectiligne », `SCRATCHVJ-22` | — |
+| 01 | tranché, source modifiée | `"auto"` devient l'absence de clé, même migration que `equirect` → `equirect_360` | fermé | `ef3cbbc` |
+| 02 | tranché, source modifiée | `rectilinear`, `little_planet`, `fisheye_view` | fermé | `ef3cbbc` |
+| 03 | tranché, source modifiée | « 360 » là où 44 px ne tiennent pas plus ; `2D` et « équirectangulaire » seul disparaissent | fermé — le mot est celui de la table, `SCRATCHVJ-22` reste ouverte côté maison | `ef3cbbc` |
 | 04 | tranché, source modifiée | corps 15 px, 11,5 arrondi au cran voisin, échelle candidate | ouvert (phase 5) | — |
 | 05 | reporté | nommer les trois étages dans le fichier de jetons, sans valeurs | remonté | — |
 | 06 | reporté | rien ; isoler la mono et le fond en une ligne chacune en phase 5 | remonté | — |
@@ -30,7 +30,7 @@ verdict les débloquait.
 | 10 | tranché, source modifiée | « A » / « B » gardés ; les phrases à la craie ; capuchon 2 px + nom en craie | fermé | `3a278f2` |
 | 11 | tranché, source modifiée | l'aplat porte un état ; quatre boutons d'action perdent le remplissage | fermé | `41ca9c5` |
 | 12 | tranché, source modifiée | `kControlRadius` 3, d'après `rhythm.radius_control` | fermé | `d138ac3` |
-| 13 | tranché, source modifiée | capitale initiale sur les 25 libellés | ouvert (phase 2) | — |
+| 13 | tranché, source modifiée | capitale initiale sur les 25 libellés | fermé | `ef3cbbc` |
 | 14 | reporté | les angles à une décimale, signe explicite ; `mm:ss.d` reste | angles fermés ; le temps remonté | `b025d6a` |
 | 15 | tranché, source modifiée | `Ctrl`+`Z` sans objet ; `Tab` sur `F` ; les pads `1`–`5` corrigés dans les sources ; `Échap` : le rang qui quitte se supprime | trois lignes fermées sans commit ; `Échap` ouvert (phase 4) | — |
 | 16 | tranché, source modifiée | tangage borné à ±89,9° (`kPitchClampDeg`) ; aucun HUD | fermé ; le champ par défaut → `SCRATCHVJ-25` | `b025d6a` |
@@ -83,6 +83,70 @@ application — donc aucun fichier réel à nommer ; la première sera celle de
 
 **Phase 1.** `docs/manifeste.md` existe : les deux principes du README, cités
 dans ses termes, et la version française que `CLAUDE.md` portait déjà.
+
+---
+
+## Phase 2 — le vocabulaire · 2026-09-10 · `ef3cbbc`
+
+Les deux moitiés que le talon demande : les formes canoniques de la 360 partout
+où une projection ou une disposition est écrite, et `docs/vocabulaire.md` pour
+les mots propres à la scène.
+
+| Verdict | Ce qui a été fait | État |
+|---|---|---|
+| 01 | `equirect` → `equirect_360` ; `"auto"` cesse de s'écrire, la clé s'omet ; les deux anciennes formes se lisent encore | fermé |
+| 02 | `Projection::{Rectilinear, LittlePlanet, FisheyeView}`, et les trois libellés | fermé ; les libellés FR des deux dernières → `SCRATCHVJ-27` |
+| 03 | « 360 » et « Rectiligne » ; `2D` et « équirectangulaire » seul ont disparu, console et nom de caisse compris | fermé ; `SCRATCHVJ-22` reste ouverte côté maison |
+| 13 | les 25 libellés de paramètre en capitale initiale | fermé |
+| — | les états d'analyse aux mots canoniques d'`ERGONOMIE.md` | fermé |
+| — | `docs/vocabulaire.md` | fermé |
+
+**`SCRATCHVJ-22` : le mot employé est « Rectiligne ».** La remontée du tour 02
+opposait « Plate » (`SCENE.md`, et le verdict 03 qui l'a produite) à
+« Rectiligne » (la table du langage d'`ERGONOMIE.md`, sur `LACUNA-17`), écrits le
+même jour. Le mot appliqué ici est **celui de la table**, pour la raison que la
+table donne elle-même : « une plate en projection Plate » n'est lisible ni à
+l'écrit ni à l'oral, et la table est la source des deux colonnes. **La remontée
+reste ouverte côté maison** : ce dépôt ne peut pas faire dire la même chose aux
+deux sources, et tant que `SCENE.md` écrit « Plate », le produit de scène suivant
+reposera la question.
+
+Conséquence de forme, notée parce qu'elle n'était pas prévue : « Rectiligne »
+tient partout où « 2D » tenait — les sélecteurs de ce produit se dimensionnent
+sur leur texte. Il n'y a donc **aucune troncature à demander** ; la seule forme
+courte employée est « 360 » pour « Équirectangulaire 360 », que
+`ERGONOMIE.md` donne en exemple.
+
+**La migration, vérifiée sur de vrais fichiers.** `library.json` est le premier
+fichier écrit sur disque que ce produit migre. Le lecteur accepte encore `"auto"`
+et `"equirect"`, l'écriture ne produit plus que `flat` et `equirect_360` — et
+l'absence de clé pour ce qui n'est pas forcé. Le lecteur **dit** qu'il a dû
+accepter une ancienne forme (`LibraryFile::migrated_on_read`), et l'interface
+enregistre une fois au démarrage quand c'est le cas : sans cela un fichier
+ancien serait resté dans l'ancienne forme jusqu'à la première modification d'un
+set.
+
+Quatre fichiers réels, dérivés du `library.json` de cette machine (huit clips,
+dont trois locaux et cinq hors du dépôt), lancés dans
+`build-ui\scratchvj\ui\Release\scratchvj_ui.exe --screen bibliotheque` :
+
+| Fichier | Ce qu'il contient | Ce qui en est sorti |
+|---|---|---|
+| `library-01-ancien.json` | l'ancienne forme, avec **les trois valeurs** `auto`, `flat`, `equirect`, et trois caisses dont `360°` et `2D` | réécrit : `flat`, `equirect_360`, clé absente pour `auto` ; caisses « Équirectangulaire 360 », « Rectiligne », « Set 12 sept. » intacte |
+| `library-02-nouveau.json` | la nouvelle forme seule | relu et réécrit à l'identique ; aucun changement de forme |
+| `library-03-mixte.json` | les deux formes dans le même fichier, plus une clé absente | normalisé ; les huit décisions conservées une à une |
+| `library-04-corrompu.json` | `"projection": "sphere"` sur le troisième clip | **refusé en nommant la valeur** ; le fichier est resté tel quel sur le disque, `"sphere"` compris |
+
+Deux tests capturent la même chose dans la suite, pour que la prochaine session
+n'ait pas à refaire ces quatre fichiers : *« the old projection words are still
+read, the new ones written »* et *« a crate named after a projection takes the
+long form »* (`scratchvj/tests/test_library_io.cpp`).
+
+**Ce que la phase a révélé.** Deux points montent au tour 03 : `SCRATCHVJ-27`
+(les libellés FR de `little_planet` et `fisheye_view` n'existent dans aucune
+table, et « Fisheye » désigne déjà une projection de fichier) et `SCRATCHVJ-28`
+(un nom de caisse est un libellé que l'utilisateur peut changer *et* une chaîne
+écrite sur disque ; ce dépôt a dû décider seul ce que la migration touche).
 
 ---
 
@@ -402,8 +466,8 @@ indécidable.
 
 | Fichier | Champ | Valeurs | Où | État |
 |---|---|---|---|---|
-| `library.json` | `clips[].projection` | `"auto"`, `"flat"`, `"equirect"` | table `config/library_io.cpp:18-22` ; écriture `:63` ; lecture `:120-127` | `"flat"` **conforme**, seule forme canonique du catalogue écrite sur disque (`00-vocabulaire.md:48`) — **fermé** (`9ccce6f`). `"equirect"` et `"auto"` → **ouvert (phase 2)** — verdict SCRATCHVJ-01 reçu (tranché, source modifiée) : `"auto"` cesse de s'écrire et la clé s'omet, dans la **même migration** que `equirect` → `equirect_360` ; le refus de chaîne inconnue reste (`00-vocabulaire.md`, « Ce qui n'est pas déclaré ») |
-| `library.json` | `crates[].name` | `"Tous les clips"`, `"360°"`, `"Loops & textures"` | `app/engine.cpp:276-278`, écrits `config/library_io.cpp:71` | **ouvert (phase 2)** — verdict SCRATCHVJ-03 reçu (tranché, source modifiée) : la forme courte est bornée par la place (`ERGONOMIE.md`, « Le langage ») ; « 360 » là où 44 px ne tiennent pas plus, forme longue accessible à côté ; `2D` et « équirectangulaire » seul disparaissent partout, console et nom de caisse compris — ce dernier est une migration. **Bloqué en partie** : le verdict et `SCENE.md` écrivent « Plate », la table d'`ERGONOMIE.md` écrit « Rectiligne » (`LACUNA-17`) → tour 02, `SCRATCHVJ-22` — un nom de caisse est un libellé que l'utilisateur peut changer, pas une valeur de schéma ; mais il est écrit sur disque et il nomme une projection |
+| `library.json` | `clips[].projection` | `"auto"`, `"flat"`, `"equirect"` | table `config/library_io.cpp:18-22` ; écriture `:63` ; lecture `:120-127` | `"flat"` **conforme**, seule forme canonique du catalogue écrite sur disque (`00-vocabulaire.md:48`) — **fermé** (`9ccce6f`). `"equirect"` et `"auto"` → **fermé** (`ef3cbbc`, phase 2, SCRATCHVJ-01) — `equirect_360` s'écrit, `"auto"` est devenu l'absence de clé, les deux anciennes formes se lisent encore, et le lecteur dit qu'il a dû les accepter pour que le fichier soit réécrit une fois au démarrage. Le refus de chaîne inconnue est intact, vérifié sur un fichier réel |
+| `library.json` | `crates[].name` | « Tous les clips », « 360° », « Loops & textures » | `app/engine.cpp`, écrits par `config/library_io.cpp` | **fermé** (`ef3cbbc`, phase 2, SCRATCHVJ-03) — la caisse que le produit crée lui-même porte la forme longue, « Équirectangulaire 360 » ; les trois noms que ce produit a écrits (`360°`, `360`, `2D`) sont migrés à la lecture, un nom tapé par l'utilisateur ne l'est pas. **Ce partage est une décision de ce dépôt** → tour 03, `SCRATCHVJ-28` |
 | `.svcache`, en-tête | `flags`, bit 1 | `kCacheEquirect = 1u << 1` | `core/videocache.h:43-46` ; testé `:58` ; posé `app/analyze.cpp:258` et `app/engine.cpp:75` | **hors périmètre** — un bit, pas une chaîne. `00-vocabulaire.md:5-8` ne régit que « la chaîne écrite sur disque ou passée d'une application à l'autre » |
 | `settings.json` | — | aucune | preuve ci-dessous | **hors périmètre** — axe vide |
 | `mapping.json` | `bindings[].id` | `ch1.trim`, `xfader`, `ch1.eq.hi`… | fichier lu ; `core/layout.h:1-7` | **hors périmètre** — des contrôles, pas des projections |
@@ -420,7 +484,7 @@ clé, aucune valeur ne nomme une projection, une disposition ou un œil.
 | Identifiant | Où | Ce qu'il désigne | État |
 |---|---|---|---|
 | `ProjectionOverride::{Auto, Flat, Equirect}` | `core/library.h:28-32` | ce que l'utilisateur a forcé sur un clip | **fermé** (verdict SCRATCHVJ-01, rien à écrire) — un identifiant de code n'est pas « la chaîne écrite sur disque ou passée d'une application à l'autre » (`00-vocabulaire.md`, en tête) ; le verdict ne vise que le fichier de bibliothèque, et renommer un identifiant est une refonte qu'aucune phase ne porte |
-| `Projection::{Perspective, LittlePlanet, Fisheye}` | `core/sphere.h:31-35` | la reprojection de la **vue**, pas la projection du fichier | **ouvert (phase 2)** — verdict SCRATCHVJ-02 reçu (tranché, source modifiée) : `rectilinear`, `little_planet`, `fisheye_view`, identifiants et libellés (`00-vocabulaire.md`, « Les modes de vue, ou reprojections ») |
+| `Projection::{Rectilinear, LittlePlanet, FisheyeView}` | `core/sphere.h` | la reprojection de la **vue**, pas la projection du fichier | **fermé** (`ef3cbbc`, phase 2, SCRATCHVJ-02) — `Rectilinear`, `LittlePlanet`, `FisheyeView` dans le code, « Rectiligne » / « Little planet » / « Fisheye » à l'écran. Les libellés FR des deux dernières ne sont dans aucune table → tour 03, `SCRATCHVJ-27` |
 | `kCacheEquirect`, `is_equirect()` | `core/videocache.h:45,58` | le drapeau du cache | **fermé** (verdict SCRATCHVJ-01, rien à écrire) — un identifiant de code n'est pas « la chaîne écrite sur disque ou passée d'une application à l'autre » (`00-vocabulaire.md`, en tête) ; le verdict ne vise que le fichier de bibliothèque, et renommer un identifiant est une refonte qu'aucune phase ne porte |
 | `effective_equirect()`, `shown_equirect()` | `core/library.h:37,61` ; `core/library.cpp:19-23` | ce qui est réellement montré | **fermé** (verdict SCRATCHVJ-01, rien à écrire) — un identifiant de code n'est pas « la chaîne écrite sur disque ou passée d'une application à l'autre » (`00-vocabulaire.md`, en tête) ; le verdict ne vise que le fichier de bibliothèque, et renommer un identifiant est une refonte qu'aucune phase ne porte |
 | `equirect_from_direction`, `direction_from_equirect`, `sample_equirect` | `core/sphere.h:51,54,60` | la géométrie | **fermé** (verdict SCRATCHVJ-01, rien à écrire) — un identifiant de code n'est pas « la chaîne écrite sur disque ou passée d'une application à l'autre » (`00-vocabulaire.md`, en tête) ; le verdict ne vise que le fichier de bibliothèque, et renommer un identifiant est une refonte qu'aucune phase ne porte |
@@ -431,29 +495,30 @@ clé, aucune valeur ne nomme une projection, une disposition ou un œil.
 
 | Ligne (`ui/panels.cpp`) | Chaîne | Où | État |
 |---|---|---|---|
-| `388` | `equirect 360` / `plan 2D` | détail sous la vignette du deck | **ouvert (phase 2)** — verdict SCRATCHVJ-03 reçu (tranché, source modifiée) : la forme courte est bornée par la place (`ERGONOMIE.md`, « Le langage ») ; « 360 » là où 44 px ne tiennent pas plus, forme longue accessible à côté ; `2D` et « équirectangulaire » seul disparaissent partout, console et nom de caisse compris — ce dernier est une migration. **Bloqué en partie** : le verdict et `SCENE.md` écrivent « Plate », la table d'`ERGONOMIE.md` écrit « Rectiligne » (`LACUNA-17`) → tour 02, `SCRATCHVJ-22` |
-| `851` | `360°` / `2D` | `projection_word()`, employé en `976` et `1369` | **ouvert (phase 2)** — verdict SCRATCHVJ-03 reçu (tranché, source modifiée) : la forme courte est bornée par la place (`ERGONOMIE.md`, « Le langage ») ; « 360 » là où 44 px ne tiennent pas plus, forme longue accessible à côté ; `2D` et « équirectangulaire » seul disparaissent partout, console et nom de caisse compris — ce dernier est une migration. **Bloqué en partie** : le verdict et `SCENE.md` écrivent « Plate », la table d'`ERGONOMIE.md` écrit « Rectiligne » (`LACUNA-17`) → tour 02, `SCRATCHVJ-22` |
-| `1197` | `{"Tous", "2D", "360°", "Alpha"}` | filtres de la bibliothèque | **ouvert (phase 2)** — verdict SCRATCHVJ-03 reçu (tranché, source modifiée) : la forme courte est bornée par la place (`ERGONOMIE.md`, « Le langage ») ; « 360 » là où 44 px ne tiennent pas plus, forme longue accessible à côté ; `2D` et « équirectangulaire » seul disparaissent partout, console et nom de caisse compris — ce dernier est une migration. **Bloqué en partie** : le verdict et `SCENE.md` écrivent « Plate », la table d'`ERGONOMIE.md` écrit « Rectiligne » (`LACUNA-17`) → tour 02, `SCRATCHVJ-22` |
+| `388` | `equirect 360` / `plan 2D` | détail sous la vignette du deck | **fermé** (`ef3cbbc`, phase 2, SCRATCHVJ-03) — « 360 » et « Rectiligne » ; `2D` et « équirectangulaire » seul ont disparu, console comprise ; la forme longue est à côté, dans l'infobulle de l'inspecteur et dans celle du sélecteur d'en-tête. **`SCRATCHVJ-22` est tranché par la table** : le mot est celui d'`ERGONOMIE.md`, « Rectiligne », et non le « Plate » de `SCENE.md` — la remontée reste ouverte côté maison, qui doit faire dire la même chose aux deux sources |
+| `851` | `360°` / `2D` | `projection_word()`, employé en `976` et `1369` | **fermé** (`ef3cbbc`, phase 2, SCRATCHVJ-03) — « 360 » et « Rectiligne » ; `2D` et « équirectangulaire » seul ont disparu, console comprise ; la forme longue est à côté, dans l'infobulle de l'inspecteur et dans celle du sélecteur d'en-tête. **`SCRATCHVJ-22` est tranché par la table** : le mot est celui d'`ERGONOMIE.md`, « Rectiligne », et non le « Plate » de `SCENE.md` — la remontée reste ouverte côté maison, qui doit faire dire la même chose aux deux sources |
+| `1197` | `{"Tous", "2D", "360°", "Alpha"}` | filtres de la bibliothèque | **fermé** (`ef3cbbc`, phase 2, SCRATCHVJ-03) — « 360 » et « Rectiligne » ; `2D` et « équirectangulaire » seul ont disparu, console comprise ; la forme longue est à côté, dans l'infobulle de l'inspecteur et dans celle du sélecteur d'en-tête. **`SCRATCHVJ-22` est tranché par la table** : le mot est celui d'`ERGONOMIE.md`, « Rectiligne », et non le « Plate » de `SCENE.md` — la remontée reste ouverte côté maison, qui doit faire dire la même chose aux deux sources |
 | `1464` | `PROJECTION` | sur-titre de l'inspecteur | **conforme** — sur-titre de panneau, capitales admises (`DIRECTION-ARTISTIQUE.md:200-201`) |
-| `1468-1469` | `Auto (360°)`, `Auto (2D)`, `2D`, `360°` | sélecteur de l'inspecteur | **ouvert (phase 2)** — verdict SCRATCHVJ-03 reçu (tranché, source modifiée) : la forme courte est bornée par la place (`ERGONOMIE.md`, « Le langage ») ; « 360 » là où 44 px ne tiennent pas plus, forme longue accessible à côté ; `2D` et « équirectangulaire » seul disparaissent partout, console et nom de caisse compris — ce dernier est une migration. **Bloqué en partie** : le verdict et `SCENE.md` écrivent « Plate », la table d'`ERGONOMIE.md` écrit « Rectiligne » (`LACUNA-17`) → tour 02, `SCRATCHVJ-22` |
-| `2039` | `{"2D", "360°"}` | sélecteur sur l'en-tête du deck | **ouvert (phase 2)** — verdict SCRATCHVJ-03 reçu (tranché, source modifiée) : la forme courte est bornée par la place (`ERGONOMIE.md`, « Le langage ») ; « 360 » là où 44 px ne tiennent pas plus, forme longue accessible à côté ; `2D` et « équirectangulaire » seul disparaissent partout, console et nom de caisse compris — ce dernier est une migration. **Bloqué en partie** : le verdict et `SCENE.md` écrivent « Plate », la table d'`ERGONOMIE.md` écrit « Rectiligne » (`LACUNA-17`) → tour 02, `SCRATCHVJ-22` |
-| `2236` | `{"Perspective", "Little planet", "Fisheye"}` | sélecteur `VUE 360` | **ouvert (phase 2)** — verdict SCRATCHVJ-02 reçu (tranché, source modifiée) : `rectilinear`, `little_planet`, `fisheye_view`, identifiants et libellés (`00-vocabulaire.md`, « Les modes de vue, ou reprojections ») |
-| `2240` | `VUE 360` | libellé de ligne | **ouvert (phase 2)** — `row_label`, donc un libellé de paramètre : capitales et abréviation, contre `ERGONOMIE.md:382` |
+| `1468-1469` | `Auto (360°)`, `Auto (2D)`, `2D`, `360°` | sélecteur de l'inspecteur | **fermé** (`ef3cbbc`, phase 2, SCRATCHVJ-03) — « 360 » et « Rectiligne » ; `2D` et « équirectangulaire » seul ont disparu, console comprise ; la forme longue est à côté, dans l'infobulle de l'inspecteur et dans celle du sélecteur d'en-tête. **`SCRATCHVJ-22` est tranché par la table** : le mot est celui d'`ERGONOMIE.md`, « Rectiligne », et non le « Plate » de `SCENE.md` — la remontée reste ouverte côté maison, qui doit faire dire la même chose aux deux sources |
+| `2039` | `{"2D", "360°"}` | sélecteur sur l'en-tête du deck | **fermé** (`ef3cbbc`, phase 2, SCRATCHVJ-03) — « 360 » et « Rectiligne » ; `2D` et « équirectangulaire » seul ont disparu, console comprise ; la forme longue est à côté, dans l'infobulle de l'inspecteur et dans celle du sélecteur d'en-tête. **`SCRATCHVJ-22` est tranché par la table** : le mot est celui d'`ERGONOMIE.md`, « Rectiligne », et non le « Plate » de `SCENE.md` — la remontée reste ouverte côté maison, qui doit faire dire la même chose aux deux sources |
+| `2236` | `{"Perspective", "Little planet", "Fisheye"}` | sélecteur `VUE 360` | **fermé** (`ef3cbbc`, phase 2, SCRATCHVJ-02) — `Rectilinear`, `LittlePlanet`, `FisheyeView` dans le code, « Rectiligne » / « Little planet » / « Fisheye » à l'écran. Les libellés FR des deux dernières ne sont dans aucune table → tour 03, `SCRATCHVJ-27` |
+| `2240` | `VUE 360` | libellé de ligne | **fermé** (`ef3cbbc`, phase 2, SCRATCHVJ-13) — « Vue 360 », capitale initiale |
 | `2288` | `SOURCE ÉQUIRECTANGULAIRE — cadre de visée` | sur-titre du popup de regard | **conforme** — sur-titre, et le mot est le bon (`ERGONOMIE.md:366`) |
-| `4534` | `PROGRAMME · 360 PROJETÉ` | bande programme | **ouvert (phase 2)** — verdict SCRATCHVJ-03 reçu (tranché, source modifiée) : la forme courte est bornée par la place (`ERGONOMIE.md`, « Le langage ») ; « 360 » là où 44 px ne tiennent pas plus, forme longue accessible à côté ; `2D` et « équirectangulaire » seul disparaissent partout, console et nom de caisse compris — ce dernier est une migration. **Bloqué en partie** : le verdict et `SCENE.md` écrivent « Plate », la table d'`ERGONOMIE.md` écrit « Rectiligne » (`LACUNA-17`) → tour 02, `SCRATCHVJ-22` |
+| `4534` | `PROGRAMME · 360 PROJETÉ` | bande programme | **fermé** (`ef3cbbc`, phase 2, SCRATCHVJ-03) — « 360 » et « Rectiligne » ; `2D` et « équirectangulaire » seul ont disparu, console comprise ; la forme longue est à côté, dans l'infobulle de l'inspecteur et dans celle du sélecteur d'en-tête. **`SCRATCHVJ-22` est tranché par la table** : le mot est celui d'`ERGONOMIE.md`, « Rectiligne », et non le « Plate » de `SCENE.md` — la remontée reste ouverte côté maison, qui doit faire dire la même chose aux deux sources |
 
 ## 1.4 Ligne de commande, démonstration, documentation
 
 | Où | Chaîne | État |
 |---|---|---|
-| `app/main.cpp:41` | « a 2:1 picture is flagged equirect » (aide) | **ouvert (phase 2)** — verdict SCRATCHVJ-01 reçu : la forme canonique s'écrit, `"auto"` devient l'absence de clé, même migration que `equirect` → `equirect_360` |
-| `app/main.cpp:296` | `  equirect 360` (sortie de `analyze`) | **ouvert (phase 2)** — verdict SCRATCHVJ-01 reçu : la forme canonique s'écrit, `"auto"` devient l'absence de clé, même migration que `equirect` → `equirect_360` |
-| `app/main.cpp:341` | `  360         équirectangulaire` / `non` (sortie de `info`) | **ouvert (phase 2)** — verdict SCRATCHVJ-03 reçu (tranché, source modifiée) : la forme courte est bornée par la place (`ERGONOMIE.md`, « Le langage ») ; « 360 » là où 44 px ne tiennent pas plus, forme longue accessible à côté ; `2D` et « équirectangulaire » seul disparaissent partout, console et nom de caisse compris — ce dernier est une migration. **Bloqué en partie** : le verdict et `SCENE.md` écrivent « Plate », la table d'`ERGONOMIE.md` écrit « Rectiligne » (`LACUNA-17`) → tour 02, `SCRATCHVJ-22` |
-| `app/engine.cpp:277` | caisse `360°` de la démonstration | **ouvert (phase 2)** — verdict SCRATCHVJ-03 reçu (tranché, source modifiée) : la forme courte est bornée par la place (`ERGONOMIE.md`, « Le langage ») ; « 360 » là où 44 px ne tiennent pas plus, forme longue accessible à côté ; `2D` et « équirectangulaire » seul disparaissent partout, console et nom de caisse compris — ce dernier est une migration. **Bloqué en partie** : le verdict et `SCENE.md` écrivent « Plate », la table d'`ERGONOMIE.md` écrit « Rectiligne » (`LACUNA-17`) → tour 02, `SCRATCHVJ-22` |
+| `app/main.cpp:41` | « a 2:1 picture is flagged equirect » (aide) | **fermé** (`ef3cbbc`, phase 2, SCRATCHVJ-01) — la forme canonique s'écrit, `"auto"` est devenu l'absence de clé, dans la même migration que `equirect` → `equirect_360` |
+| `app/main.cpp:296` | `  equirect 360` (sortie de `analyze`) | **fermé** (`ef3cbbc`, phase 2, SCRATCHVJ-01) — la forme canonique s'écrit, `"auto"` est devenu l'absence de clé, dans la même migration que `equirect` → `equirect_360` |
+| `app/main.cpp:341` | `  360         équirectangulaire` / `non` (sortie de `info`) | **fermé** (`ef3cbbc`, phase 2, SCRATCHVJ-03) — « 360 » et « Rectiligne » ; `2D` et « équirectangulaire » seul ont disparu, console comprise ; la forme longue est à côté, dans l'infobulle de l'inspecteur et dans celle du sélecteur d'en-tête. **`SCRATCHVJ-22` est tranché par la table** : le mot est celui d'`ERGONOMIE.md`, « Rectiligne », et non le « Plate » de `SCENE.md` — la remontée reste ouverte côté maison, qui doit faire dire la même chose aux deux sources |
+| `app/engine.cpp:277` | caisse `360°` de la démonstration | **fermé** (`ef3cbbc`, phase 2, SCRATCHVJ-03) — « 360 » et « Rectiligne » ; `2D` et « équirectangulaire » seul ont disparu, console comprise ; la forme longue est à côté, dans l'infobulle de l'inspecteur et dans celle du sélecteur d'en-tête. **`SCRATCHVJ-22` est tranché par la table** : le mot est celui d'`ERGONOMIE.md`, « Rectiligne », et non le « Plate » de `SCENE.md` — la remontée reste ouverte côté maison, qui doit faire dire la même chose aux deux sources |
 | `app/engine.cpp:75` | `width == height * 2 ? kCacheEquirect` | **fermé** (verdict SCRATCHVJ-18, rien à écrire) — grappe G7 : Mutoscope est la référence, `evidence` gagne `filename`, et **un rang absent est absent, il ne dégrade rien** (`spec/01-manifeste-plate.md`). L'inférence au ratio reste, « Auto (360°) » reste — une règle de détection, pas un mot |
 | `app/analyze.cpp:255-258` | la même règle, avec sa raison écrite | **fermé** (verdict SCRATCHVJ-18, rien à écrire) — grappe G7 : Mutoscope est la référence, `evidence` gagne `filename`, et **un rang absent est absent, il ne dégrade rien** (`spec/01-manifeste-plate.md`). L'inférence au ratio reste, « Auto (360°) » reste |
-| `core/destinations.cpp:17-20` | « regard 360 du deck A : lacet (degrés) », « zoom little planet / fisheye du deck A » | **ouvert (phase 2)** — verdict SCRATCHVJ-02 reçu (tranché, source modifiée) : `rectilinear`, `little_planet`, `fisheye_view`, identifiants et libellés (`00-vocabulaire.md`, « Les modes de vue, ou reprojections ») ; l'unité entre parenthèses est traitée à l'axe 10.1 |
-| `docs/format-cache.md`, `docs/roadmap.md` | prose : « équirectangulaire (360) », « la 2D et la 360 » | **ouvert (phase 2)** — prose, suit le vocabulaire une fois arrêté |
+| `core/destinations.cpp:17-20` | « regard 360 du deck A : lacet (degrés) », « zoom little planet / fisheye du deck A » | **fermé** (`ef3cbbc`, phase 2, SCRATCHVJ-02) — `Rectilinear`, `LittlePlanet`, `FisheyeView` dans le code, « Rectiligne » / « Little planet » / « Fisheye » à l'écran. Les libellés FR des deux dernières ne sont dans aucune table → tour 03, `SCRATCHVJ-27` ; l'unité entre parenthèses est traitée à l'axe 10.1 |
+| `docs/format-cache.md` | prose : « équirectangulaire (360) », « la 2D et la 360 » | **fermé** (`ef3cbbc`, phase 2) — `equirect_360` dans la table des drapeaux, « la rectiligne et la 360 » dans la prose |
+| `docs/roadmap.md` | les mêmes mots, dans deux entrées de journal datées | **hors périmètre** — un journal dit ce qui a été écrit un jour donné ; le réécrire en ferait un faux. Les deux entrées décrivent une interface qui n'existe déjà plus |
 
 ## 1.5 Le repère — **conforme, et la contradiction a disparu**
 
@@ -860,8 +925,8 @@ libellés lui-même : la clause de l'hôte ne le protège pas.
 |---|---|---|---|
 | sur-titres de panneau — `eyebrow()` | 39 (`ui/panels.cpp:53-59`) | capitales | **conforme** — `DIRECTION-ARTISTIQUE.md:200-201` prescrit « titre de panneau à 125 condensé **en capitales** », et `suite.css:82-83` fait de même en `h2` |
 | onglets d'écran | 6 (`ui/panels.cpp:4808-4830`) | capitales | **conforme** — même raison : ce sont des titres de panneau |
-| libellés de paramètre — `row_label()` | 24 (`:331-340`), dont **20 en capitales** | capitales | **ouvert (phase 2)** et **ouvert (phase 2)** — verdict SCRATCHVJ-13 reçu (tranché, source modifiée) : capitale initiale, aucune exception de scène ; la frontière est écrite — « un libellé est ce qui a une valeur à sa droite ; un titre de panneau est ce qui a des libellés en dessous » (`ERGONOMIE.md`, « Le langage ») |
-| libellés de curseur | 5 (`:2279-2285`) : `lacet`, `tangage`, `roulis`, `champ`, `zoom` | **minuscules** | **ouvert (phase 2)** — pas de capitale initiale non plus |
+| libellés de paramètre — `row_label()` | 24, dont **20 en capitales** | capitale initiale | **fermé** (`ef3cbbc`, phase 2, SCRATCHVJ-13) — les 20 capitales et les 4 phrases prennent la capitale initiale ; `readout()` écrit un sur-titre et garde les siennes, par la frontière mécanique de la source |
+| libellés de curseur | 5 : `Lacet`, `Tangage`, `Roulis`, `Champ`, `Zoom` | capitale initiale | **fermé** (`ef3cbbc`, phase 2, SCRATCHVJ-13) |
 | boutons | 40 sites | capitale initiale, verbe à l'infinitif (`Importer…`, `Créer`, `Rescanner`, `Effacer`) | **conforme** — `ERGONOMIE.md:392-393` |
 
 Aucun emoji, aucun point d'exclamation, aucun « Oups », aucun « Veuillez », aucun
@@ -961,9 +1026,11 @@ Ni la fraction faite, ni l'étape nommée, ni le temps restant.
 définition de fini (`MAISON.md:182`) l'exige sans réserve de salle.
 
 À côté, `ui/panels.cpp:634-640` affiche bien « analyse en cours · N en
-attente » : la fraction y est. Les états canoniques de `ERGONOMIE.md:312-313`
-(`en_attente`, `en_cours`…) ne sont écrits nulle part : `AnalysisState`
-(`app/engine.cpp:281`) a ses propres noms. **Ouvert (phase 2)**.
+attente » : la fraction y est. Les états canoniques d'`ERGONOMIE.md`, « Le travail long » — `pending`,
+`running`, `failed` — s'écrivent désormais « En attente », « En cours »,
+« Échoué ». **Fermé** (`ef3cbbc`, phase 2). Un clip que personne n'a demandé
+n'est pas un travail et n'a pas d'état canonique : il dit « Non analysé », dans
+ses propres mots. La **progression** elle-même reste ouverte (phase 4).
 
 ## 10.4 Les infobulles
 
