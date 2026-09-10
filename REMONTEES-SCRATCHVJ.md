@@ -1411,3 +1411,289 @@ la pile d'`Échap` et le rang qui ferme la fenêtre (phase 4) ; les deux
 progressions en pourcentage seul et les erreurs qui ne nomment pas la réparation
 (phase 4) ; les deux documents commerciaux qui présentent la licence GPL comme une
 question ouverte alors qu'elle a été tranchée le 9 septembre (phase 6).
+
+---
+---
+
+# Tour 02
+
+Six points relevés le **2026-09-10** en appliquant les verdicts du tour 01
+(`REPONSES-SCRATCHVJ-01.md`), sur la branche `claude/scratch-video-unreal-0oi7dv`
+à partir de `9ea2eba`. La numérotation continue après `SCRATCHVJ-20`. Aucun de
+ces points n'a été tranché dans le dépôt ; ce qui a été fait est dans
+`docs/ALIGNEMENT.md`, « Application des verdicts du tour 01 ». Les numéros de
+ligne sont ceux du disque au 2026-09-10, après application.
+
+| # | Objet | Portée | Ce que ça bloque |
+|---|---|---|---|
+| 21 | La valeur chaude de `warn`, produite — et sa teinte frôle l'accent | ligne scène | `tokens.json` v4, `lines.scene.signal.warn` |
+| 22 | « Plate » ou « Rectiligne » : `SCENE.md` et la table d'`ERGONOMIE.md` ne disent pas le même mot | ligne scène, et la maison | **la phase 2** |
+| 23 | L'ambre résiduel : une valeur hors tolérance, et les états de dérive hors du lien de platine | ligne scène | la phase 5 (le fichier de jetons fige les emplois) |
+| 24 | Une étiquette de source de plus de deux caractères, et la troisième source sans couleur | ligne scène, et la maison | la phase 5 |
+| 25 | Le champ par défaut : `viewer.geometry` selon deux sources, `viewer.plate` selon la troisième | toute la maison | la phase 5 |
+| 26 | `MAISON.md` régénéré le 2026-09-10 contredit deux verdicts du tour 01 | ce produit, par le générateur | la phase 4 et la phase 5, à la lecture |
+
+---
+
+## SCRATCHVJ-21 — La valeur chaude de `warn`, produite — et sa teinte frôle l'accent
+
+**Portée : toute la ligne scène.** C'est une valeur remise, pas une question ;
+la question est en dessous.
+
+**Ce que disent les sources.** `design/tokens.json:105-108` : `lines.scene.signal`
+porte `done` et `fail`, et son `$comment` dit que `warn` « n'a AUCUNE valeur de
+scène » et que « qui doit la produire : scratchvj, en donnant `warn` au lien qui
+faiblit ». `design/SCENE.md:342` inscrit la même ligne dans « ce qui reste
+ouvert ». `tokens.json:44` donne la valeur d'atelier, `#C48A4B`.
+
+**Ce que fait le code.** `scratchvj/ui/panels.cpp:42` : `kWarn = #9C774E`, donné
+au lien de platine qui faiblit (`link_colour()`, `:101-108`, et le voyant de la
+barre haute). La valeur n'est pas choisie à l'œil ; elle est **dérivée** par la
+règle que la table appliquait déjà, sans l'écrire, à `done` et `fail` : même
+teinte que la valeur d'atelier, clarté et saturation HSL multipliées par la
+moyenne des rapports mesurés sur ces deux jetons.
+
+| Jeton | Atelier | Scène | Clarté | Saturation | Luminance relative |
+|---|---|---|---|---|---|
+| `done` | `#7FB069` | `#7E946B` | ×0,907 | ×0,519 | ×0,729 |
+| `fail` | `#D9584B` | `#B54B3A` | ×0,818 | ×0,790 | ×0,682 |
+| **`warn`** | `#C48A4B` | **`#9C774E`** | ×0,863 (moyenne) | ×0,654 (moyenne) | ×0,684 |
+
+La luminance de `warn` tombe entre celles des deux autres. Le calcul est écrit
+en commentaire à côté de la valeur, comme `maison/01-LES-TROIS-COUCHES.md` le
+demande d'un jeton que le toolkit n'a pas su lire dans la source.
+
+**La question.** `#9C774E` a une teinte de 31,5° ; l'accent candidat du produit,
+`#C9762F` (`panels.cpp:36`), en a une de 27,7°. `DIRECTION-ARTISTIQUE.md:267-276`
+compte déjà quatre valeurs à deux rôles, dont `#C48A4B` — `warn` **et** l'accent
+de Lacuna Motion. Sur la scène, le même voisinage naît entre `warn` et l'accent
+du produit, à un mètre dans le noir, où seule la clarté les sépare.
+
+**Ma recommandation : entrer `#9C774E` dans `lines.scene.signal.warn`, et laisser
+l'accent bouger s'il le faut, pas le signal.** La paire et les signaux sont de
+l'état, jamais de la couche 3 (`SCENE.md`, variable 4) ; l'accent, lui, attend un
+nom et un écran calibré (`SCENE.md`, « ce qui reste ouvert », l'accent du
+produit). Entre une valeur qui attend deux décisions et une valeur qui n'en
+attend aucune, c'est la première qui se déplace. Noter la collision dans le
+tableau des rôles doubles, pour que la séance sur écran calibré regarde cinq
+voisinages et non quatre.
+
+---
+
+## SCRATCHVJ-22 — « Plate » ou « Rectiligne » : deux sources, deux mots pour `flat`
+
+**Portée : la ligne scène, et la maison.** Bloque la phase 2.
+
+**Ce que disent les sources, et elles se contredisent.**
+
+- `design/SCENE.md:290`, « ce qui s'applique intégralement » : « on y écrit
+  « 360 » et « Plate », avec la forme longue accessible à côté ». C'est la
+  ligne que le verdict `SCRATCHVJ-03` a produite
+  (`REPONSES-SCRATCHVJ-01.md:167-171` : « « Plate » fait cinq lettres ; la place
+  ne justifie rien »).
+- `design/ERGONOMIE.md:715`, la table du langage : `flat` → « **Rectiligne** » /
+  « Flat ». Et `:744-749` : « « Plate » a été retiré de la ligne `flat` le
+  2026-09-09 (`LACUNA-17`) : c'est le nom de l'objet que tous les produits
+  manipulent, et « une plate en projection Plate » n'est lisible ni à l'écrit ni
+  à l'oral. »
+- `ERGONOMIE.md:815-821` : une forme courte est bornée par la place, et elle est
+  une **troncature de la forme longue**, jamais un autre mot.
+
+Les deux textes sont du même jour. Le verdict de scène a écrit « Plate » pendant
+que la table de la maison le retirait, et `SCENE.md` a recopié le verdict.
+
+**Ce que fait le code.** `scratchvj/ui/panels.cpp:883, 1229, 1500-1501, 2073` :
+`"2D"` et `"360°"`, ce que la phase 2 doit remplacer — et elle ne peut pas
+choisir le mot.
+
+**La question.** Quel est le libellé de `flat` à la scène : « Plate »
+(`SCENE.md`) ou « Rectiligne » (la table qui « impose le mot ») ?
+
+**Ma recommandation : « Rectiligne », et corriger `SCENE.md`.** Trois raisons.
+(1) `ERGONOMIE.md` dit de sa table qu'elle est « la source des deux colonnes ;
+aucun produit n'y ajoute un mot de son cru » — un cadran n'est pas un produit,
+mais il n'est pas non plus une seconde table. (2) La raison de `LACUNA-17` vaut
+ici aussi : ce produit lit des plates (le manifeste de plate ne le concerne pas,
+mais le mot, si — `MAISON.md` l'emploie). (3) Un mot par concept dans les deux
+langues est ce que la règle du langage protège ; « Plate » à la scène et
+« Rectiligne » à l'atelier en font deux. Ce qui reste vrai du verdict 03 : la
+forme courte est bornée par la place, et « Rectiligne » ne tient peut-être pas
+dans le même sélecteur que « 360 ». Si c'est le cas, la forme courte est une
+troncature de « Rectiligne », pas « Plate » — et laquelle, la maison le dit,
+puisque ce serait la première troncature d'un mot de la table hors des trois
+abréviations connues.
+
+---
+
+## SCRATCHVJ-23 — L'ambre résiduel : une valeur hors tolérance, et les états de dérive
+
+**Portée : toute la ligne scène.** Bloque la phase 5, qui fige les emplois de
+chaque couleur.
+
+**Ce que disent les sources.** `DIRECTION-ARTISTIQUE.md:193` : `fail` est « la
+seule couleur autorisée à porter du texte ». `:206-215` : « une étiquette d'un ou
+deux caractères qui nomme une source n'est pas du texte au sens de cette règle.
+Une phrase l'est toujours. » `tokens.json:44` : `warn` = « terminé avec réserve,
+ou dérive détectée ». Le verdict `SCRATCHVJ-08` retire l'ambre des états « en
+cours » ; `SCRATCHVJ-09` donne `warn` « au lien de platine qui faiblit ».
+
+**Ce que fait le code, après application.** L'ambre reste à deux endroits qui ne
+sont ni le deck A ni « en cours », et que les deux verdicts ne nomment pas.
+
+*Des valeurs colorées hors tolérance* — un nombre, pas une phrase, pas une
+étiquette de source :
+
+| Où (`ui/panels.cpp`) | Ce qui est coloré | Quand |
+|---|---|---|
+| `:1910-1914` | la balance en dB et l'erreur de phase du scope | hors de ±1 dB, hors de ±5° |
+| `:1957-1958`, `:2176` | la vitesse du plateau | au-delà de 2,5× |
+| `:1964` | la confiance du décodeur, en % | selon l'état du lien (`link_colour`) |
+
+*Des états de dérive portés par un point ou une barre*, pas par du texte :
+
+| Où | Ce que c'est | Couleur |
+|---|---|---|
+| `:623` | la table MIDI partiellement connectée | ambre |
+| `:1871` | la figure de Lissajous quand le scope n'est pas équilibré | ambre |
+| `:2027` | la jauge de fraîcheur de l'ancre (`stale > 0,6`) | ambre |
+| `:3707` | une liaison activée mais inactive | ambre |
+
+Chacun de ces sites dit « ça marche encore, mais ça dérive », c'est-à-dire le
+sens exact de `warn` — et ils portent la couleur du deck A.
+
+**Les questions.**
+
+**Q1 — un nombre coloré est-il du texte au sens de la règle du `fail` ?** La
+clause des étiquettes ne le couvre pas (ce n'est pas une source), celle de la
+phrase non plus (ce n'est pas une phrase). Recommandation : **oui, c'est du
+texte, et il revient à la craie** ; la dérive se dit par le voyant ou la jauge
+d'à côté, que ce produit double déjà d'un mot partout. Un chiffre qui change de
+couleur est le mécanisme même qu'un instrument de mesure ne fait pas.
+
+**Q2 — les états de dérive prennent-ils `warn` au-delà du seul lien de
+platine ?** Recommandation : **oui, par le sens du jeton.** Le verdict 09 a nommé
+un site parce qu'un site avait été remonté ; laisser les quatre autres en ambre
+reconstruit le double rôle que le verdict 08 vient de retirer.
+
+---
+
+## SCRATCHVJ-24 — Une étiquette de source de plus de deux caractères, et la troisième source sans couleur
+
+**Portée : la ligne scène, et la maison** — la clause des étiquettes est une
+clause de maison, et elle vient de servir à Mutoscope.
+
+**Ce que disent les sources.** `DIRECTION-ARTISTIQUE.md:206-215` : « une étiquette
+d'**un ou deux caractères** qui nomme une source ». `tokens.json:101-102` :
+`lines.scene.pair` porte `a` et `b`, et rien d'autre. `tokens.json:107` :
+`done` = `#7E946B`.
+
+**Ce que fait le code.** Deux choses que la clause ne couvre pas.
+
+- **Des mots de source colorés.** `ui/panels.cpp:859, 864` : « Deck A » en ambre,
+  « Deck B » en ardoise, sur des boutons ; `:1197-1199`, `:1551-1553`, `:1761` :
+  les mêmes sur des puces de cible. Six caractères, pas deux ; mais ils
+  **nomment une source**, exactement comme « A » et « B ».
+- **Une troisième source, sans couleur dans la paire.** L'incrustation est la
+  troisième cible du produit (`DeckTarget::Overlay`) et le code lui a donné le
+  **vert de `done`** — `:869`, `:1199`, `:1553`, `:4604`, `:4617`. C'est un
+  signal employé comme identité : le troisième rôle de `#7E946B`, et le motif
+  que `DIRECTION-ARTISTIQUE.md:267-276` compte comme une collision.
+
+**Les questions.**
+
+**Q1 — la clause tient-elle par le compte de caractères ou par ce que
+l'étiquette nomme ?** Recommandation : par ce qu'elle nomme. « Un ou deux
+caractères » décrit le cas qui l'a fait naître, pas sa limite ; « Deck A » sur
+un bouton n'est pas lu comme une alarme davantage que « A ». Réécrire la clause
+par son critère — *un nom de source, jamais une phrase* — comme la maison vient
+de le faire pour le clavier et pour la forme courte, qui avaient le même mode de
+panne (énoncées par l'exemple, lues sur l'exemple).
+
+**Q2 — l'incrustation a-t-elle droit à une couleur, et laquelle ?** La paire est
+« A/B », « constante sur toute la ligne » (`SCENE.md`, variable 4) ; un troisième
+membre ne s'invente pas dans un dépôt. Recommandation : soit `lines.scene.pair`
+gagne une troisième valeur pour la couche d'incrustation — un produit de scène
+qui compose deux sources en a presque toujours une troisième — soit
+l'incrustation se nomme à la craie. Dans les deux cas, `done` cesse d'être une
+identité : c'est un retrait, il se fera dès la réponse.
+
+---
+
+## SCRATCHVJ-25 — Le champ par défaut : `viewer.geometry` selon deux sources, `viewer.plate` selon la troisième
+
+**Portée : toute la maison.** Trois sources, deux chemins.
+
+**Ce que disent les sources.**
+
+- `design/SCENE.md:304-307` : « Les constantes de `viewer.geometry` restent
+  exigibles de tout produit qui reprojette une sphère, y compris quand le regard
+  est piloté au potard. »
+- `spec/00-vocabulaire.md:237-243` : « Le domaine de champ appartient à la
+  reprojection, pas au produit. […] Seul celui de `rectilinear` est écrit à ce
+  jour, dans `viewer.geometry`. »
+- `design/tokens.json:65-77` : `viewer.geometry` ne porte que
+  `pitch_deg_clamp` ; `fov_deg_default` (75), `fov_deg_min` (30) et
+  `fov_deg_max` (120) sont sous **`viewer.plate`** — « le viseur qui regarde une
+  plate : l'œil est au centre, sa seule profondeur est la focale, donc la molette
+  lui revient » — depuis l'arbitrage de `GEORAMA-06`, rendu après
+  `SCRATCHVJ-16`.
+
+**Ce que fait le code.** Le tangage est borné à ±89,9° par `kPitchClampDeg`
+(`core/sphere.h:41`, fermé). Le champ par défaut est **90°** (`core/sphere.h:47`),
+borné à 20–170° (`app/engine.cpp:516`, `ui/panels.cpp:2322`) parce que little
+planet a besoin d'un champ que 120° ne couvre pas — raison que `tokens.json:74`
+cite et accepte.
+
+**Les questions.**
+
+**Q1 — le bloc `viewer.plate` lie-t-il ce produit ?** Son œil est au centre de la
+sphère et sa seule profondeur est le champ : c'est la définition de `plate`.
+Mais le regard est un potard, il n'y a pas de molette, et le produit n'est pas
+un viseur au sens du châssis (`SCENE.md`, « sans objet »). Recommandation :
+séparer ce que `plate` dit de la **molette** (sans objet ici) de ce qu'il dit du
+**champ** (qui ne dépend pas du geste, comme le tangage) — et ranger le champ
+là où `00-vocabulaire.md` dit qu'il est, avec le domaine : sur la reprojection.
+Deux sources sur trois écrivent `viewer.geometry` ; le fichier de jetons, qui
+fait foi, écrit `viewer.plate`. L'un des chemins est faux, et la phase 5 doit
+en citer un.
+
+**Q2 — 90° ou 75° par défaut ?** 75° est écrit pour un moniteur à 60 cm où l'on
+juge une plate ; 90° est ce qu'on projette à un public, et c'est une valeur en
+service. Recommandation : ne pas trancher dans le dépôt ; si le champ par défaut
+est du cadran (il dépend de la distance de lecture, variable 1), il va sous
+`lines.scene` avec sa raison ; sinon il retourne à 75, et la phase 5 le change
+en une ligne.
+
+---
+
+## SCRATCHVJ-26 — `MAISON.md` régénéré le 2026-09-10 contredit deux verdicts du tour 01
+
+**Portée : ce produit, par `tools/gen-maison.py`.** `maison/02-INTERDITS.md`
+dit qu'un fichier généré faux se répare dans le générateur, et `MAISON.md`
+lui-même demande qu'une de ses lignes qui ne se retrouve pas sur le disque se
+remonte.
+
+**Ce que dit le talon.**
+
+- `MAISON.md:57` : « Le **noyau** réservé, lui, doit tenir : `Espace`, `Échap`
+  selon la pile de priorité, **`Ctrl`+`Z`**, `?` / `F1`, `Tab`. » Et `:96`,
+  phase 4 : « … `Ctrl`+`Z`, `?` / `F1`, `Tab` s'il a un sens ». Source :
+  `tools/gen-maison.py:642, 657`.
+- `MAISON.md:58` : la provenance du fichier de jetons à écrire — « *ligne scène,
+  candidat, en attente de `tokens.json` v3 `lines.scene`* ».
+
+**Ce que disent les verdicts, rendus la veille.** `SCRATCHVJ-15`, § 2 : `Ctrl`+`Z`
+n'est pas exigible — « un produit sans état persistant n'a pas d'annulation à
+offrir », clause désormais écrite dans `ERGONOMIE.md` sous la table du clavier.
+`SCRATCHVJ-07` : `tokens.json` **est** en v3 avec `lines.scene`, et l'en-tête
+attendu est « ligne scène, tokens.json v3, lines.scene ». `Tab`, enfin, est
+rouvert par la suite elle-même (`ERGONOMIE.md`, « La touche qui masque
+l'interface est rouverte ») : « `Tab` s'il a un sens » est vrai, mais « comme
+`Tab` à l'atelier » ne l'est plus.
+
+**La question.** Aucune : c'est une correction du générateur, signalée pour
+qu'une session de phase 4 ne lise pas dans le talon une exigence que le verdict
+a levée, ni en phase 5 une attente déjà satisfaite. Recommandation : la ligne du
+noyau se réécrit par le critère (« les touches réservées que le produit lie, et
+celles qu'il a la chose de lier »), avec `Ctrl`+`Z` **sans objet** pour ce
+produit ; l'en-tête des jetons prend la forme du verdict 07.

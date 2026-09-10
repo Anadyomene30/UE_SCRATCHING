@@ -4,6 +4,88 @@ Relevé le **2026-09-09**, en lecture seule, branche `claude/scratch-video-unrea
 à **`75eee2f`**. Aucun fichier de code modifié. Les remontées sont dans
 [`../REMONTEES-SCRATCHVJ.md`](../REMONTEES-SCRATCHVJ.md).
 
+## Application des verdicts du tour 01 — 2026-09-10
+
+Les vingt verdicts (`../REPONSES-SCRATCHVJ-01.md`, rendus le 2026-09-09) ont été
+appliqués le 2026-09-10, sur la même branche, à partir de `9ea2eba` — l'état
+avant application. Chaque ligne du relevé qui portait « remonté SCRATCHVJ-NN »
+porte désormais l'état qui en résulte ; ce tableau en est l'index. Un seul état
+s'ajoute aux trois du protocole, et il existait déjà dans ce relevé : **ouvert
+(phase N) — verdict reçu**, pour une question répondue dont le travail appartient
+à une phase que le talon n'a pas encore ouverte. Cette session a fait la phase 1
+et rien d'autre ; elle n'a pas pris les phases 2, 4 et 5 sous prétexte qu'un
+verdict les débloquait.
+
+| # | Verdict | Ce que ça fait dans ce dépôt | État des lignes | Commit |
+|---|---|---|---|---|
+| 01 | tranché, source modifiée | `"auto"` devient l'absence de clé, même migration que `equirect` → `equirect_360` | ouvert (phase 2) ; les identifiants de code : fermé, rien demandé | — |
+| 02 | tranché, source modifiée | `rectilinear`, `little_planet`, `fisheye_view` | ouvert (phase 2) | — |
+| 03 | tranché, source modifiée | « 360 » là où 44 px ne tiennent pas plus ; `2D` et « équirectangulaire » seul disparaissent | ouvert (phase 2) — **bloqué en partie** par « Plate » / « Rectiligne », `SCRATCHVJ-22` | — |
+| 04 | tranché, source modifiée | corps 15 px, 11,5 arrondi au cran voisin, échelle candidate | ouvert (phase 5) | — |
+| 05 | reporté | nommer les trois étages dans le fichier de jetons, sans valeurs | remonté | — |
+| 06 | reporté | rien ; isoler la mono et le fond en une ligne chacune en phase 5 | remonté | — |
+| 07 | tranché, source modifiée | fichier de jetons en tête « ligne scène, tokens.json v3, lines.scene » | ouvert (phase 5) ; le second orange documentaire : phase 7 | — |
+| 08 | tranché | l'ambre au deck A ; « en cours » à la craie | fermé | `3a278f2` |
+| 09 | tranché, source modifiée | `kWarn` `#9C774E` dérivé et donné au lien de platine qui faiblit | fermé ; la valeur monte, `SCRATCHVJ-21` | `3a278f2` |
+| 10 | tranché, source modifiée | « A » / « B » gardés ; les phrases à la craie ; capuchon 2 px + nom en craie | fermé | `3a278f2` |
+| 11 | tranché, source modifiée | l'aplat porte un état ; quatre boutons d'action perdent le remplissage | fermé | `41ca9c5` |
+| 12 | tranché, source modifiée | `kControlRadius` 3, d'après `rhythm.radius_control` | fermé | `d138ac3` |
+| 13 | tranché, source modifiée | capitale initiale sur les 25 libellés | ouvert (phase 2) | — |
+| 14 | reporté | les angles à une décimale, signe explicite ; `mm:ss.d` reste | angles fermés ; le temps remonté | `b025d6a` |
+| 15 | tranché, source modifiée | `Ctrl`+`Z` sans objet ; `Tab` sur `F` ; les pads `1`–`5` corrigés dans les sources ; `Échap` : le rang qui quitte se supprime | trois lignes fermées sans commit ; `Échap` ouvert (phase 4) | — |
+| 16 | tranché, source modifiée | tangage borné à ±89,9° (`kPitchClampDeg`) ; aucun HUD | fermé ; le champ par défaut → `SCRATCHVJ-25` | `b025d6a` |
+| 17 | reporté | rien ; `_style.css` ne se réécrit pas | remonté | — |
+| 18 | tranché, source modifiée | rien : G7, un rang absent ne dégrade rien | fermé | — |
+| 19 | tranché, source modifiée | rien : le nom de travail reste interne | fermé | — |
+| 20 | tranché, source modifiée | rien sur 1–3 ; le renvoi de `design/README.md` en phase 5 | fermé ; le renvoi : ouvert (phase 5) | — |
+
+**Ce que ça change à l'écran.** Les contrôles ont un rayon de 3 px au lieu de
+1 ; quatre boutons d'action ne sont plus orange ; le nom du produit est en craie
+derrière un filet d'accent de 2 px ; les phrases d'état (analyse, plateau,
+Spout, apprentissage MIDI, correspondances d'effets) sont en craie, plus en
+ambre ni en vert ; le voyant et la figure du lien de platine qui faiblit sont
+`warn` et non ambre ; les angles s'écrivent `+12.5°` ; le tangage s'arrête à
+89,9°.
+
+**Ce que l'application a révélé, et qui monte au tour 02**
+(`../REMONTEES-SCRATCHVJ.md`, « Tour 02 ») :
+
+1. la valeur chaude de `warn`, produite par dérivation — et sa teinte à 4° de
+   l'accent candidat (`SCRATCHVJ-21`) ;
+2. « Plate » (`SCENE.md`, verdict 03) contre « Rectiligne » (table
+   d'`ERGONOMIE.md`, `LACUNA-17`), le même jour — la phase 2 ne peut pas choisir
+   le mot (`SCRATCHVJ-22`) ;
+3. l'ambre résiduel : des nombres colorés hors tolérance, et quatre états de
+   dérive portés par un point ou une barre (`SCRATCHVJ-23`) ;
+4. « Deck A » / « Deck B » colorés sur des boutons, et le vert de `done` employé
+   comme identité de l'incrustation (`SCRATCHVJ-24`) ;
+5. le champ par défaut sous `viewer.plate` dans `tokens.json` v3, sous
+   `viewer.geometry` dans `SCENE.md` et `00-vocabulaire.md` (`SCRATCHVJ-25`) ;
+6. `MAISON.md` régénéré le 2026-09-10 exige encore `Ctrl`+`Z` et attend encore
+   `tokens.json` v3 (`SCRATCHVJ-26`).
+
+Et deux comptes de ce relevé à corriger sur pièce, sans remontée : le § 6.6
+annonçait **24** sites de texte coloré et sa propre table en sommait 26 ; à
+l'application, neuf sites de plus ont été trouvés (`share_open`, `connecté`,
+`moments lus`, le nom d'écran de sortie, le message des préréglages, la cible de
+la file, « régler », `TRANSFORM`, le mot d'état du lien) et traités par la même
+règle. Le compte juste est celui que donne
+`grep -c 'text_c(k\(Amber\|Sage\|Slate\|Accent\)' scratchvj/ui/panels.cpp`, pas
+celui d'un relevé.
+
+**Les tests.** `cmake --build build-ui --config Release` : zéro avertissement ;
+`ctest --test-dir build-ui -C Release --output-on-failure` : 6 / 6, les cinq
+contrôles de shader compris ; `cmake --build build --config Debug` puis
+`ctest --test-dir build -C Debug --output-on-failure` : `scratchvj_core_tests`
+passe. **Aucune migration** d'un fichier écrit sur disque dans cette
+application — donc aucun fichier réel à nommer ; la première sera celle de
+`library.json` en phase 2.
+
+**Phase 1.** `docs/manifeste.md` existe : les deux principes du README, cités
+dans ses termes, et la version française que `CLAUDE.md` portait déjà.
+
+---
+
 ## Le cadre
 
 **Git.** Le dépôt est sous git, tête `75eee2f`, arbre de travail propre : les
@@ -104,7 +186,7 @@ Une taille employée n'a la valeur d'aucune des deux lignes : **11,5 px**
 (`ui/main_ui.cpp:259`), hors de l'échelle fermée 11/12/13/16/28
 (`tokens.json:17`) — et 15 px l'est aussi. Or l'échelle est un invariant
 (`secteurs.html:369`) **explicitement exclu du cadran** (`:457`).
-→ **remonté SCRATCHVJ-04**.
+→ **ouvert (phase 5)** — verdict SCRATCHVJ-04 reçu (tranché, source modifiée) : le corps à 15 px est une valeur de source, 11,5 s'arrondit au cran voisin du jeu du produit avec le substitut noté ; les cinq crans restent ouverts (`tokens.json` v3, `lines.scene.type.scale_candidat` ; ce qui manque : la règle de dérivation entre salles ; qui doit la produire : la maison).
 
 ## Variable 2 — La règle de couleur · **coïncide sur le principe, pas sur le compte**
 
@@ -147,7 +229,7 @@ Ce dernier point n'est pas une négligence du code : **les deux documents que
 `MAISON.md:90` déclare identiques « mot pour mot » ne disent pas la même
 chose.** `secteurs.html:403-404` dit « porté par un état » ;
 `design/README.md:33-34` dit « l'orange plein est réservé à une seule action par
-panneau ». Le code applique les deux à la fois. → **remonté SCRATCHVJ-11**.
+panneau ». Le code applique les deux à la fois. → **fermé** (`41ca9c5`, SCRATCHVJ-11) — l'aplat porte un état, jamais une action ; les quatre boutons d'action perdent le remplissage ; un panneau est la plus petite région délimitée par un filet ou un fond propre, et sur ce critère le compte est tenu (`SCENE.md`, variable 2).
 
 ## Variable 3 — Le châssis · **coïncide sur la teinte, pas sur la valeur**
 
@@ -170,7 +252,7 @@ commune n'est arrêtée nulle part.
 exactement ce que la source dit d'elle-même. `MAISON.md:99` range l'écart de
 valeur en couche 3 et ordonne de ne rien changer ; `secteurs.html:663` demande au
 contraire de le corriger « aujourd'hui, en un fichier chacun ». J'ai suivi
-`MAISON.md`. → **remonté SCRATCHVJ-06**.
+`MAISON.md`. → **remonté SCRATCHVJ-06** — *reporté*, et reporté sur la mono, pas sur la luminance. La direction est tranchée : luminance de l'atelier, teinte de la scène, test « luminance relative WCAG à ±5 % du jeton d'atelier correspondant, dérive chaude R > G > B » (`tokens.json` v3, `lines.scene.chassis.$test`) ; `#0D0C0A` passe. Ce qui manque : le moteur d'impression de Chrome sur **Fragment Mono contre DM Mono**, une heure. Qui doit le produire : ce produit, seul à tenir une chaîne PDF réelle. Rien ne change d'ici là ; en phase 5, la mono et le fond s'isolent en une ligne chacune.
 
 ## Variable 4 — L'accent · **coïncide**
 
@@ -199,13 +281,13 @@ Trois conséquences n'appartiennent pas au cadran et sortent d'ici :
 - aucune des trois valeurs n'existe dans `tokens.json` — il n'y a ni entrée
   `accents.scratchvj` (`:37-47`), ni niveau `lines.scene` que
   `secteurs.html:492-493` annonce pour la v3 ; et `suite.css:53-61` n'a pas de
-  classe produit pour la scène. → **remonté SCRATCHVJ-07** ;
+  classe produit pour la scène. → **ouvert (phase 5)** — verdict SCRATCHVJ-07 reçu (tranché, source modifiée) : `tokens.json` est en **v3** avec `lines.scene` — la paire `pair.a` / `pair.b`, les sept valeurs de châssis avec leur état, les signaux ; en-tête du fichier de jetons « ligne scène, tokens.json v3, lines.scene » ; l'accent produit reste derrière un nom unique prêt à changer ; le second orange documentaire `#b45f1c` tombe en phase 7 avec la feuille locale ;
 - l'ambre `#C99A2F` est à trois unités de `signal.running` `#C9A227`
   (`tokens.json:32`), et porte donc deux sens à la fois — le deck A et le travail
-  en cours. → **remonté SCRATCHVJ-08** ;
+  en cours. → **fermé** (`3a278f2`, SCRATCHVJ-08) — l'ambre appartient au deck A ; `running` garde sa valeur dans `tokens.json` et se montre ici par la progression nommée, jamais par un point ;
 - la paire est portée par du **texte** coloré, or `secteurs.html:377-379` range
   dans l'invariant que `fail` « reste la seule couleur autorisée à porter du
-  texte ». → **remonté SCRATCHVJ-10**.
+  texte ». → **fermé** (`3a278f2`, SCRATCHVJ-10) — « A » et « B » gardent leur couleur (`DIRECTION-ARTISTIQUE.md`, « Ce qui compte comme du texte ») ; les phrases reviennent à la craie ; le nom du produit devient capuchon 2 px + nom en craie (`kAccentCap`, d'après `rhythm.accent_cap`).
 
 ## Variable 5 — Le mouvement · **coïncide**
 
@@ -263,7 +345,7 @@ pas atteignable aujourd'hui : `suite.css` n'a pas de papier sombre, et sa
 dernière ligne (`:260-261`) écrit « **Aucun thème sombre.** Un manuel se lit et
 s'imprime sur du clair » comme une règle générale sans renvoi, alors que
 `diorama-01-reponses.md:406-412` vient d'établir que c'est une valeur de cadran.
-→ **ouvert (phase 7)** pour la note, **remonté SCRATCHVJ-17** pour ce que la
+→ la note est **rendue** (phase 7) ; **remonté SCRATCHVJ-17** — *reporté*. Ce qui manque : les deux valeurs de `SCRATCHVJ-06`. Qui doit le produire : la maison, dans `docs/suite.css` — un bloc `.line-scene` qui redéfinit sept jetons et les quatre signaux (éclaircis), `--paper-sunk` plus **sombre** que `--paper`, non imprimable ; pas de classe `.p-` avant le nom. La phase 7 de ce produit est **rendue** par la note ; `docs/pdf/_style.css` ne se réécrit pas pour ce que la
 feuille doit porter.
 
 Conformément à `MAISON.md:100` et à la consigne de ce chantier, `_style.css`
@@ -295,19 +377,19 @@ une fois, dans `apply_style()` : `CellPadding (8,4)`, `ItemSpacing (10,6)`,
 coïncide avec une valeur qui n'existe pas. Trois étages typographiques existent,
 ce qui est le bon nombre, mais rien n'écrit lesquels, ni lequel se lit à un
 mètre, ni ce qu'« un étage » recouvre au juste — une taille, une densité
-d'espacement, ou les deux. → **remonté SCRATCHVJ-05**.
+d'espacement, ou les deux. → **remonté SCRATCHVJ-05** — *reporté*. Ce qui manque : la définition d'un étage et ses valeurs, éprouvées sur un **second produit de scène**, que `maison/05-QUI-EST-QUI.md` ne connaît pas encore. Qui doit le produire : la maison, au tour 01 du second, après l'avoir nommé ou retiré la phrase de `secteurs.html`. En attendant, en phase 5 : nommer les trois étages dans le fichier de jetons — quel panneau à quel étage — sans en inventer les valeurs, et ne pas régulariser `10`, `6`, `18`.
 
 ## Récapitulatif
 
 | Variable | Coïncide ? | État |
 |---|---|---|
-| 1 · distance et corps | **en partie** — corps oui, cible sur deux contrôles | ouvert (phase 5) + SCRATCHVJ-04 |
-| 2 · règle de couleur | **en partie** — principe oui, compte non | SCRATCHVJ-11 |
-| 3 · châssis | **en partie** — teinte oui, valeur non | SCRATCHVJ-06 |
-| 4 · accent | **oui** | conforme ; SCRATCHVJ-07, -08, -10 pour ses conséquences hors cadran |
+| 1 · distance et corps | **en partie** — corps oui, cible sur deux contrôles | ouvert (phase 5) — verdict SCRATCHVJ-04 reçu |
+| 2 · règle de couleur | **oui depuis `41ca9c5`** — l'état, et le compte tenu au sens de la plus petite région bordée | fermé (SCRATCHVJ-11) |
+| 3 · châssis | **en partie** — teinte oui, valeur non | remonté SCRATCHVJ-06, reporté sur la mono |
+| 4 · accent | **oui** | conforme ; 07 → phase 5, 08 et 10 fermés (`3a278f2`) |
 | 5 · mouvement | **oui** | conforme |
-| 6 · papier des documents | **non** | ouvert (phase 7) + SCRATCHVJ-17 |
-| 7 · densité | **indécidable** — la variable n'a pas de valeurs | SCRATCHVJ-05 |
+| 6 · papier des documents | **non** | remonté SCRATCHVJ-17, reporté — la phase 7 est rendue par la note |
+| 7 · densité | **indécidable** — la variable n'a pas de valeurs | remonté SCRATCHVJ-05, reporté |
 
 Deux coïncidences pleines, trois partielles, une non-coïncidence, une
 indécidable.
@@ -320,8 +402,8 @@ indécidable.
 
 | Fichier | Champ | Valeurs | Où | État |
 |---|---|---|---|---|
-| `library.json` | `clips[].projection` | `"auto"`, `"flat"`, `"equirect"` | table `config/library_io.cpp:18-22` ; écriture `:63` ; lecture `:120-127` | `"flat"` **conforme**, seule forme canonique du catalogue écrite sur disque (`00-vocabulaire.md:48`) — **fermé** (`9ccce6f`). `"equirect"` et `"auto"` **remonté SCRATCHVJ-01** |
-| `library.json` | `crates[].name` | `"Tous les clips"`, `"360°"`, `"Loops & textures"` | `app/engine.cpp:276-278`, écrits `config/library_io.cpp:71` | **remonté SCRATCHVJ-03** — un nom de caisse est un libellé que l'utilisateur peut changer, pas une valeur de schéma ; mais il est écrit sur disque et il nomme une projection |
+| `library.json` | `clips[].projection` | `"auto"`, `"flat"`, `"equirect"` | table `config/library_io.cpp:18-22` ; écriture `:63` ; lecture `:120-127` | `"flat"` **conforme**, seule forme canonique du catalogue écrite sur disque (`00-vocabulaire.md:48`) — **fermé** (`9ccce6f`). `"equirect"` et `"auto"` → **ouvert (phase 2)** — verdict SCRATCHVJ-01 reçu (tranché, source modifiée) : `"auto"` cesse de s'écrire et la clé s'omet, dans la **même migration** que `equirect` → `equirect_360` ; le refus de chaîne inconnue reste (`00-vocabulaire.md`, « Ce qui n'est pas déclaré ») |
+| `library.json` | `crates[].name` | `"Tous les clips"`, `"360°"`, `"Loops & textures"` | `app/engine.cpp:276-278`, écrits `config/library_io.cpp:71` | **ouvert (phase 2)** — verdict SCRATCHVJ-03 reçu (tranché, source modifiée) : la forme courte est bornée par la place (`ERGONOMIE.md`, « Le langage ») ; « 360 » là où 44 px ne tiennent pas plus, forme longue accessible à côté ; `2D` et « équirectangulaire » seul disparaissent partout, console et nom de caisse compris — ce dernier est une migration. **Bloqué en partie** : le verdict et `SCENE.md` écrivent « Plate », la table d'`ERGONOMIE.md` écrit « Rectiligne » (`LACUNA-17`) → tour 02, `SCRATCHVJ-22` — un nom de caisse est un libellé que l'utilisateur peut changer, pas une valeur de schéma ; mais il est écrit sur disque et il nomme une projection |
 | `.svcache`, en-tête | `flags`, bit 1 | `kCacheEquirect = 1u << 1` | `core/videocache.h:43-46` ; testé `:58` ; posé `app/analyze.cpp:258` et `app/engine.cpp:75` | **hors périmètre** — un bit, pas une chaîne. `00-vocabulaire.md:5-8` ne régit que « la chaîne écrite sur disque ou passée d'une application à l'autre » |
 | `settings.json` | — | aucune | preuve ci-dessous | **hors périmètre** — axe vide |
 | `mapping.json` | `bindings[].id` | `ch1.trim`, `xfader`, `ch1.eq.hi`… | fichier lu ; `core/layout.h:1-7` | **hors périmètre** — des contrôles, pas des projections |
@@ -337,40 +419,40 @@ clé, aucune valeur ne nomme une projection, une disposition ou un œil.
 
 | Identifiant | Où | Ce qu'il désigne | État |
 |---|---|---|---|
-| `ProjectionOverride::{Auto, Flat, Equirect}` | `core/library.h:28-32` | ce que l'utilisateur a forcé sur un clip | **remonté SCRATCHVJ-01** |
-| `Projection::{Perspective, LittlePlanet, Fisheye}` | `core/sphere.h:31-35` | la reprojection de la **vue**, pas la projection du fichier | **remonté SCRATCHVJ-02** |
-| `kCacheEquirect`, `is_equirect()` | `core/videocache.h:45,58` | le drapeau du cache | **remonté SCRATCHVJ-01** |
-| `effective_equirect()`, `shown_equirect()` | `core/library.h:37,61` ; `core/library.cpp:19-23` | ce qui est réellement montré | **remonté SCRATCHVJ-01** |
-| `equirect_from_direction`, `direction_from_equirect`, `sample_equirect` | `core/sphere.h:51,54,60` | la géométrie | **remonté SCRATCHVJ-01** |
-| `sample_equirect_eye` | `core/headset.h:102` | la même, pour un œil de casque | **remonté SCRATCHVJ-01** |
+| `ProjectionOverride::{Auto, Flat, Equirect}` | `core/library.h:28-32` | ce que l'utilisateur a forcé sur un clip | **fermé** (verdict SCRATCHVJ-01, rien à écrire) — un identifiant de code n'est pas « la chaîne écrite sur disque ou passée d'une application à l'autre » (`00-vocabulaire.md`, en tête) ; le verdict ne vise que le fichier de bibliothèque, et renommer un identifiant est une refonte qu'aucune phase ne porte |
+| `Projection::{Perspective, LittlePlanet, Fisheye}` | `core/sphere.h:31-35` | la reprojection de la **vue**, pas la projection du fichier | **ouvert (phase 2)** — verdict SCRATCHVJ-02 reçu (tranché, source modifiée) : `rectilinear`, `little_planet`, `fisheye_view`, identifiants et libellés (`00-vocabulaire.md`, « Les modes de vue, ou reprojections ») |
+| `kCacheEquirect`, `is_equirect()` | `core/videocache.h:45,58` | le drapeau du cache | **fermé** (verdict SCRATCHVJ-01, rien à écrire) — un identifiant de code n'est pas « la chaîne écrite sur disque ou passée d'une application à l'autre » (`00-vocabulaire.md`, en tête) ; le verdict ne vise que le fichier de bibliothèque, et renommer un identifiant est une refonte qu'aucune phase ne porte |
+| `effective_equirect()`, `shown_equirect()` | `core/library.h:37,61` ; `core/library.cpp:19-23` | ce qui est réellement montré | **fermé** (verdict SCRATCHVJ-01, rien à écrire) — un identifiant de code n'est pas « la chaîne écrite sur disque ou passée d'une application à l'autre » (`00-vocabulaire.md`, en tête) ; le verdict ne vise que le fichier de bibliothèque, et renommer un identifiant est une refonte qu'aucune phase ne porte |
+| `equirect_from_direction`, `direction_from_equirect`, `sample_equirect` | `core/sphere.h:51,54,60` | la géométrie | **fermé** (verdict SCRATCHVJ-01, rien à écrire) — un identifiant de code n'est pas « la chaîne écrite sur disque ou passée d'une application à l'autre » (`00-vocabulaire.md`, en tête) ; le verdict ne vise que le fichier de bibliothèque, et renommer un identifiant est une refonte qu'aucune phase ne porte |
+| `sample_equirect_eye` | `core/headset.h:102` | la même, pour un œil de casque | **fermé** (verdict SCRATCHVJ-01, rien à écrire) — un identifiant de code n'est pas « la chaîne écrite sur disque ou passée d'une application à l'autre » (`00-vocabulaire.md`, en tête) ; le verdict ne vise que le fichier de bibliothèque, et renommer un identifiant est une refonte qu'aucune phase ne porte |
 | `View360Gpu` | `ui/gpu_view360.h` | une classe de passe GPU | **hors périmètre** — ne nomme aucune projection |
 
 ## 1.3 Libellés à l'écran
 
 | Ligne (`ui/panels.cpp`) | Chaîne | Où | État |
 |---|---|---|---|
-| `388` | `equirect 360` / `plan 2D` | détail sous la vignette du deck | **remonté SCRATCHVJ-03** |
-| `851` | `360°` / `2D` | `projection_word()`, employé en `976` et `1369` | **remonté SCRATCHVJ-03** |
-| `1197` | `{"Tous", "2D", "360°", "Alpha"}` | filtres de la bibliothèque | **remonté SCRATCHVJ-03** |
+| `388` | `equirect 360` / `plan 2D` | détail sous la vignette du deck | **ouvert (phase 2)** — verdict SCRATCHVJ-03 reçu (tranché, source modifiée) : la forme courte est bornée par la place (`ERGONOMIE.md`, « Le langage ») ; « 360 » là où 44 px ne tiennent pas plus, forme longue accessible à côté ; `2D` et « équirectangulaire » seul disparaissent partout, console et nom de caisse compris — ce dernier est une migration. **Bloqué en partie** : le verdict et `SCENE.md` écrivent « Plate », la table d'`ERGONOMIE.md` écrit « Rectiligne » (`LACUNA-17`) → tour 02, `SCRATCHVJ-22` |
+| `851` | `360°` / `2D` | `projection_word()`, employé en `976` et `1369` | **ouvert (phase 2)** — verdict SCRATCHVJ-03 reçu (tranché, source modifiée) : la forme courte est bornée par la place (`ERGONOMIE.md`, « Le langage ») ; « 360 » là où 44 px ne tiennent pas plus, forme longue accessible à côté ; `2D` et « équirectangulaire » seul disparaissent partout, console et nom de caisse compris — ce dernier est une migration. **Bloqué en partie** : le verdict et `SCENE.md` écrivent « Plate », la table d'`ERGONOMIE.md` écrit « Rectiligne » (`LACUNA-17`) → tour 02, `SCRATCHVJ-22` |
+| `1197` | `{"Tous", "2D", "360°", "Alpha"}` | filtres de la bibliothèque | **ouvert (phase 2)** — verdict SCRATCHVJ-03 reçu (tranché, source modifiée) : la forme courte est bornée par la place (`ERGONOMIE.md`, « Le langage ») ; « 360 » là où 44 px ne tiennent pas plus, forme longue accessible à côté ; `2D` et « équirectangulaire » seul disparaissent partout, console et nom de caisse compris — ce dernier est une migration. **Bloqué en partie** : le verdict et `SCENE.md` écrivent « Plate », la table d'`ERGONOMIE.md` écrit « Rectiligne » (`LACUNA-17`) → tour 02, `SCRATCHVJ-22` |
 | `1464` | `PROJECTION` | sur-titre de l'inspecteur | **conforme** — sur-titre de panneau, capitales admises (`DIRECTION-ARTISTIQUE.md:200-201`) |
-| `1468-1469` | `Auto (360°)`, `Auto (2D)`, `2D`, `360°` | sélecteur de l'inspecteur | **remonté SCRATCHVJ-03** |
-| `2039` | `{"2D", "360°"}` | sélecteur sur l'en-tête du deck | **remonté SCRATCHVJ-03** |
-| `2236` | `{"Perspective", "Little planet", "Fisheye"}` | sélecteur `VUE 360` | **remonté SCRATCHVJ-02** |
+| `1468-1469` | `Auto (360°)`, `Auto (2D)`, `2D`, `360°` | sélecteur de l'inspecteur | **ouvert (phase 2)** — verdict SCRATCHVJ-03 reçu (tranché, source modifiée) : la forme courte est bornée par la place (`ERGONOMIE.md`, « Le langage ») ; « 360 » là où 44 px ne tiennent pas plus, forme longue accessible à côté ; `2D` et « équirectangulaire » seul disparaissent partout, console et nom de caisse compris — ce dernier est une migration. **Bloqué en partie** : le verdict et `SCENE.md` écrivent « Plate », la table d'`ERGONOMIE.md` écrit « Rectiligne » (`LACUNA-17`) → tour 02, `SCRATCHVJ-22` |
+| `2039` | `{"2D", "360°"}` | sélecteur sur l'en-tête du deck | **ouvert (phase 2)** — verdict SCRATCHVJ-03 reçu (tranché, source modifiée) : la forme courte est bornée par la place (`ERGONOMIE.md`, « Le langage ») ; « 360 » là où 44 px ne tiennent pas plus, forme longue accessible à côté ; `2D` et « équirectangulaire » seul disparaissent partout, console et nom de caisse compris — ce dernier est une migration. **Bloqué en partie** : le verdict et `SCENE.md` écrivent « Plate », la table d'`ERGONOMIE.md` écrit « Rectiligne » (`LACUNA-17`) → tour 02, `SCRATCHVJ-22` |
+| `2236` | `{"Perspective", "Little planet", "Fisheye"}` | sélecteur `VUE 360` | **ouvert (phase 2)** — verdict SCRATCHVJ-02 reçu (tranché, source modifiée) : `rectilinear`, `little_planet`, `fisheye_view`, identifiants et libellés (`00-vocabulaire.md`, « Les modes de vue, ou reprojections ») |
 | `2240` | `VUE 360` | libellé de ligne | **ouvert (phase 2)** — `row_label`, donc un libellé de paramètre : capitales et abréviation, contre `ERGONOMIE.md:382` |
 | `2288` | `SOURCE ÉQUIRECTANGULAIRE — cadre de visée` | sur-titre du popup de regard | **conforme** — sur-titre, et le mot est le bon (`ERGONOMIE.md:366`) |
-| `4534` | `PROGRAMME · 360 PROJETÉ` | bande programme | **remonté SCRATCHVJ-03** |
+| `4534` | `PROGRAMME · 360 PROJETÉ` | bande programme | **ouvert (phase 2)** — verdict SCRATCHVJ-03 reçu (tranché, source modifiée) : la forme courte est bornée par la place (`ERGONOMIE.md`, « Le langage ») ; « 360 » là où 44 px ne tiennent pas plus, forme longue accessible à côté ; `2D` et « équirectangulaire » seul disparaissent partout, console et nom de caisse compris — ce dernier est une migration. **Bloqué en partie** : le verdict et `SCENE.md` écrivent « Plate », la table d'`ERGONOMIE.md` écrit « Rectiligne » (`LACUNA-17`) → tour 02, `SCRATCHVJ-22` |
 
 ## 1.4 Ligne de commande, démonstration, documentation
 
 | Où | Chaîne | État |
 |---|---|---|
-| `app/main.cpp:41` | « a 2:1 picture is flagged equirect » (aide) | **remonté SCRATCHVJ-01** |
-| `app/main.cpp:296` | `  equirect 360` (sortie de `analyze`) | **remonté SCRATCHVJ-01** |
-| `app/main.cpp:341` | `  360         équirectangulaire` / `non` (sortie de `info`) | **remonté SCRATCHVJ-03** |
-| `app/engine.cpp:277` | caisse `360°` de la démonstration | **remonté SCRATCHVJ-03** |
-| `app/engine.cpp:75` | `width == height * 2 ? kCacheEquirect` | **remonté SCRATCHVJ-18** — une règle de détection, pas un mot |
-| `app/analyze.cpp:255-258` | la même règle, avec sa raison écrite | **remonté SCRATCHVJ-18** |
-| `core/destinations.cpp:17-20` | « regard 360 du deck A : lacet (degrés) », « zoom little planet / fisheye du deck A » | **remonté SCRATCHVJ-02** ; l'unité entre parenthèses est traitée à l'axe 10.1 |
+| `app/main.cpp:41` | « a 2:1 picture is flagged equirect » (aide) | **ouvert (phase 2)** — verdict SCRATCHVJ-01 reçu : la forme canonique s'écrit, `"auto"` devient l'absence de clé, même migration que `equirect` → `equirect_360` |
+| `app/main.cpp:296` | `  equirect 360` (sortie de `analyze`) | **ouvert (phase 2)** — verdict SCRATCHVJ-01 reçu : la forme canonique s'écrit, `"auto"` devient l'absence de clé, même migration que `equirect` → `equirect_360` |
+| `app/main.cpp:341` | `  360         équirectangulaire` / `non` (sortie de `info`) | **ouvert (phase 2)** — verdict SCRATCHVJ-03 reçu (tranché, source modifiée) : la forme courte est bornée par la place (`ERGONOMIE.md`, « Le langage ») ; « 360 » là où 44 px ne tiennent pas plus, forme longue accessible à côté ; `2D` et « équirectangulaire » seul disparaissent partout, console et nom de caisse compris — ce dernier est une migration. **Bloqué en partie** : le verdict et `SCENE.md` écrivent « Plate », la table d'`ERGONOMIE.md` écrit « Rectiligne » (`LACUNA-17`) → tour 02, `SCRATCHVJ-22` |
+| `app/engine.cpp:277` | caisse `360°` de la démonstration | **ouvert (phase 2)** — verdict SCRATCHVJ-03 reçu (tranché, source modifiée) : la forme courte est bornée par la place (`ERGONOMIE.md`, « Le langage ») ; « 360 » là où 44 px ne tiennent pas plus, forme longue accessible à côté ; `2D` et « équirectangulaire » seul disparaissent partout, console et nom de caisse compris — ce dernier est une migration. **Bloqué en partie** : le verdict et `SCENE.md` écrivent « Plate », la table d'`ERGONOMIE.md` écrit « Rectiligne » (`LACUNA-17`) → tour 02, `SCRATCHVJ-22` |
+| `app/engine.cpp:75` | `width == height * 2 ? kCacheEquirect` | **fermé** (verdict SCRATCHVJ-18, rien à écrire) — grappe G7 : Mutoscope est la référence, `evidence` gagne `filename`, et **un rang absent est absent, il ne dégrade rien** (`spec/01-manifeste-plate.md`). L'inférence au ratio reste, « Auto (360°) » reste — une règle de détection, pas un mot |
+| `app/analyze.cpp:255-258` | la même règle, avec sa raison écrite | **fermé** (verdict SCRATCHVJ-18, rien à écrire) — grappe G7 : Mutoscope est la référence, `evidence` gagne `filename`, et **un rang absent est absent, il ne dégrade rien** (`spec/01-manifeste-plate.md`). L'inférence au ratio reste, « Auto (360°) » reste |
+| `core/destinations.cpp:17-20` | « regard 360 du deck A : lacet (degrés) », « zoom little planet / fisheye du deck A » | **ouvert (phase 2)** — verdict SCRATCHVJ-02 reçu (tranché, source modifiée) : `rectilinear`, `little_planet`, `fisheye_view`, identifiants et libellés (`00-vocabulaire.md`, « Les modes de vue, ou reprojections ») ; l'unité entre parenthèses est traitée à l'axe 10.1 |
 | `docs/format-cache.md`, `docs/roadmap.md` | prose : « équirectangulaire (360) », « la 2D et la 360 » | **ouvert (phase 2)** — prose, suit le vocabulaire une fois arrêté |
 
 ## 1.5 Le repère — **conforme, et la contradiction a disparu**
@@ -474,7 +556,7 @@ c'est là que passe le geste.
 | `Espace` | lecture / pause du deck **sous la souris** | `ui/panels.cpp:2093-2099` | `IsWindowHovered(ChildWindows)` et `!WantTextInput` | **conforme** — `ERGONOMIE.md:250`, et couche 1 de `MAISON.md:47` (« unanime »). Le choix du deck survolé est écrit et motivé : `:2091-2092`, « in a set nobody aims at a 28 px button with the other hand on a fader » |
 | `F` | image seule (masque toute l'interface) | `ui/panels.cpp:4688` | `!WantTextInput` | **conforme** — `F` est l'une des quatre lettres que `ERGONOMIE.md:260-265` interdit à la **réservation de suite**, donc libre pour le produit ; `MAISON.md:101` et `:138` le confirment. L'effet est celui que `ERGONOMIE.md:253` donne à `Tab` |
 | `B` | replier le rail de bibliothèque | `ui/panels.cpp:4689` | `!WantTextInput` | **conforme** — `B` n'est ni dans la table réservée (`ERGONOMIE.md:245-258`) ni dans les quatre lettres interdites ; aucune règle ne s'y oppose |
-| `Échap` | 1. quitte « image seule » ; 2. sinon ferme la fenêtre de sortie ; 3. sinon **quitte l'application** | `ui/main_ui.cpp:663-675` | `!WantTextInput` | **ouvert (phase 4)** et **remonté SCRATCHVJ-15** |
+| `Échap` | 1. quitte « image seule » ; 2. sinon ferme la fenêtre de sortie ; 3. sinon **quitte l'application** | `ui/main_ui.cpp:663-675` | `!WantTextInput` | **ouvert (phase 4)** — verdict SCRATCHVJ-15 reçu (tranché, source modifiée) : le rang qui quitte l'application se supprime, l'événement se consomme au premier rang qui s'applique, le rang 6 n'est jamais facultatif (`ERGONOMIE.md`, « La pile de priorité d'`Échap` ») |
 
 `Tab` n'est lié à rien par le produit. ImGui s'en sert pour la navigation entre
 champs ; le produit n'y touche pas.
@@ -509,10 +591,10 @@ le rang 6 (« ne rien faire ») est remplacé par « quitter ».
 | Touche | Exigée par | Liée ? | État |
 |---|---|---|---|
 | `Espace` | `MAISON.md:101`, `ERGONOMIE.md:250` | oui | **conforme** |
-| `Échap`, selon la pile | `MAISON.md:101`, `ERGONOMIE.md:275-285` | oui, mais fausse | **remonté SCRATCHVJ-15** |
-| `Ctrl`+`Z` / `Ctrl`+`Maj`+`Z` | `MAISON.md:101`, `ERGONOMIE.md:257` | **non** | **remonté SCRATCHVJ-15** — le produit n'a pas d'annulation : il ne détient aucun état réversible au sens de `04-frontieres.md:19-23`, et la scène « ne produit aucun fichier » (`secteurs.html:191-193`) |
+| `Échap`, selon la pile | `MAISON.md:101`, `ERGONOMIE.md:275-285` | oui, mais fausse | **ouvert (phase 4)** — verdict SCRATCHVJ-15 reçu, voir 5.1 |
+| `Ctrl`+`Z` / `Ctrl`+`Maj`+`Z` | `MAISON.md:101`, `ERGONOMIE.md:257` | **non** | **fermé** (verdict SCRATCHVJ-15, rien à écrire) — **sans objet** : « une touche réservée n'est exigible que d'un produit qui a la chose qu'elle manipule » (`ERGONOMIE.md`, encadré sous « Le clavier réservé à la suite », réécrit sur cette remontée). Le produit n'a pas d'annulation : il ne détient aucun état réversible au sens de `04-frontieres.md:19-23`, et la scène « ne produit aucun fichier » (`secteurs.html:191-193`) |
 | `?` / `F1` | `MAISON.md:101`, `ERGONOMIE.md:255` | **non** | **ouvert (phase 4)** — le produit lie quatre touches, donc la clause « un produit qui ne lie aucune touche n'en lie pas pour se conformer » (`ERGONOMIE.md:233-238`, tranchée par `DIORAMA-06`) ne le dispense pas |
-| `Tab` | `MAISON.md:101`, `ERGONOMIE.md:253` | **non** | **remonté SCRATCHVJ-15** — l'effet existe, il est sur `F` par décision écrite de `MAISON.md:138` |
+| `Tab` | `MAISON.md:101`, `ERGONOMIE.md:253` | **non** | **fermé** (verdict SCRATCHVJ-15, rien à écrire) — l'effet est sur `F`, l'une des quatre lettres libres ; et `Tab` est rouvert par la suite elle-même (`ERGONOMIE.md`, « La touche qui masque l'interface est rouverte ») |
 
 ## 5.4 Le reste du clavier réservé de l'atelier
 
@@ -532,7 +614,7 @@ cellules de 44 px) et sur la surface MIDI ; aucun n'a de raccourci clavier.
 `1`–`5` » et un conflit potentiel avec le clavier réservé. **Cette interface
 n'existe plus** : elle a été remplacée par la refonte de septembre (`9ccce6f`, et
 `design/README.md:6-8`). Le conflit annoncé n'existe pas.
-→ **remonté SCRATCHVJ-15**.
+→ **fermé** (verdict SCRATCHVJ-15, rien à écrire ici) — les deux sources sont corrigées (`secteurs.html` § 5.3, `tools/gen-maison.py`) ; la conclusion tient par Mutoscope seul (`MUTOSCOPE-01`).
 
 ## 5.6 Le viseur 360 à la souris — **axe vide, et c'est écrit**
 
@@ -558,7 +640,7 @@ Aucun `IsMouseDragging`, `GetMouseDragDelta` ni `MouseDelta` n'est lu sur la vue
 **État : hors périmètre** pour `−Δx` au lacet, `+Δy` au tangage, l'absence
 d'inertie et la molette — le geste n'existe pas. Les **constantes** de
 `tokens.json:48-57`, elles, ne dépendent pas du geste, et leur sort est ouvert :
-→ **remonté SCRATCHVJ-16**.
+→ **fermé** (`b025d6a`, SCRATCHVJ-16) pour le tangage : borné à ±89,9° par `kPitchClampDeg` (`core/sphere.h`, nommé d'après `viewer.geometry.pitch_deg_clamp`), sur le curseur, le mapping par défaut et la destination. Aucun HUD n'est dû. Le champ par défaut (90° contre 75°) et ses bornes (20–170°) ne bougent pas : `tokens.json` v3 a rangé le champ sous `viewer.plate`, et le domaine de little planet / fisheye est ouvert (`00-vocabulaire.md`, « Les modes de vue, ou reprojections ») — question au tour 02, `SCRATCHVJ-25`.
 
 ## 5.7 La souris ailleurs
 
@@ -584,23 +666,23 @@ fichier.
 
 | Nom | Valeur | Rôle | Jeton d'atelier voisin | État |
 |---|---|---|---|---|
-| `kGround` | `#141412` | fond de fenêtre | `chassis.void` `#0A0C0B` | **conforme par le cadran** — variable 3, `secteurs.html:412` ; la valeur → **remonté SCRATCHVJ-06** |
-| `kPanel` | `#1A1917` | fond de panneau | `chassis.panel` `#121614` | **conforme par le cadran** — même teinte chaude, variable 3 ; la valeur → **remonté SCRATCHVJ-06** |
+| `kGround` | `#141412` | fond de fenêtre | `chassis.void` `#0A0C0B` | **conforme par le cadran** — variable 3, `secteurs.html:412` ; la valeur → **remonté SCRATCHVJ-06** — *reporté*, voir « Variable 3 » : la direction est tranchée (luminance de l'atelier, teinte de la scène, test ±5 %), la mono manque |
+| `kPanel` | `#1A1917` | fond de panneau | `chassis.panel` `#121614` | **conforme par le cadran** — même teinte chaude, variable 3 ; la valeur → **remonté SCRATCHVJ-06** — *reporté*, voir « Variable 3 » : la direction est tranchée (luminance de l'atelier, teinte de la scène, test ±5 %), la mono manque |
 | `kWell` | `#0E0E0C` | champs, fonds de bouton | `chassis.raised` `#1A1F1C` | **ouvert (phase 5)** — voir 6.7 : le champ est **creusé** ici, **relevé** à l'atelier |
-| `kHair` | `#2E2D28` | filets 1 px | `chassis.line` `#2A302C` | **conforme par le cadran** — variable 3 ; la valeur → **remonté SCRATCHVJ-06** |
+| `kHair` | `#2E2D28` | filets 1 px | `chassis.line` `#2A302C` | **conforme par le cadran** — variable 3 ; la valeur → **remonté SCRATCHVJ-06** — *reporté*, voir « Variable 3 » : la direction est tranchée (luminance de l'atelier, teinte de la scène, test ±5 %), la mono manque |
 | `kInk` | `#E9E6DF` | texte principal | `chassis.chalk` `#E4E7E1` | **conforme par le cadran** — craie chaude contre craie verdie, variable 3 |
 | `kMuted` | `#8A867C` | libellés secondaires | `chassis.chalk_dim` `#8D958C` | idem |
 | `kFaint` | `#605D56` | indisponible, sur-titres | `chassis.chalk_off` `#5A615A` | idem |
-| `kAccent` | `#C9762F` | accent produit | aucun — absent de `tokens.json:37-47` | **remonté SCRATCHVJ-07** |
-| `kAmber` | `#C99A2F` | deck A, et « en cours » | `signal.running` `#C9A227` | **conforme par le cadran** pour le deck A (variable 4, `:420`) ; le double rôle → **remonté SCRATCHVJ-08** |
-| `kSlate` | `#6E8696` | deck B | aucun | **conforme par le cadran** — variable 4, `:420` ; l'absence dans `tokens.json` → **remonté SCRATCHVJ-07** |
-| `kSage` | `#7E946B` | « terminé », « lié » | `signal.done` `#7FB069` | **remonté SCRATCHVJ-09** |
-| `kAlert` | `#B54B3A` | « échec », « délié » | `signal.fail` `#D9584B` | **remonté SCRATCHVJ-09** |
+| `kAccent` | `#C9762F` | accent produit | aucun — absent de `tokens.json:37-47` | **ouvert (phase 5)** — verdict SCRATCHVJ-07 reçu (tranché, source modifiée) : `tokens.json` est en **v3** avec `lines.scene` — la paire `pair.a` / `pair.b`, les sept valeurs de châssis avec leur état, les signaux ; en-tête du fichier de jetons « ligne scène, tokens.json v3, lines.scene » ; l'accent produit reste derrière un nom unique prêt à changer ; le second orange documentaire `#b45f1c` tombe en phase 7 avec la feuille locale |
+| `kAmber` | `#C99A2F` | deck A, et « en cours » | `signal.running` `#C9A227` | **conforme par le cadran** pour le deck A (variable 4, `:420`) ; le double rôle → **fermé** (`3a278f2`, SCRATCHVJ-08) : l'ambre est au deck A ; « en cours » se dit à la craie, par la progression nommée |
+| `kSlate` | `#6E8696` | deck B | aucun | **conforme par le cadran** — variable 4, `:420` ; l'absence dans `tokens.json` → **ouvert (phase 5)** — verdict SCRATCHVJ-07 reçu (tranché, source modifiée) : `tokens.json` est en **v3** avec `lines.scene` — la paire `pair.a` / `pair.b`, les sept valeurs de châssis avec leur état, les signaux ; en-tête du fichier de jetons « ligne scène, tokens.json v3, lines.scene » ; l'accent produit reste derrière un nom unique prêt à changer ; le second orange documentaire `#b45f1c` tombe en phase 7 avec la feuille locale |
+| `kSage` | `#7E946B` | « terminé », « lié » | `signal.done` `#7FB069` | **fermé** (`3a278f2`, SCRATCHVJ-09) — `kWarn` `#9C774E` entre dans la table nommée, dérivé de `#C48A4B` par les rapports de clarté et de saturation que la table applique déjà à `done` et `fail`, et va au lien de platine qui faiblit (`link_colour()`, voyant de la barre haute) ; la valeur monte au tour 02 (`SCRATCHVJ-21`). La déclaration des quatre valeurs comme jeu de support de la scène attend le fichier de jetons (phase 5) |
+| `kAlert` | `#B54B3A` | « échec », « délié » | `signal.fail` `#D9584B` | **fermé** (`3a278f2`, SCRATCHVJ-09) — `kWarn` `#9C774E` entre dans la table nommée, dérivé de `#C48A4B` par les rapports de clarté et de saturation que la table applique déjà à `done` et `fail`, et va au lien de platine qui faiblit (`link_colour()`, voyant de la barre haute) ; la valeur monte au tour 02 (`SCRATCHVJ-21`). La déclaration des quatre valeurs comme jeu de support de la scène attend le fichier de jetons (phase 5) |
 
 Il n'y a **aucune** valeur pour `signal.warn` (`tokens.json:34`). Les quatre
 couleurs de signalisation sont un **invariant** (`secteurs.html:377-379`), pas
 une variable de cadran ; trois sont retouchées et la quatrième manque.
-→ **remonté SCRATCHVJ-09**.
+→ **fermé** (`3a278f2`, SCRATCHVJ-09) — `kWarn` `#9C774E` entre dans la table nommée, dérivé de `#C48A4B` par les rapports de clarté et de saturation que la table applique déjà à `done` et `fail`, et va au lien de platine qui faiblit (`link_colour()`, voyant de la barre haute) ; la valeur monte au tour 02 (`SCRATCHVJ-21`). La déclaration des quatre valeurs comme jeu de support de la scène attend le fichier de jetons (phase 5).
 
 ## 6.2 Écrites hors de la table
 
@@ -657,9 +739,9 @@ fichiers confondus (maquette comprise). Hors maquette :
 
 | Fichier | Occurrences | Distinctes | État |
 |---|---|---|---|
-| `docs/pdf/_style.css` | 29 | 25 | **remonté SCRATCHVJ-17**, et **ouvert (phase 7)** |
-| `docs/pdf/build.py:74,76` | 2 | 2 | **ouvert (phase 7)** — le script **écrit** `#eae5dd` et `#6c6862` en style local dans le HTML qu'il régénère |
-| `docs/pdf/manuel.html` | 126 | 2 | **ouvert (phase 7)** — les 126 sont la sortie de `build.py`, pas du texte écrit à la main |
+| `docs/pdf/_style.css` | 29 | 25 | **remonté SCRATCHVJ-17** — *reporté*, voir « Variable 6 » : la maison écrira `.line-scene` dans `suite.css` quand `SCRATCHVJ-06` sera rendue ; `_style.css` ne se réécrit pas, et **remonté SCRATCHVJ-17** — la phase 7 est rendue par la note ; rien à faire tant que `suite.css` n'a pas son papier sombre |
+| `docs/pdf/build.py:74,76` | 2 | 2 | **remonté SCRATCHVJ-17** — la phase 7 est rendue par la note ; rien à faire tant que `suite.css` n'a pas son papier sombre — le script **écrit** `#eae5dd` et `#6c6862` en style local dans le HTML qu'il régénère |
+| `docs/pdf/manuel.html` | 126 | 2 | **remonté SCRATCHVJ-17** — la phase 7 est rendue par la note ; rien à faire tant que `suite.css` n'a pas son papier sombre — les 126 sont la sortie de `build.py`, pas du texte écrit à la main |
 | `docs/pdf/argumentaire.html` | 0 | 0 | **conforme** — aucune valeur écrite dans le document, ce que `DIRECTION-ARTISTIQUE.md:172-175` exige |
 
 ## 6.6 La couleur qui porte du texte
@@ -680,7 +762,7 @@ Les deux `kAlert` sont conformes (c'est `fail`). Les quatre « A » / « B »
 (`:2796, 2798, 4652, 4658`) sont la paire opératoire de la variable 4 — reste à
 savoir si elle a le droit de porter du texte, ce que `secteurs.html:418-425` ne
 dit pas. Les dix-huit autres ne sont couvertes par aucune ligne.
-→ **remonté SCRATCHVJ-10**.
+→ **fermé** (`3a278f2`, SCRATCHVJ-10) — « A » et « B » gardent leur couleur (`DIRECTION-ARTISTIQUE.md`, « Ce qui compte comme du texte ») ; les phrases reviennent à la craie ; le nom du produit devient capuchon 2 px + nom en craie (`kAccentCap`, d'après `rhythm.accent_cap`).
 
 ## 6.7 Le champ creusé contre le champ relevé
 
@@ -702,16 +784,16 @@ Ce n'est aucune des sept variables, et aucune source ne l'autorise.
 | `ui/panels.cpp:4724` | `WindowRounding = 0.0f` | `radius_panel: 0` (`tokens.json:22`) ; « angle vif sur les panneaux » (`secteurs.html:371`) | **conforme** |
 | `:4725` | `ChildRounding = 0.0f` | idem | **conforme** |
 | `:4728` | `ScrollbarRounding = 0.0f` | — | **conforme** |
-| `:4726` | `FrameRounding = 1.0f` | `radius_control: 3` (`tokens.json:22`) ; « rayon minimal sur les contrôles » (`secteurs.html:371`) ; « le rayon est 3px sur un contrôle » (`DIRECTION-ARTISTIQUE.md:246`) | **remonté SCRATCHVJ-12** |
-| `:4727` | `GrabRounding = 1.0f` | idem | **remonté SCRATCHVJ-12** |
-| `:230-231` | `AddRectFilled(..., 1.0f)`, `AddRect(..., 1.0f)` | le bouton dessiné à la main, au même rayon | **remonté SCRATCHVJ-12** |
-| `docs/pdf/_style.css:135, 147, 223` | `1.2mm`, `1.5mm`, `1mm` | rayons de `code`, `pre`, `.tag` dans le document | **ouvert (phase 7)** — `suite.css:118,121` emploie `3px` |
+| `:4726` | `FrameRounding = 1.0f` | `radius_control: 3` (`tokens.json:22`) ; « rayon minimal sur les contrôles » (`secteurs.html:371`) ; « le rayon est 3px sur un contrôle » (`DIRECTION-ARTISTIQUE.md:246`) | **fermé** (`d138ac3`, SCRATCHVJ-12) — `kControlRadius = 3.0f`, nommé d'après `rhythm.radius_control`, sur les deux champs de style et les six rectangles de contrôle dessinés à la main |
+| `:4727` | `GrabRounding = 1.0f` | idem | **fermé** (`d138ac3`, SCRATCHVJ-12) — `kControlRadius = 3.0f`, nommé d'après `rhythm.radius_control`, sur les deux champs de style et les six rectangles de contrôle dessinés à la main |
+| `:230-231` | `AddRectFilled(..., 1.0f)`, `AddRect(..., 1.0f)` | le bouton dessiné à la main, au même rayon | **fermé** (`d138ac3`, SCRATCHVJ-12) — `kControlRadius = 3.0f`, nommé d'après `rhythm.radius_control`, sur les deux champs de style et les six rectangles de contrôle dessinés à la main |
+| `docs/pdf/_style.css:135, 147, 223` | `1.2mm`, `1.5mm`, `1mm` | rayons de `code`, `pre`, `.tag` dans le document | **remonté SCRATCHVJ-17** — la phase 7 est rendue par la note ; rien à faire tant que `suite.css` n'a pas son papier sombre — `suite.css:118,121` emploie `3px` |
 
 `secteurs.html:457` range le rayon des angles parmi ce qui **n'entre pas** dans
 le cadran : ce n'est donc pas une valeur de scène, c'est un écart. Mais
 l'invariant tel que `secteurs.html:371` l'écrit dit « rayon minimal », et 1 px
 est plus minimal que 3. La contradiction est entre `secteurs.html` et
-`tokens.json`, pas entre la source et le code. → **remonté SCRATCHVJ-12**.
+`tokens.json`, pas entre la source et le code. → **fermé** (`d138ac3`, SCRATCHVJ-12) — `kControlRadius = 3.0f`, nommé d'après `rhythm.radius_control`, sur les deux champs de style et les six rectangles de contrôle dessinés à la main.
 
 Les autres rayons du dépôt sont des **rayons de dessin**, pas des rayons
 d'angle : voyants (`ui/panels.cpp:303, 323, 500, 668, 3357, 3667, 4633`), arcs de
@@ -727,11 +809,11 @@ potard (`:2585, 2625-2644`), poignée de géométrie (`:3873-3882`), cercle de s
 | Où | Fonte | Rôle | État |
 |---|---|---|---|
 | `ui/main_ui.cpp:258` | `Archivo-Variable.ttf` à 15 px | les mots | **conforme** — `DIRECTION-ARTISTIQUE.md:62-63`, `secteurs.html:365-368` |
-| `ui/main_ui.cpp:259` | Archivo à 11,5 px | les sur-titres | **conforme** sur la famille ; la taille → **remonté SCRATCHVJ-04** |
-| `ui/main_ui.cpp:261` | `DMMono-Regular.ttf` à 15 px | les valeurs | **remonté SCRATCHVJ-06** (question 2) — `tokens.json:16` prescrit Fragment Mono |
+| `ui/main_ui.cpp:259` | Archivo à 11,5 px | les sur-titres | **conforme** sur la famille ; la taille → **ouvert (phase 5)** — verdict SCRATCHVJ-04 reçu (tranché, source modifiée) : le corps à 15 px est une valeur de source, 11,5 s'arrondit au cran voisin du jeu du produit avec le substitut noté ; les cinq crans restent ouverts (`tokens.json` v3, `lines.scene.type.scale_candidat` ; ce qui manque : la règle de dérivation entre salles ; qui doit la produire : la maison) |
+| `ui/main_ui.cpp:261` | `DMMono-Regular.ttf` à 15 px | les valeurs | **remonté SCRATCHVJ-06** — *reporté*, et reporté sur la mono, pas sur la luminance. La direction est tranchée : luminance de l'atelier, teinte de la scène, test « luminance relative WCAG à ±5 % du jeton d'atelier correspondant, dérive chaude R > G > B » (`tokens.json` v3, `lines.scene.chassis.$test`) ; `#0D0C0A` passe. Ce qui manque : le moteur d'impression de Chrome sur **Fragment Mono contre DM Mono**, une heure. Qui doit le produire : ce produit, seul à tenir une chaîne PDF réelle. Rien ne change d'ici là ; en phase 5, la mono et le fond s'isolent en une ligne chacune (question 2) — `tokens.json:16` prescrit Fragment Mono |
 | `ui/fonts/DMMono-Medium.ttf` | — | **jamais chargée** | **ouvert (phase 5)** — présente dans le dépôt et employée par `docs/pdf/_style.css:5`, absente du code |
-| `docs/pdf/_style.css:28` | `"Segoe UI", system-ui, …` | les mots, dans le document | **ouvert (phase 7)** — la raison est écrite en `:1-3` : Chrome refuse `Archivo-Variable.ttf` à l'impression |
-| `docs/pdf/_style.css:4-5, 74, 98, 131, 141, 183, 219, 232` | `"DMMono"` | les valeurs, dans le document | **ouvert (phase 7)** |
+| `docs/pdf/_style.css:28` | `"Segoe UI", system-ui, …` | les mots, dans le document | **remonté SCRATCHVJ-17** — la phase 7 est rendue par la note ; rien à faire tant que `suite.css` n'a pas son papier sombre — la raison est écrite en `:1-3` : Chrome refuse `Archivo-Variable.ttf` à l'impression |
+| `docs/pdf/_style.css:4-5, 74, 98, 131, 141, 183, 219, 232` | `"DMMono"` | les valeurs, dans le document | **remonté SCRATCHVJ-17** — la phase 7 est rendue par la note ; rien à faire tant que `suite.css` n'a pas son papier sombre |
 
 **La règle des deux fontes est tenue.** C'est la constante la plus forte de
 l'invariant (`secteurs.html:365-368`), et elle est respectée aux deux endroits :
@@ -750,14 +832,14 @@ pas ».
 
 | Taille | Où | Dans l'échelle ? | État |
 |---|---|---|---|
-| 15 px | `ui/main_ui.cpp:258, 261` | non | **conforme par le cadran** pour le corps — variable 1, `secteurs.html:396` ; hors échelle → **remonté SCRATCHVJ-04** |
-| 11,5 px | `ui/main_ui.cpp:259` | non | **remonté SCRATCHVJ-04** |
+| 15 px | `ui/main_ui.cpp:258, 261` | non | **conforme par le cadran** pour le corps — variable 1, `secteurs.html:396` ; hors échelle → **ouvert (phase 5)** — verdict SCRATCHVJ-04 reçu (tranché, source modifiée) : le corps à 15 px est une valeur de source, 11,5 s'arrondit au cran voisin du jeu du produit avec le substitut noté ; les cinq crans restent ouverts (`tokens.json` v3, `lines.scene.type.scale_candidat` ; ce qui manque : la règle de dérivation entre salles ; qui doit la produire : la maison) |
+| 11,5 px | `ui/main_ui.cpp:259` | non | **ouvert (phase 5)** — verdict SCRATCHVJ-04 reçu (tranché, source modifiée) : le corps à 15 px est une valeur de source, 11,5 s'arrondit au cran voisin du jeu du produit avec le substitut noté ; les cinq crans restent ouverts (`tokens.json` v3, `lines.scene.type.scale_candidat` ; ce qui manque : la règle de dérivation entre salles ; qui doit la produire : la maison) |
 | ×1,55 | `ui/main_ui.cpp:267` | — | **hors périmètre** — facteur de repli quand les fichiers de fonte manquent |
 | 28 px | `ui/panels.cpp:205` | c'est `param_row` | **ouvert (phase 5)** — valeur atelier dans un produit de scène, variable 1 |
 | 44 px | `ui/panels.cpp:2096, 2382` | c'est la cible scène | **conforme par le cadran** — `secteurs.html:396` |
 | 40 px | `ui/panels.cpp:546` | — | **ouvert (phase 5)** — la barre haute ; `tokens.json:23` dit 32 |
 | 22 px | absent | — | le pied de fenêtre de `ERGONOMIE.md:117` n'existe pas ; la bande d'erreur est dans la barre haute (`ui/panels.cpp:644`) |
-| 7,2 à 30 pt | `docs/pdf/_style.css` | non — dix-sept tailles distinctes | **ouvert (phase 7)** |
+| 7,2 à 30 pt | `docs/pdf/_style.css` | non — dix-sept tailles distinctes | **remonté SCRATCHVJ-17** — la phase 7 est rendue par la note ; rien à faire tant que `suite.css` n'a pas son papier sombre |
 
 Le rythme : `CellPadding (8,4)`, `ItemSpacing (10,6)`, `ItemInnerSpacing (6,4)`,
 `WindowPadding (18,16)`, `FramePadding (8,4)` — `ui/panels.cpp:4732-4736`. Unité
@@ -765,7 +847,7 @@ de 4 px de `tokens.json:21` : respectée par sept des dix nombres ; `10`, `6` et
 `18` ne le sont pas. La colonne de paramètres de 280 px (`ERGONOMIE.md:112`)
 n'existe pas — l'écran est le miroir de la table de mixage
 (`ui/panels.cpp:4682-4684`), pas un viseur avec une colonne. → **ouvert (phase 5)**,
-et la grille de la scène → **remonté SCRATCHVJ-05**.
+et la grille de la scène → **remonté SCRATCHVJ-05** — *reporté*. Ce qui manque : la définition d'un étage et ses valeurs, éprouvées sur un **second produit de scène**, que `maison/05-QUI-EST-QUI.md` ne connaît pas encore. Qui doit le produire : la maison, au tour 01 du second, après l'avoir nommé ou retiré la phrase de `secteurs.html`. En attendant, en phase 5 : nommer les trois étages dans le fichier de jetons — quel panneau à quel étage — sans en inventer les valeurs, et ne pas régulariser `10`, `6`, `18`.
 
 ## 8.3 La casse des libellés
 
@@ -778,7 +860,7 @@ libellés lui-même : la clause de l'hôte ne le protège pas.
 |---|---|---|---|
 | sur-titres de panneau — `eyebrow()` | 39 (`ui/panels.cpp:53-59`) | capitales | **conforme** — `DIRECTION-ARTISTIQUE.md:200-201` prescrit « titre de panneau à 125 condensé **en capitales** », et `suite.css:82-83` fait de même en `h2` |
 | onglets d'écran | 6 (`ui/panels.cpp:4808-4830`) | capitales | **conforme** — même raison : ce sont des titres de panneau |
-| libellés de paramètre — `row_label()` | 24 (`:331-340`), dont **20 en capitales** | capitales | **ouvert (phase 2)** et **remonté SCRATCHVJ-13** |
+| libellés de paramètre — `row_label()` | 24 (`:331-340`), dont **20 en capitales** | capitales | **ouvert (phase 2)** et **ouvert (phase 2)** — verdict SCRATCHVJ-13 reçu (tranché, source modifiée) : capitale initiale, aucune exception de scène ; la frontière est écrite — « un libellé est ce qui a une valeur à sa droite ; un titre de panneau est ce qui a des libellés en dessous » (`ERGONOMIE.md`, « Le langage ») |
 | libellés de curseur | 5 (`:2279-2285`) : `lacet`, `tangage`, `roulis`, `champ`, `zoom` | **minuscules** | **ouvert (phase 2)** — pas de capitale initiale non plus |
 | boutons | 40 sites | capitale initiale, verbe à l'infinitif (`Importer…`, `Créer`, `Rescanner`, `Effacer`) | **conforme** — `ERGONOMIE.md:392-393` |
 
@@ -802,16 +884,16 @@ attributs `style=` dans les annexes régénérées, avec deux valeurs hexadécim
 
 | Ce qui diverge | `_style.css` | `suite.css` | État |
 |---|---|---|---|
-| le papier | `#f7f5f1` clair, couverture `#141412` en aplat | `--paper #F6F7F4` clair, aucun aplat (`:190-192`) | variable 6 : **ne coïncide pas** ; **remonté SCRATCHVJ-17** |
-| l'accent | `#b45f1c` (`:13`) | posé par la classe produit (`:53-61`) — aucune classe pour ce produit | **remonté SCRATCHVJ-07** ; et `#b45f1c` est un **second orange**, distinct de `#C9762F`, alors que `DIRECTION-ARTISTIQUE.md:164-166` interdit qu'un produit porte deux teintes |
-| les fontes | Segoe UI + DM Mono (`:1-5, 28`) | Archivo + Fragment Mono (`:46-47`) | **ouvert (phase 7)** — la raison est écrite, `:1-3` |
-| le corps | 10,2 pt (`:25`) | 16 px (`:69`) | **ouvert (phase 7)** |
-| l'échelle | dix-sept tailles de 7,2 à 30 pt | 11/12/13/16/28 (`:78, 82, 87, 116, 132`) | **remonté SCRATCHVJ-04** |
-| la couverture | `.cover` en aplat sombre (`:40-49`) | `.cover` en filet de 2 px (`:194-216`), ajoutée par `DIORAMA-07` | **ouvert (phase 7)** — la classe existe désormais, elle n'est pas employée |
-| le sommaire | `.toc` propre, sur deux colonnes (`:230-233`) | `.toc` commun (`:218-240`), ajouté par `DIORAMA-07` | **ouvert (phase 7)** |
-| les aplats colorés | `.tag.ok`, `.tag.part`, `.tag.no` (`:226-228`) : fonds verts, ambrés, gris | `.note` en filet, jamais un aplat (`:151-159`) | **ouvert (phase 7)** — écart 20 de `DIVERGENCES.md:155` |
-| les couleurs sémantiques | `.warn` en `#9a2f2f`, un **rouge** pour un avertissement (`:205-206`) | `--warn #8A5C22` (`:40`) | **ouvert (phase 7)** — écart 21 de `DIVERGENCES.md:156` ; `warn` en rouge inverse le sens de `tokens.json:34` |
-| les valeurs écrites | 29 valeurs hexadécimales | aucune tolérée (`DIRECTION-ARTISTIQUE.md:172-175`) | **ouvert (phase 7)** |
+| le papier | `#f7f5f1` clair, couverture `#141412` en aplat | `--paper #F6F7F4` clair, aucun aplat (`:190-192`) | variable 6 : **ne coïncide pas** ; **remonté SCRATCHVJ-17** — *reporté*, voir « Variable 6 » : la maison écrira `.line-scene` dans `suite.css` quand `SCRATCHVJ-06` sera rendue ; `_style.css` ne se réécrit pas |
+| l'accent | `#b45f1c` (`:13`) | posé par la classe produit (`:53-61`) — aucune classe pour ce produit | **ouvert (phase 5)** — verdict SCRATCHVJ-07 reçu (tranché, source modifiée) : `tokens.json` est en **v3** avec `lines.scene` — la paire `pair.a` / `pair.b`, les sept valeurs de châssis avec leur état, les signaux ; en-tête du fichier de jetons « ligne scène, tokens.json v3, lines.scene » ; l'accent produit reste derrière un nom unique prêt à changer ; le second orange documentaire `#b45f1c` tombe en phase 7 avec la feuille locale ; et `#b45f1c` est un **second orange**, distinct de `#C9762F`, alors que `DIRECTION-ARTISTIQUE.md:164-166` interdit qu'un produit porte deux teintes |
+| les fontes | Segoe UI + DM Mono (`:1-5, 28`) | Archivo + Fragment Mono (`:46-47`) | **remonté SCRATCHVJ-17** — la phase 7 est rendue par la note ; rien à faire tant que `suite.css` n'a pas son papier sombre — la raison est écrite, `:1-3` |
+| le corps | 10,2 pt (`:25`) | 16 px (`:69`) | **remonté SCRATCHVJ-17** — la phase 7 est rendue par la note ; rien à faire tant que `suite.css` n'a pas son papier sombre |
+| l'échelle | dix-sept tailles de 7,2 à 30 pt | 11/12/13/16/28 (`:78, 82, 87, 116, 132`) | **ouvert (phase 5)** — verdict SCRATCHVJ-04 reçu (tranché, source modifiée) : le corps à 15 px est une valeur de source, 11,5 s'arrondit au cran voisin du jeu du produit avec le substitut noté ; les cinq crans restent ouverts (`tokens.json` v3, `lines.scene.type.scale_candidat` ; ce qui manque : la règle de dérivation entre salles ; qui doit la produire : la maison) |
+| la couverture | `.cover` en aplat sombre (`:40-49`) | `.cover` en filet de 2 px (`:194-216`), ajoutée par `DIORAMA-07` | **remonté SCRATCHVJ-17** — la phase 7 est rendue par la note ; rien à faire tant que `suite.css` n'a pas son papier sombre — la classe existe désormais, elle n'est pas employée |
+| le sommaire | `.toc` propre, sur deux colonnes (`:230-233`) | `.toc` commun (`:218-240`), ajouté par `DIORAMA-07` | **remonté SCRATCHVJ-17** — la phase 7 est rendue par la note ; rien à faire tant que `suite.css` n'a pas son papier sombre |
+| les aplats colorés | `.tag.ok`, `.tag.part`, `.tag.no` (`:226-228`) : fonds verts, ambrés, gris | `.note` en filet, jamais un aplat (`:151-159`) | **remonté SCRATCHVJ-17** — la phase 7 est rendue par la note ; rien à faire tant que `suite.css` n'a pas son papier sombre — écart 20 de `DIVERGENCES.md:155` |
+| les couleurs sémantiques | `.warn` en `#9a2f2f`, un **rouge** pour un avertissement (`:205-206`) | `--warn #8A5C22` (`:40`) | **remonté SCRATCHVJ-17** — la phase 7 est rendue par la note ; rien à faire tant que `suite.css` n'a pas son papier sombre — écart 21 de `DIVERGENCES.md:156` ; `warn` en rouge inverse le sens de `tokens.json:34` |
+| les valeurs écrites | 29 valeurs hexadécimales | aucune tolérée (`DIRECTION-ARTISTIQUE.md:172-175`) | **remonté SCRATCHVJ-17** — la phase 7 est rendue par la note ; rien à faire tant que `suite.css` n'a pas son papier sombre |
 
 Les deux HTML **sont** des surfaces de marque au sens tranché par `DIORAMA-08` :
 `DIRECTION-ARTISTIQUE.md:153-157`, « tout document qui peut être envoyé à
@@ -829,8 +911,8 @@ définition.
 
 | Grandeur | Ce que dit la source | Ce que fait le code | État |
 |---|---|---|---|
-| angle | une décimale, signe explicite (`:161`) | `%+.0f°` — `ui/panels.cpp:2253` ; `"%.0f°"` sur les curseurs — `:2279-2283` | **ouvert (phase 4)** — le signe y est, la décimale non |
-| timecode | `hh:mm:ss:ff` (`:165`) | `mm:ss.d` — `clock_of()`, `ui/panels.cpp:67-74` ; `mm:ss` — `short_clock()`, `:76-81` | **remonté SCRATCHVJ-14** |
+| angle | une décimale, signe explicite (`:161`) | `%+.0f°` — `ui/panels.cpp:2253` ; `"%.0f°"` sur les curseurs — `:2279-2283` | **fermé** (`b025d6a`, SCRATCHVJ-14) — `%+.1f°` sur le résumé et les trois curseurs d'angle, `%.1f°` sur le champ ; le zoom, qui n'est pas un angle, garde `%.2f` |
+| timecode | `hh:mm:ss:ff` (`:165`) | `mm:ss.d` — `clock_of()`, `ui/panels.cpp:67-74` ; `mm:ss` — `short_clock()`, `:76-81` | **remonté SCRATCHVJ-14** — *reporté*. Ce qui manque : le repère temporel de la ligne scène (tempo, horloge audio ou position du plateau). Qui doit le produire : le fondateur, sur la recommandation que la phase 3 de ce produit doit écrire. `mm:ss.d` reste tel quel ; le format se traitera en phase 3 comme une conséquence du repère, pas comme un sujet à part |
 | durée | `h min s`, jamais de décimales (`:166`) | `%.1f s` — `ui/panels.cpp:4593` | **ouvert (phase 4)** |
 | chemin | tronqué **par le milieu** (`:167`) | jamais tronqué : `ui/panels.cpp:1229, 1449, 1450, 1591` affichent le chemin entier | **conforme** — la règle porte sur un chemin *tronqué* ; aucun ne l'est. `pad_word()` (`:873-878`) coupe un **nom**, pas un chemin |
 | résolution | `×` cadratin, espaces fines (`:164`) | `%ux%u` — `ui/tools/xr_check.cpp:178` | **hors périmètre** — un outil de contrôle en console, pas l'interface |
