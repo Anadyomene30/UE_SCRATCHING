@@ -1,7 +1,7 @@
 /* ============================================================================
    suite.css — la feuille unique des manuels et des documents commerciaux.
 
-   VERSION 6 — 2026-09-10
+   VERSION 7 — 2026-09-15
 
    Un produit livré porte une COPIE de cette feuille dans son dossier de
    documentation, comme il porte une copie des jetons : jamais un lien hors
@@ -71,6 +71,20 @@
    Emploi : <link rel="stylesheet" href="suite.css"> puis, sur <html> ou
    <body>, la classe du produit — p. ex. class="p-mutoscope". Valeurs de
    référence : ../design/tokens.json.
+
+   VERSION 7, le 2026-09-15 — LES DEUX FAMILLES NE TRAVERSAIENT PAS LES
+   ÉLÉMENTS QUI N'HÉRITENT PAS. `button`, `input`, `select`, `textarea` et
+   `kbd` ne prennent PAS la `font-family` de leur parent : le navigateur leur
+   pose la fonte du système, et aucune règle de cette feuille ne la reprenait.
+   Mesuré sur la charte graphique de la maison le 2026-09-15 : trois boutons
+   d'exemple — « Convertir », « Annuler », « Lasso » — composés en
+   **Arial-BoldMT** dans le PDF livré, sous une règle `.btn` qui fixait
+   pourtant le poids, la largeur d'axe et la casse. Elle fixait tout sauf la
+   famille, parce que son auteur croyait l'hériter.
+
+   C'est le même défaut que les fontes chargées par le réseau, un cran plus
+   bas : la feuille promet deux familles et une seule les atteint. Le socle
+   reprend donc ces cinq éléments. Une copie qui porte VERSION 6 ne l'a pas.
 
    Révisée le 2026-09-09 (DIORAMA-07) : la couverture et le sommaire d'un
    manuel, qui manquaient et que chaque produit aurait réinventés dans son coin
@@ -178,6 +192,16 @@ body{
   -webkit-font-smoothing:antialiased;
   font-variant-numeric:tabular-nums;
 }
+/* CES CINQ-LÀ N'HÉRITENT PAS DE LA FAMILLE, et le navigateur leur pose celle
+   du système. Sans cette règle, un bouton d'exemple sort en Arial et un `kbd`
+   en Courier, dans un document dont toute la raison d'être est de montrer les
+   deux familles de la maison. Mesuré le 2026-09-15 sur charte-graphique.pdf. */
+button, input, select, textarea{
+  font-family:inherit; font-size:inherit; font-weight:inherit;
+  font-variation-settings:inherit; line-height:inherit; color:inherit;
+}
+kbd{ font-family:var(--vals); font-variant-numeric:tabular-nums; }
+
 .page{ max-width:880px; margin:0 auto; padding:56px 32px 120px; }
 
 /* --------------------------------------------------------- typographie -- */
