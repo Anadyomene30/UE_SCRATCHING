@@ -1,7 +1,7 @@
 /* ============================================================================
    suite.css — la feuille unique des manuels et des documents commerciaux.
 
-   VERSION 7 — 2026-09-15
+   VERSION 8 — 2026-09-15
 
    Un produit livré porte une COPIE de cette feuille dans son dossier de
    documentation, comme il porte une copie des jetons : jamais un lien hors
@@ -71,6 +71,14 @@
    Emploi : <link rel="stylesheet" href="suite.css"> puis, sur <html> ou
    <body>, la classe du produit — p. ex. class="p-mutoscope". Valeurs de
    référence : ../design/tokens.json.
+
+   VERSION 8, le 2026-09-15 — LA CONSEQUENCE DU CORRECTIF D'IMPRESSION, ecrite.
+   `overflow:visible` a rendu les mots coupes au flux ; il ne les replie pas, donc
+   une ligne plus large que la colonne sort de la page. Trois produits l'ont
+   mesure separement (GEORAMA-41, DIORAMA-23, VIGIE-44) et le troisieme seul a vu
+   que le correctif deplacait la limite au lieu de la supprimer. La feuille porte
+   desormais la contrainte, la derivation de la largeur, et la verification
+   mecanique — pas un nombre.
 
    VERSION 7, le 2026-09-15 — LES DEUX FAMILLES NE TRAVERSAIENT PAS LES
    ÉLÉMENTS QUI N'HÉRITENT PAS. `button`, `input`, `select`, `textarea` et
@@ -490,7 +498,37 @@ figcaption{
      d'un document a ne venir d'aucune source de la maison etaient ceux-la.
 
      `visible` et rien d'autre : les deux mots reviennent, les fleches
-     disparaissent. */
+     disparaissent.
+
+     ET CA NE SUFFIT PAS, mesure par un TROISIEME produit le 2026-09-15
+     (VIGIE-44) : `overflow:visible` rend les mots au flux, IL NE LES REPLIE
+     PAS. Une ligne plus longue que la colonne sort maintenant DE LA PAGE au
+     lieu d'etre coupee. La limite s'est deplacee, elle n'a pas disparu.
+
+     Le choix reste le bon — un schema en art ASCII ne doit pas se replier, un
+     repli automatique rendrait illisible ce que le bloc existe pour montrer.
+     Donc LA CONTRAINTE EST REELLE ET ELLE SE TIENT A LA MAIN : un bloc `pre`
+     plus large que la colonne sort de la page.
+
+     LA LARGEUR NE S'ECRIT PAS ICI COMME UN NOMBRE, parce qu'elle bouge avec
+     @page, la marge et le corps — trois valeurs que cette feuille peut
+     changer. On donne la derivation :
+
+         largeur utile = 210mm - 2 x 20mm = 170mm ~ 643px
+         chasse        = Fragment Mono a 13px ~ 7,8px (0,6 em)
+         caracteres    = 643 / 7,8 ~ 82
+
+     82 en theorie, 78 en mesure — l'ecart est le `padding:14px 16px` du bloc.
+     C'EST LA MESURE QUI FAIT FOI ; la derivation dit quoi refaire quand une de
+     ces valeurs change.
+
+     ET LA VERIFICATION EST MECANIQUE, ce que trois produits ont decouvert
+     separement en le faisant a la main. Celle de Diorama est la bonne :
+
+         'le_mot_de_la_source' in page.extract_text()
+
+     Un mot ecrit dans la source et absent du PDF n'est pas invisible : il n'est
+     pas dans le fichier. Voir `remontees/etudes/grappe-impression.md`. */
   pre, .tablewrap, .scroll{ overflow:visible; }
 
   html,body{ background:#fff; }
