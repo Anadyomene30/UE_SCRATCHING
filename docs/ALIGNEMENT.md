@@ -23,9 +23,13 @@ sans lui l'outil ne devine pas : il le dit, et il s'arrête là.*
 >    descend `DMMono-Regular/Medium.ttf` sans fichier de licence OFL, alors que
 >    ce produit est GPL-3 et destiné à la vente.
 >
-> Et une correction de compte : `SCRATCHVJ-33` n'a jamais été émis — la
-> numérotation de `remontees/filoscope.md` saute de 32 à 34. Ce que `depuis.py`
-> annonçait comme une déclaration en attente de « pris acte » n'existe pas.
+> Et une lecture rectifiée en cours de session, notée parce que l'erreur est
+> instructive : `SCRATCHVJ-33` **existe** — c'est la déclaration des PDF
+> régénérés, ici même (`docs/REMONTEES.md:2079`). Ce qui manque est de l'autre
+> côté : `Suite 360emonteesiloscope.md` passe de 32 à 34, donc la maison
+> n'a jamais écrit le « pris acte ». `depuis.py` a raison de la compter comme
+> en attente. Chercher une ligne dans le fichier des **verdicts** et conclure
+> qu'elle n'a pas été **émise** confond les deux moitiés du canal.
 
 Relevé le **2026-09-09**, en lecture seule, branche `claude/scratch-video-unreal-0oi7dv`
 à **`75eee2f`**. Ce qui monte d'ici est dans
