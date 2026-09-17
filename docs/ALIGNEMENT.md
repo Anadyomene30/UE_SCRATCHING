@@ -22,11 +22,19 @@ sans lui l'outil ne devine pas : il le dit, et il s'arrête là.*
 > 3. **`68c7469` — un défaut de livraison est signalé** : `distribute.py`
 >    descend `DMMono-Regular/Medium.ttf` sans fichier de licence OFL, alors que
 >    ce produit est GPL-3 et destiné à la vente.
+>    **Fermé le 2026-09-17, et le fait signalé était à moitié faux** : ce dépôt
+>    portait déjà l'OFL de DM Mono, sous le nom générique `OFL.txt`. C'est
+>    **Archivo** qui n'avait pas la sienne, et `Archivo-Variable.ttf` est là
+>    depuis le début. La table `fontes` de `distribute.py` nomme désormais
+>    `OFL-Archivo.txt` et `OFL-DMMono.txt`, l'outil les a posées, et `OFL.txt`
+>    est retiré : un fichier qui ne dit pas de quelle fonte il est la licence
+>    n'en est pas une quand il y en a deux dans le dossier. Les autres produits
+>    portent les deux noms explicites depuis toujours.
 >
 > Et une lecture rectifiée en cours de session, notée parce que l'erreur est
 > instructive : `SCRATCHVJ-33` **existe** — c'est la déclaration des PDF
 > régénérés, ici même (`docs/REMONTEES.md:2079`). Ce qui manque est de l'autre
-> côté : `Suite 360emonteesiloscope.md` passe de 32 à 34, donc la maison
+> côté : `Suite 360/remontees/filoscope.md` passe de 32 à 34, donc la maison
 > n'a jamais écrit le « pris acte ». `depuis.py` a raison de la compter comme
 > en attente. Chercher une ligne dans le fichier des **verdicts** et conclure
 > qu'elle n'a pas été **émise** confond les deux moitiés du canal.
