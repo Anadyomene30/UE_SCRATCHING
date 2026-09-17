@@ -1504,7 +1504,16 @@ void draw_library_screen(Engine& engine, Frame& frame) {
     } else {
         const ClipId id = inspected;
         const float w = ImGui::GetContentRegionAvail().x;
-        thumbnail_well(frame, id, w, w * 9.0f / 16.0f, "pas encore d'image");
+        // « pas encore d'image » est faux pour un clip déjà analysé : sa passe est
+        // finie, et elle est d'avant `core/cachemeta` — le bloc de métadonnées de
+        // son cache ne porte aucune vignette et n'en portera jamais. « Tout
+        // analyser » ne revient pas sur un clip analysé, donc l'attente annoncée
+        // par ce mot n'aurait jamais de fin. Le remède est le bouton juste en
+        // dessous, et c'est ce qu'il faut dire à sa place.
+        const bool stale_cache = clip->state == AnalysisState::Ready;
+        thumbnail_well(frame, id, w, w * 9.0f / 16.0f,
+                       stale_cache ? "cache sans vignette \xC2\xB7 r\xC3\xA9""-analyser"
+                                   : "pas encore d'image");
         ImGui::Dummy(ImVec2(0.0f, 4.0f));
         text_c(kInk, "%s", clip->name.c_str());
         push_small();
