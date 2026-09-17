@@ -2233,3 +2233,80 @@ réelle ». Il ne l'a pas passé ici : Fragment Mono n'est pas montée dans
 (`03-DEFINITION-DE-FINI.md`, G4). **Le jour où la maison le demande, c'est une
 heure**, et la mesure est celle-ci : les deux `@font-face` dans une même page,
 imprimée par le même Chrome, et le dépouillement des `/ToUnicode` des deux.
+
+---
+
+# Remontées — Filoscope, tour 05
+
+## SCRATCHVJ-36 — *Déclaration* — un audit d'ergonomie, et les neuf défauts qu'il a trouvés
+
+*Écrit le 2026-09-17. Une déclaration, pas une question : rien ici n'attend un
+verdict, tout attend « pris acte ».*
+
+Le fondateur a demandé un tour d'horizon du logiciel. Il a été fait sur un
+binaire rebâti du jour, écran par écran, par captures regardées et non par
+lecture de code — `tools/shot.ps1`, deux tailles, 1760 × 1000 et 1280 × 800.
+**Neuf défauts corrigés, aucun ajout.** Chaque correction porte sa mesure.
+
+| Ce qui était faux | Mesuré par |
+|---|---|
+| l'écran SORTIE promettait que `Échap` ferme la sortie ; la phase 4 l'a retirée le 2026-09-10 | une capture |
+| la poignée d'un curseur passait en aplat sous sa propre valeur : « 0.62 » se lisait « 0.6\|2 » | une capture agrandie |
+| « Vitesse+0.00× » sans espace : la largeur du libellé était devinée par un facteur 0,8 pour un rapport réel de 13/15 | une capture agrandie |
+| « en mémoire : tout le clip » s'imprimait sous la tête de lecture | une capture |
+| un clip 360 coupait son propre sélecteur Cues \| Clips \| Boucles, à la taille même où les captures se font | une capture |
+| la rangée de transport avançait de 28 px en contenant un bouton de 44 ; la barre de position mordait dedans | une capture agrandie |
+| `demo --seconds abc` sortait en code 3 sans un mot ; `demo --fps 0` tournait sans fin | la commande, et un `taskkill` |
+| `scan` d'un dossier inexistant répondait « 0 entrées » et sortait 0 | la commande, et un test neuf |
+| une liaison vers une cible inconnue portait la même pastille verte qu'une liaison vivante | une capture |
+
+**Ce qui monte vraiment, et c'est une seule chose :** ce dépôt a produit une
+**troisième** instance du même défaut de raisonnement, après la sonde Spout et
+l'entrée MOTU — *un état normal reste indiscernable d'une panne tant que la
+sonde ne dit pas ce qu'elle a **trouvé**, et pas seulement ce qui lui manque.*
+`scan` sur un disque débranché donnait le même zéro qu'un dossier vide. Les deux
+premières fois, la leçon a été écrite dans le roadmap ; écrite là, elle n'a pas
+empêché la troisième. Elle est désormais tenue par un test qui énonce la
+propriété — *le même zéro, deux réponses différentes* — plutôt que par une note.
+
+**Ce que l'audit n'a pas pu faire.** Le matériel était annoncé branché ; la
+machine ne voit que l'Elite. Pas de MOTU (donc pas de porteuse, donc le scope de
+calibration n'a toujours été regardé par personne), pas de RP-8000, pas de
+Phase. `input_check` le dit correctement, ce qui est la seule bonne nouvelle de
+ce paragraphe.
+
+## SCRATCHVJ-37 — La touche `D` est réservée depuis une semaine, et ce produit fait déjà son effet avec `F`
+
+**La règle.** `design/ERGONOMIE.md`, table du clavier réservé, entrée ajoutée le
+2026-09-10 (`780e8a0`) : « `D` — masquer toute l'interface, ne laisser que
+l'image ». Et, dans le même commit : « **Ce que ça demande à un produit** : `D`
+masque toute l'interface et ne laisse que l'image ; un second appui la rend.
+C'est un **ajout** au sens de la grappe G4 — il ne se fait donc pas au titre d'un
+alignement, il demande une phase ou une demande. **Un produit qui liait déjà
+`Tab` à cet effet le garde**, et gagne `D` à côté. »
+
+**L'état ici.** Ce produit lie quatre touches — `Espace`, `F`, `B`, `F1`, plus
+`?` lu dans la file de caractères — et **pas `D`**. Or `F` fait déjà exactement
+ce que `D` décrit : « image seule », l'interface disparaît et il ne reste que le
+programme. La clause de sauvegarde de la maison nomme `Tab` et dit « c'est le
+seul produit concerné » : elle n'avait pas vu qu'un second produit rendait le
+même effet par une autre lettre.
+
+**Ce que la demande veut vraiment.** Que le même geste s'appelle pareil dans les
+dix produits, pour qu'une main qui passe de l'un à l'autre n'ait pas à réé
+apprendre. `F` n'est ni dans le clavier réservé, ni dans les quatre lettres que
+la suite s'interdit : elle n'est pas fautive, elle est seulement autre.
+
+**Les trois issues.**
+
+| Issue | Ce que ça coûte |
+|---|---|
+| **`D` s'ajoute à côté de `F`**, les deux font l'effet, la carte du clavier les montre toutes deux | une phase courte ; c'est exactement le traitement que la maison a donné à `Tab`, et rien n'est retiré à qui a appris `F` |
+| **`F` cède la place à `D`** | plus propre à lire, mais retire une touche apprise ; la maison a explicitement refusé ce coût pour `Tab` |
+| **la maison étend sa clause** : tout produit qui rendait déjà cet effet par une lettre libre la garde et gagne `D` | une ligne de source qui vaut pour les dix, au lieu d'un cas par produit |
+
+**Recommandation :** la première, et signaler la troisième à la maison. La clause
+de `Tab` existe déjà et dit le bon principe ; ce qui lui manque est de ne pas
+nommer `Tab` en particulier. Ce dépôt **ne l'a pas fait** : la maison dit que
+c'est un ajout, un ajout demande une phase ou une demande, et une session
+d'audit n'en ouvre pas une toute seule.
