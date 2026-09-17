@@ -1,10 +1,31 @@
 # Alignement — le relevé
 
-**Maison lue jusqu'à : d9fa7be (2026-09-10)**
+**Maison lue jusqu'à : ba1e9ba (2026-09-15)**
 
 *C'est le marqueur que `Suite 360\tools\depuis.py` lit pour dire ce qui a changé
 dans la maison depuis la dernière lecture de ce dépôt. Il s'écrit en finissant, et
 sans lui l'outil ne devine pas : il le dit, et il s'arrête là.*
+
+> **Lecture du 2026-09-17, pendant l'audit d'ergonomie.** Les trente-six commits
+> de `d9fa7be..ba1e9ba` ont été lus. Trois touchent ce dépôt et **aucun n'a été
+> appliqué** : la session était un relevé, pas un alignement.
+>
+> 1. **`780e8a0` — la touche `D` est réservée** (masquer l'interface) pour tout
+>    produit qui porte un châssis. Ce produit lie quatre touches — `Espace`,
+>    `F`, `B`, `F1`, plus `?` lu dans la file de caractères — et **pas `D`**
+>    (`ui/panels.cpp:2162, 4778, 4779, 4895`). L'écart est réel et date du
+>    2026-09-10.
+> 2. **`0891328` — `design/SCENE.md` porte une contradiction non tranchée** :
+>    `Espace` et `Échap` y sont dits réservés « intégralement » à la scène, et
+>    ailleurs candidats libres pour la ligne scène. Ce produit lie `Espace` et
+>    ne lie pas `Échap`. La question appartient à la maison.
+> 3. **`68c7469` — un défaut de livraison est signalé** : `distribute.py`
+>    descend `DMMono-Regular/Medium.ttf` sans fichier de licence OFL, alors que
+>    ce produit est GPL-3 et destiné à la vente.
+>
+> Et une correction de compte : `SCRATCHVJ-33` n'a jamais été émis — la
+> numérotation de `remontees/filoscope.md` saute de 32 à 34. Ce que `depuis.py`
+> annonçait comme une déclaration en attente de « pris acte » n'existe pas.
 
 Relevé le **2026-09-09**, en lecture seule, branche `claude/scratch-video-unreal-0oi7dv`
 à **`75eee2f`**. Ce qui monte d'ici est dans
