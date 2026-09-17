@@ -31,7 +31,7 @@ Toute nouvelle fonctionnalité doit respecter ces deux règles.
 
 ```sh
 cmake -S . -B build && cmake --build build
-ctest --test-dir build --output-on-failure    # 605 tests, doivent tous passer
+ctest --test-dir build --output-on-failure    # 607 tests, doivent tous passer
 ./build/scratchvj/scratchvj demo              # démo sans matériel
 ./build/scratchvj/scratchvj effects           # catalogue d'effets
 ./build/scratchvj/scratchvj layout            # checklist MIDI learn (tout le rig)
@@ -226,11 +226,13 @@ locaux attrapent déjà l'essentiel des warnings avant même d'y arriver.
 
 ## Repo
 
-- Branche de travail : `claude/scratch-video-unreal-0oi7dv`. `main` est une
-  branche de base quasi vide, créée uniquement pour que GitHub ait un point de
-  comparaison pour les pull requests — ne pas la confondre avec une branche
-  stable.
-- PR en cours : [#1](https://github.com/Anadyomene30/UE_SCRATCHING/pull/1).
+- Branche de travail : `main`, depuis le 2026-09-17. Elle l'était devenue en
+  fait bien avant — le travail se commitait dessus pendant que ce fichier
+  désignait encore `claude/scratch-video-unreal-0oi7dv` comme la branche et
+  `main` comme une base vide. Le document avait tort, pas les commits.
+  `claude/scratch-video-unreal-0oi7dv` reste poussée à `75eee2f` et porte la
+  PR [#1](https://github.com/Anadyomene30/UE_SCRATCHING/pull/1) ; elle n'a plus
+  de travail dessus.
 - `design/` contient les fichiers source de la maquette d'interface (canvas
   Claude Design). Le fichier assemblé (`interface-scratchvj.html`, ~2,5 Mo) est
   ignoré par git — c'est un artefact généré, voir `design/README.md` pour le
