@@ -3027,13 +3027,25 @@ ImU32 accent_colour(const std::string& name) {
 // A button or a pad: a small square, lit while the control reads high, with
 // the last segment of its id under it. Clicking it presses it for the frame,
 // which is what a mouse can honestly do to a momentary control.
+// `cell_w` est la largeur que la case de ce controle possede sur un panneau,
+// ou 0 hors panneau. Un libelle plus large qu'elle debordait chez le voisin :
+// « push » et « inout » se lisaient « push inout », et sur un panneau serre le
+// mot passait sous la boite du groupe d'a cote. La regle est celle que les
+// rotatifs appliquent deja plus haut -- un controle retreci garde sa forme et
+// perd son ecriture, la place dit ce que c'est, et le survol le nomme.
 void small_square(const char* id, const char* label, const Control* control, Frame& frame,
-                  ControlIndex index, ImU32 accent, float side, bool optional) {
+                  ControlIndex index, ImU32 accent, float side, bool optional,
+                  float cell_w = 0.0f, float cell_h = 0.0f) {
     ImGui::BeginGroup();
     push_small();
-    const float label_w = label != nullptr ? ImGui::CalcTextSize(label).x : 0.0f;
+    const ImVec2 label_size =
+        label != nullptr ? ImGui::CalcTextSize(label) : ImVec2(0.0f, 0.0f);
+    const float label_w = label_size.x;
     pop_font();
-    const float column = std::max(side, label_w + 2.0f);
+    const bool captioned = label != nullptr && label[0] != '\0' &&
+                           (cell_w <= 0.0f || label_w + 4.0f <= cell_w) &&
+                           (cell_h <= 0.0f || side + 3.0f + label_size.y <= cell_h);
+    const float column = captioned ? std::max(side, label_w + 6.0f) : side;
     const ImVec2 cell = ImGui::GetCursorScreenPos();
     const ImVec2 origin(cell.x + (column - side) * 0.5f, cell.y);
     ImGui::InvisibleButton(id, ImVec2(column, side));
@@ -3059,13 +3071,22 @@ void small_square(const char* id, const char* label, const Control* control, Fra
                           optional ? kHair : kFaint);
         }
     }
-    if (label != nullptr && label[0] != '\0') {
+    if (captioned) {
         push_small();
         const ImVec2 size = ImGui::CalcTextSize(label);
         draw->AddText(ImVec2(cell.x + (column - size.x) * 0.5f, corner.y + 1.0f),
                       optional ? kHair : kFaint, label);
         ImGui::Dummy(ImVec2(column, size.y + 2.0f));
         pop_font();
+    }
+    // Le nom, toujours atteignable -- c'est ce qui autorise le libelle a
+    // disparaitre quand il ne tient pas dans sa case.
+    if (label != nullptr && label[0] != '\0' && ImGui::IsItemHovered()) {
+        if (known) {
+            ImGui::SetTooltip("%s  %s", label, high ? "on" : "off");
+        } else {
+            ImGui::SetTooltip("%s  jamais touch\xC3\xA9", label);
+        }
     }
     ImGui::EndGroup();
 }
@@ -3081,7 +3102,7 @@ const char* short_label(const std::string& id) {
 // widget; the id's last segment is the label.
 void draw_profile_control(const DeviceProfile& profile, const std::string& id, Engine& engine,
                           Frame& frame, std::size_t device_index, ImU32 accent, float scale,
-                          float xfader_width) {
+                          float xfader_width, float cell_w = 0.0f, float cell_h = 0.0f) {
     const ProfileControl* spec = profile_control(profile, id);
     if (spec == nullptr) return;
     ControlIndex index = kNoControl;
@@ -3107,12 +3128,12 @@ void draw_profile_control(const DeviceProfile& profile, const std::string& id, E
             break;
         case ControlKind::Pad:
             small_square(widget_id, label, control, frame, index, accent, 22.0f * scale,
-                         spec->optional);
+                         spec->optional, cell_w, cell_h);
             break;
         case ControlKind::Button:
         default:
             small_square(widget_id, label, control, frame, index, accent, 18.0f * scale,
-                         spec->optional);
+                         spec->optional, cell_w, cell_h);
             break;
     }
 }
@@ -3137,8 +3158,17 @@ void draw_group_at(const DeviceProfile& profile, const ProfileGroup& group, Engi
     draw->AddText(ImVec2(at.x + 5.0f, at.y + 2.0f), accent, group.title.c_str());
     pop_font();
 
+    // Chaque groupe peint dans son propre rectangle et nulle part ailleurs.
+    // Sans ca, un controle dont la case deborde allait s'ecrire sous la boite
+    // du groupe voisin -- « back » disparaissait sous CUE, « sampler » sous la
+    // boite du sampler -- et le test qui garde les sections de se recouvrir ne
+    // voyait rien, puisque ce sont les CONTENUS qui se recouvraient.
+    draw->PushClipRect(at, corner, true);
     const int count = static_cast<int>(group.controls.size());
-    if (count == 0) return;
+    if (count == 0) {
+        draw->PopClipRect();
+        return;
+    }
     const int columns = group.columns > 0 ? std::min(group.columns, count) : count;
     const int rows = (count + columns - 1) / columns;
     const float pad = 4.0f;
@@ -3154,8 +3184,11 @@ void draw_group_at(const DeviceProfile& profile, const ProfileGroup& group, Engi
         ImGui::SetCursorScreenPos(ImVec2(at.x + pad + cell_w * static_cast<float>(column),
                                          at.y + title_h + pad + cell_h * static_cast<float>(row)));
         draw_profile_control(profile, group.controls[static_cast<std::size_t>(i)], engine, frame,
-                             device_index, accent, scale, std::max(60.0f, size.x - 2.0f * pad));
+                             device_index, accent, scale,
+                             std::max(60.0f, size.x - 2.0f * pad), cell_w,
+                             cell_h + pad);
     }
+    draw->PopClipRect();
 }
 
 // A whole device, drawn as its panel: every group where the hardware has it.
@@ -3368,7 +3401,11 @@ void draw_mapping_list(Engine& engine, Frame& frame);  // below, with the rest o
 void draw_table_screen(Engine& engine, Frame& frame) {
     draw_surface_header(frame);
     ImGui::Dummy(ImVec2(0.0f, 6.0f));
-    const float list_w = 540.0f;
+    // La liste prend sa part de la largeur au lieu de 540 px fixes : les phrases
+    // de destination sont des phrases (« la transition du crossfader : cut, ... »)
+    // et une colonne fixe les coupait toutes au même endroit, à mi-mot.
+    const float list_w =
+        std::clamp(ImGui::GetContentRegionAvail().x * 0.42f, 460.0f, 860.0f);
     const float gap = ImGui::GetStyle().ItemSpacing.x;
     const float table_w = std::max(400.0f, ImGui::GetContentRegionAvail().x - list_w - gap);
     ImGui::BeginChild("table", ImVec2(table_w, 0.0f), ImGuiChildFlags_None,
@@ -3390,6 +3427,24 @@ void draw_table_screen(Engine& engine, Frame& frame) {
 
         // What the control list cannot say about this device, under it. Only
         // the profile knows whether there is anything to say.
+        // Qui est cet appareil, et pour quel deck. Deux RP-8000 dessinees cote a
+        // cote sont deux blocs identiques : sans cette ligne, rien a l'ecran ne
+        // dit laquelle est sous la main gauche. La lettre prend la couleur que
+        // le deck porte sur JOUER, pour que ce soit le meme objet des deux cotes.
+        const auto device_title = [&profile, &d]() {
+            const ImU32 deck_c = d.deck == 'b' ? kSlate : kAmber;
+            push_small();
+            text_c(kMuted, "%s", profile.display_name.empty() ? profile.name.c_str()
+                                                              : profile.display_name.c_str());
+            ImGui::SameLine(0.0f, 8.0f);
+            text_c(deck_c, "deck %c", d.deck == 'b' ? 'B' : 'A');
+            if (!d.connected) {
+                ImGui::SameLine(0.0f, 8.0f);
+                text_c(kFaint, "absent");
+            }
+            pop_font();
+        };
+
         const auto device_note = [&profile]() {
             if (profile.note.empty()) return;
             push_small();
@@ -3402,6 +3457,7 @@ void draw_table_screen(Engine& engine, Frame& frame) {
             const float panel_width = body_h * (profile.panel_w / profile.panel_h);
             ImGui::PushID(static_cast<int>(i));
             ImGui::BeginGroup();
+            device_title();
             draw_device_panel(profile, engine, frame, i, ImVec2(panel_width, body_h * 0.86f));
             device_note();
             ImGui::EndGroup();
@@ -3418,6 +3474,7 @@ void draw_table_screen(Engine& engine, Frame& frame) {
         first = false;
         ImGui::PushID(static_cast<int>(i));
         ImGui::BeginGroup();
+        device_title();
         bool first_group = true;
         for (const ProfileGroup& group : profile.layout) {
             if (!first_group) ImGui::SameLine(0.0f, 26.0f);
@@ -3465,6 +3522,20 @@ void draw_table_screen(Engine& engine, Frame& frame) {
             {"CROSSFADER", &mix.xfader, &mix.xfader_reverse, kAccent},
             {"VOIE 2", &mix.channel_b, &mix.channel_b_reverse, kSlate},
         };
+        // La colonne des titres se mesure sur le plus long des trois, dans la
+        // fonte qui les dessine. À 110 px devinés, « CROSSFADER » passait dessous
+        // le sélecteur et se lisait « CROSSFADEF ».
+        float title_col = 0.0f;
+        push_small();
+        for (const auto& pair : pairs) {
+            title_col = std::max(title_col, ImGui::CalcTextSize(pair.title).x);
+        }
+        pop_font();
+        // Pas de +marge ici : l'écart se prend APRÈS le texte, sur sa largeur
+        // réelle. `SameLine(x)` compte depuis l'origine du contenu, qui n'est pas
+        // celle du texte dans un groupe indenté — c'est ce décalage qui laissait
+        // « CROSSFADER » collé au sélecteur alors que la mesure était juste.
+
         for (int i = 0; i < 3; ++i) {
             push_small();
             ImGui::PushID(i);
@@ -3474,7 +3545,8 @@ void draw_table_screen(Engine& engine, Frame& frame) {
                 text_c(pairs[i].accent, "%s", pairs[i].title);
                 ImGui::SetCursorPosY(ImGui::GetCursorPosY() - dy);
             }
-            ImGui::SameLine(110.0f);
+            const float used = ImGui::GetItemRectSize().x;
+            ImGui::SameLine(0.0f, std::max(10.0f, title_col - used + 10.0f));
             int index = curve_index(*pairs[i].curve);
             if (segmented("curve", kCurves, 4, index, nullptr, pairs[i].accent)) {
                 *pairs[i].curve = curve_of(index);
@@ -3836,8 +3908,10 @@ void draw_mapping_list(Engine& engine, Frame& frame) {
                           ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_RowBg |
                               ImGuiTableFlags_ScrollY)) {
         ImGui::TableSetupColumn("on", ImGuiTableColumnFlags_WidthFixed, 24.0f);
-        ImGui::TableSetupColumn("source", ImGuiTableColumnFlags_WidthFixed, 170.0f);
-        ImGui::TableSetupColumn("destination", ImGuiTableColumnFlags_WidthFixed, 190.0f);
+        ImGui::TableSetupColumn("source", ImGuiTableColumnFlags_WidthFixed, 140.0f);
+        // La destination s'étire : c'est elle qui porte une phrase, les autres
+        // portent un identifiant ou un nombre dont la largeur est connue.
+        ImGui::TableSetupColumn("destination", ImGuiTableColumnFlags_WidthStretch, 1.0f);
         ImGui::TableSetupColumn("valeur", ImGuiTableColumnFlags_WidthFixed, 64.0f);
         ImGui::TableSetupColumn("x", ImGuiTableColumnFlags_WidthFixed, 24.0f);
 
@@ -3910,8 +3984,15 @@ void draw_mapping_list(Engine& engine, Frame& frame) {
                 // Sans description, la cible s'écrit telle quelle — et se lit en
                 // `warn`, pas en encre : c'est une adresse que rien n'écoute.
                 const ImU32 dest_c = !known ? kWarn : (row.enabled ? kInk : kFaint);
-                text_c(dest_c, "%s",
-                       spec != nullptr ? spec->about : row.destination.target.c_str());
+                const char* dest_text =
+                    spec != nullptr ? spec->about : row.destination.target.c_str();
+                text_c(dest_c, "%s", dest_text);
+                // Le filet de sécurité : quelle que soit la largeur, une phrase
+                // coupée se lit en entier au survol.
+                if (ImGui::IsItemHovered() &&
+                    ImGui::CalcTextSize(dest_text).x > ImGui::GetContentRegionAvail().x) {
+                    ImGui::SetTooltip("%s", dest_text);
+                }
                 if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", row.destination.target.c_str());
             }
             ImGui::TableSetColumnIndex(3);
