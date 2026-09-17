@@ -3754,6 +3754,14 @@ void draw_mapping_list(Engine& engine, Frame& frame) {
         for (std::size_t i = 0; i < mapping.size(); ++i) {
             Mapping& row = mapping.mutable_at(i);
             const bool selected = frame.mapping_selected == static_cast<int>(i);
+            // Une cible que le registre ne connaît pas ne fera jamais rien. Elle
+            // s'affichait avec la même pastille verte qu'une liaison vivante — un
+            // `mapping.json` d'avant le retrait des liaisons OSC par défaut montrait
+            // ainsi `/ue/shake` en pleine santé. Le registre la rapporte au `bind()`,
+            // et c'est ici qu'elle doit se voir : une liaison qui ne fait rien apprend
+            // à se méfier de toutes les autres.
+            const bool known =
+                describe_destination(resolve_destination(row.destination.target)) != nullptr;
             ImGui::TableNextRow();
             if (selected) {
                 ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, kPanel);
@@ -3770,11 +3778,22 @@ void draw_mapping_list(Engine& engine, Frame& frame) {
                     frame.mappings_dirty = true;
                 }
                 draw->AddCircleFilled(ImVec2(at.x + 8.0f, at.y + ImGui::GetTextLineHeight() * 0.5f), 4.0f,
-                                      row.enabled ? (mapping.active(i) ? kSage : kWarn) : kHair);
+                                      !row.enabled ? kHair
+                                      : !known     ? kWarn
+                                      : mapping.active(i) ? kSage
+                                                          : kWarn);
                 if (ImGui::IsItemHovered()) {
-                    ImGui::SetTooltip(row.enabled ? (mapping.active(i) ? "active \xC2\xB7 clic : couper"
-                                                                        : "activ\xC3\xA9""e mais sans valeur (contr\xC3\xB4le jamais touch\xC3\xA9 ?) \xC2\xB7 clic : couper")
-                                                  : "coup\xC3\xA9""e \xC2\xB7 clic : activer");
+                    if (!known) {
+                        ImGui::SetTooltip("cible inconnue de cette version \xC2\xB7 "
+                                          "cette liaison ne fait rien");
+                    } else if (!row.enabled) {
+                        ImGui::SetTooltip("coup\xC3\xA9""e \xC2\xB7 clic : activer");
+                    } else if (mapping.active(i)) {
+                        ImGui::SetTooltip("active \xC2\xB7 clic : couper");
+                    } else {
+                        ImGui::SetTooltip("activ\xC3\xA9""e mais sans valeur "
+                                          "(contr\xC3\xB4le jamais touch\xC3\xA9 ?) \xC2\xB7 clic : couper");
+                    }
                 }
             }
             ImGui::TableSetColumnIndex(1);
@@ -3797,7 +3816,11 @@ void draw_mapping_list(Engine& engine, Frame& frame) {
             ImGui::TableSetColumnIndex(2);
             {
                 const DestinationSpec* spec = describe_destination(resolve_destination(row.destination.target));
-                text_c(row.enabled ? kInk : kFaint, "%s", spec != nullptr ? spec->about : row.destination.target.c_str());
+                // Sans description, la cible s'écrit telle quelle — et se lit en
+                // `warn`, pas en encre : c'est une adresse que rien n'écoute.
+                const ImU32 dest_c = !known ? kWarn : (row.enabled ? kInk : kFaint);
+                text_c(dest_c, "%s",
+                       spec != nullptr ? spec->about : row.destination.target.c_str());
                 if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", row.destination.target.c_str());
             }
             ImGui::TableSetColumnIndex(3);
