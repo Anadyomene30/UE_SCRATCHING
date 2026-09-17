@@ -58,6 +58,10 @@ void push_mono() { if (g_fonts.mono != nullptr) ImGui::PushFont(g_fonts.mono, 0.
 void push_small() { if (g_fonts.small != nullptr) ImGui::PushFont(g_fonts.small, 0.0f); }
 void pop_font() { if (g_fonts.mono != nullptr) ImGui::PopFont(); }
 
+// Définie plus bas, près de ce qu'elle compte ; appelée par les deux boutons
+// « Tout analyser », qui sont sur deux écrans différents.
+std::size_t analyse_all_count(const Library& library, const Frame& frame);
+
 void text_c(ImU32 colour, const char* fmt, ...) IM_FMTARGS(2);
 void text_c(ImU32 colour, const char* fmt, ...) {
     va_list args;
@@ -761,7 +765,10 @@ void draw_status(Engine& engine, Frame& frame) {
 
     // The outputs, right-aligned by measurement: Spout is open from startup
     // (ui/share), NDI is not built, and the screen the room sees.
-    std::string outputs = frame.share_open ? "Spout scratchvj" : "Spout \xE2\x80\x94";
+    // Le châssis dit que le partage tourne ; il ne dit pas le nom mécanique du
+    // projet. Le nom vit dans l'infobulle, où on va le chercher quand on
+    // configure Resolume — et nulle part où on le lit sans l'avoir demandé.
+    std::string outputs = frame.share_open ? "Spout actif" : "Spout \xE2\x80\x94";
     if (frame.output_open) {
         for (const Frame::DisplayView& display : frame.displays) {
             if (!display.is_output) continue;
@@ -773,6 +780,10 @@ void draw_status(Engine& engine, Frame& frame) {
     if (right_x > ImGui::GetCursorPosX() + 40.0f) {
         ImGui::SameLine(right_x);
         text_c(frame.share_open ? kMuted : kFaint, "%s", outputs.c_str());
+        if (ImGui::IsItemHovered() && frame.share_open && !frame.share_name.empty()) {
+            ImGui::SetTooltip("nom du sender, Ã  choisir dans Resolume : %s",
+                              frame.share_name.c_str());
+        }
     }
     pop_font();
 
@@ -1266,7 +1277,14 @@ void draw_library_screen(Engine& engine, Frame& frame) {
     if (button("Dossier\xE2\x80\xA6")) frame.import_folder_request = true;
     if (ImGui::IsItemHovered()) ImGui::SetTooltip("importe ce qu'un dossier contient, une fois");
     ImGui::SameLine(0.0f, 6.0f);
-    if (button("Tout analyser")) frame.analyse_all_request = true;
+    {
+        char label[40];
+        const std::size_t n = analyse_all_count(library, frame);
+        std::snprintf(label, sizeof(label), n > 0 ? "Tout analyser (%zu)" : "Tout analyser", n);
+        if (button(label, Icon::None, false, kParamRow, kInk, n > 0)) {
+            frame.analyse_all_request = true;
+        }
+    }
     ImGui::SameLine(0.0f, 6.0f);
     if (button("Rescanner")) frame.rescan_request = true;
     if (ImGui::IsItemHovered()) ImGui::SetTooltip("relit les dossiers surveill\xC3\xA9s (R\xC3\x89GLAGES)");
@@ -1641,6 +1659,56 @@ bool input_string(const char* label, std::string& value, float width = 320.0f) {
     return false;
 }
 
+// Ce que « Tout analyser » va faire, avant qu'on clique. Deux tas : ce qui n'a
+// jamais été analysé, et les caches d'avant `core/cachemeta` — analysés, mais
+// sans vignette, donc à refaire pour en avoir une. Un bouton qui peut lancer
+// le re-décodage d'une bibliothèque de 4K dit combien, sinon c'est un piège.
+std::size_t analyse_all_count(const Library& library, const Frame& frame) {
+    std::size_t total = library.pending_analysis().size();
+    for (std::size_t k = 0; k < frame.thumbnails.size() && k < library.size(); ++k) {
+        if (frame.thumbnails[k] != nullptr) continue;
+        if (library.at(static_cast<ClipId>(k)).state == AnalysisState::Ready) ++total;
+    }
+    return total;
+}
+
+// La carte du clavier, en un seul endroit. Elle se lit à deux endroits — la
+// popup de `?` et l'écran RÉGLAGES — et deux tables auraient divergé au premier
+// changement de touche.
+struct KeyRow {
+    const char* key;
+    const char* effect;
+};
+
+// `D` est la lettre que la suite réserve pour masquer l'interface
+// (`design/ERGONOMIE.md`, 2026-09-10). Ce produit rendait déjà cet effet par
+// `F` ; la maison a traité le même cas pour `Tab` en gardant la touche apprise
+// et en ajoutant la sienne à côté, et c'est ce qui est fait ici, sur demande du
+// fondateur du 2026-09-17. Les deux font le même geste, et la carte le dit.
+constexpr KeyRow kKeyMap[] = {
+    {"Espace", "Lecture ou pause du deck sous la souris"},
+    {"F \xC2\xB7 D", "Image seule : le programme, et rien d'autre"},
+    {"B", "Rail de biblioth\xC3\xA8que"},
+    {"? \xC2\xB7 F1", "Cette carte"},
+    {"\xC3\x89" "chap", "Ferme ce qui est ouvert \xC2\xB7 ne ferme jamais la fen\xC3\xAAtre"},
+};
+
+void draw_key_table() {
+    if (!ImGui::BeginTable("keymap", 2, ImGuiTableFlags_SizingFixedFit)) return;
+    for (const KeyRow& row : kKeyMap) {
+        ImGui::TableNextRow();
+        ImGui::TableNextColumn();
+        push_mono();
+        text_c(kInk, "%s", row.key);
+        pop_font();
+        ImGui::TableNextColumn();
+        ImGui::Dummy(ImVec2(14.0f, 1.0f));
+        ImGui::SameLine(0.0f, 0.0f);
+        text_c(kMuted, "%s", row.effect);
+    }
+    ImGui::EndTable();
+}
+
 void draw_settings_screen(Engine& engine, Frame& frame) {
     (void)engine;
     if (frame.settings == nullptr) {
@@ -1683,7 +1751,12 @@ void draw_settings_screen(Engine& engine, Frame& frame) {
     ImGui::SameLine(0.0f, 8.0f);
     if (ImGui::SmallButton("Rescanner")) frame.rescan_request = true;
     ImGui::SameLine(0.0f, 8.0f);
-    if (ImGui::SmallButton("Tout analyser")) frame.analyse_all_request = true;
+    {
+        char label[40];
+        const std::size_t n = analyse_all_count(engine.library(), frame);
+        std::snprintf(label, sizeof(label), n > 0 ? "Tout analyser (%zu)" : "Tout analyser", n);
+        if (ImGui::SmallButton(label)) frame.analyse_all_request = true;
+    }
     pop_font();
 
     ImGui::Dummy(ImVec2(0.0f, 8.0f));
@@ -1839,6 +1912,15 @@ void draw_settings_screen(Engine& engine, Frame& frame) {
         text_c(kMuted, "aucun");
     }
     pop_font();
+
+    ImGui::Dummy(ImVec2(0.0f, 18.0f));
+    eyebrow("CLAVIER \xC2\xB7 les cinq gestes");
+    push_small();
+    dim("Le reste se joue sur les plateaux et sur la table. ? ou F1 rappellent "
+        "cette carte \xC3\xA0 tout moment.");
+    pop_font();
+    ImGui::Dummy(ImVec2(0.0f, 6.0f));
+    draw_key_table();
 
     ImGui::Dummy(ImVec2(0.0f, 14.0f));
     push_small();
@@ -4676,7 +4758,7 @@ void draw_program_strip(Engine& engine, Frame& frame, float height) {
                                                : "PROGRAMME");
     ImGui::Dummy(ImVec2(0.0f, 2.0f));
     draw_program_view(frame, preview_w, preview_h,
-                      frame.output_open ? "ce que voit la salle" : "Spout scratchvj");
+                      frame.output_open ? "ce que voit la salle" : "partag\xC3\xA9 en Spout");
     ImGui::EndGroup();
 
     ImGui::SameLine(0.0f, 18.0f);
@@ -4830,7 +4912,11 @@ void draw_program_strip(Engine& engine, Frame& frame, float height) {
 // with no interface in the way.
 void draw_play_screen(Engine& engine, Frame& frame) {
     if (!ImGui::GetIO().WantTextInput) {
-        if (ImGui::IsKeyPressed(ImGuiKey_F, false)) frame.full_frame = !frame.full_frame;
+        // `F` et `D` font le même geste : `F` est la touche apprise de ce
+        // produit, `D` celle que la suite réserve pour cet effet.
+        if (ImGui::IsKeyPressed(ImGuiKey_F, false) || ImGui::IsKeyPressed(ImGuiKey_D, false)) {
+            frame.full_frame = !frame.full_frame;
+        }
         if (ImGui::IsKeyPressed(ImGuiKey_B, false)) frame.rail_open = !frame.rail_open;
     }
     if (frame.full_frame) {
@@ -4969,31 +5055,7 @@ void draw_key_map() {
     eyebrow("CARTE DU CLAVIER");
     ImGui::Dummy(ImVec2(0.0f, 6.0f));
 
-    struct Row {
-        const char* key;
-        const char* effect;
-    };
-    static const Row rows[] = {
-        {"Espace", "Lecture ou pause du deck sous la souris"},
-        {"F", "Image seule : le programme, et rien d'autre"},
-        {"B", "Rail de biblioth\xC3\xA8que"},
-        {"? \xC2\xB7 F1", "Cette carte"},
-        {"\xC3\x89" "chap", "Ferme ce qui est ouvert \xC2\xB7 ne ferme jamais la fen\xC3\xAAtre"},
-    };
-    if (ImGui::BeginTable("keymap", 2, ImGuiTableFlags_SizingFixedFit)) {
-        for (const Row& row : rows) {
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            push_mono();
-            text_c(kInk, "%s", row.key);
-            pop_font();
-            ImGui::TableNextColumn();
-            ImGui::Dummy(ImVec2(14.0f, 1.0f));
-            ImGui::SameLine(0.0f, 0.0f);
-            text_c(kMuted, "%s", row.effect);
-        }
-        ImGui::EndTable();
-    }
+    draw_key_table();
 
     ImGui::Dummy(ImVec2(0.0f, 8.0f));
     push_small();

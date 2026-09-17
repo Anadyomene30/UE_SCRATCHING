@@ -187,6 +187,10 @@ struct Frame {
     std::size_t analysis_pending = 0;
     bool analysis_busy = false;
     bool share_open = false;             // the Spout sender is publishing
+    // Le nom sous lequel le partage est enregistré. C'est le nom mécanique du
+    // projet, pas celui du produit : il ne s'écrit donc pas dans le châssis,
+    // mais il doit rester atteignable — c'est lui qu'on choisit dans Resolume.
+    std::string share_name;
     // The last thing that went wrong, in one line, so a failed analysis or an
     // unreadable file is said on screen rather than lost in a stderr nobody
     // can read from a WIN32 application.

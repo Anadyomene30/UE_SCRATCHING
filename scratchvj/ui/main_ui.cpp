@@ -902,6 +902,18 @@ int main(int argc, char** argv) {
         }
         if (view.analyse_all_request) {
             for (const ClipId id : engine.library().pending_analysis()) enqueue_analysis(id);
+            // Et les caches d'avant `core/cachemeta` : analysés, mais sans la
+            // vignette que la passe produit aujourd'hui. Ils ne sont dans aucun
+            // `pending_analysis()`, donc rien de groupé ne les reprenait et leur
+            // case restait noire pour toujours. « Tout analyser » veut dire tout,
+            // et le bouton annonce son compte avant qu'on clique.
+            for (std::size_t k = 0; k < view.thumbnails.size(); ++k) {
+                if (view.thumbnails[k] != nullptr) continue;
+                const ClipId id = static_cast<ClipId>(k);
+                if (static_cast<std::size_t>(id) >= engine.library().size()) continue;
+                if (engine.library().at(id).state != AnalysisState::Ready) continue;
+                enqueue_analysis(id);
+            }
             view.analyse_all_request = false;
         }
 
@@ -1048,6 +1060,7 @@ int main(int argc, char** argv) {
         view.analysis_pending = analysis.pending();
         view.analysis_busy = analysis.busy();
         view.share_open = share.active();
+        view.share_name = kShareName;
 
         const auto now_us = static_cast<std::uint64_t>(wall_s * 1e6);
 

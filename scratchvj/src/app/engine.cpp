@@ -343,13 +343,18 @@ void Engine::configure_rack_and_mappings() {
     follower.release_ms = 400.0f;
     modulators_.add(follower);
 
+    // Les trois emplacements sont garnis, et tous à sec. Le rack est ce que
+    // l'instrument EST — on ouvre sur trois effets prêts, pas sur trois cases
+    // vides — mais un logiciel qui s'ouvre en traitant déjà l'image à 62 %
+    // montre une image que personne n'a demandée. Un mix à zéro laisse passer
+    // l'image telle quelle, et le premier potard touché fait le reste.
     rack_.load(0, EffectType::Delay);
     rack_.at(0).sync.tempo = true;
     rack_.at(0).sync.beats = 0.5;
-    rack_.at(0).shared.mix = 0.62f;
+    rack_.at(0).shared.mix = 0.0f;
     rack_.at(0).shared.feedback = 0.55f;
     rack_.load(1, EffectType::LowPass);
-    rack_.at(1).shared.mix = 0.41f;
+    rack_.at(1).shared.mix = 0.0f;
     // Unlinked on purpose, to show the one state where the two domains diverge.
     // Kaleidoscope rather than slit scan in the demo, for one honest reason:
     // slit scan reads the clip at several positions and nothing draws it yet,
@@ -357,7 +362,7 @@ void Engine::configure_rack_and_mappings() {
     // exactly that way on purpose, so the state IS visible somewhere -- one
     // undrawn effect is a note about what is coming, three is a broken rack.
     rack_.load(2, EffectType::Kaleidoscope);
-    rack_.at(2).shared.mix = 0.77f;
+    rack_.at(2).shared.mix = 0.0f;
     rack_.at(2).unlink();
     rack_.at(2).audio_override.mix = 0.0f;
 
