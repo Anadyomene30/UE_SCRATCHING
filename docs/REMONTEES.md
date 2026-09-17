@@ -2307,6 +2307,18 @@ la suite s'interdit : elle n'est pas fautive, elle est seulement autre.
 
 **Recommandation :** la première, et signaler la troisième à la maison. La clause
 de `Tab` existe déjà et dit le bon principe ; ce qui lui manque est de ne pas
-nommer `Tab` en particulier. Ce dépôt **ne l'a pas fait** : la maison dit que
-c'est un ajout, un ajout demande une phase ou une demande, et une session
-d'audit n'en ouvre pas une toute seule.
+nommer `Tab` en particulier.
+
+> **Tranché le jour même, par le fondateur : c'est la première.** `D` est liée à
+> côté de `F`, les deux rendent « image seule », et la carte du clavier le dit.
+> La demande que la maison exige pour cet ajout est donc faite et datée. **Ce
+> qui reste ouvert est la troisième issue, et elle seule** : la clause de
+> sauvegarde d'`ERGONOMIE.md` dit « un produit qui liait déjà `Tab` à cet effet
+> le garde » et ajoute « c'est le seul produit concerné ». Ce n'était pas vrai
+> au moment où elle a été écrite : celui-ci rendait le même effet par `F`. La
+> clause énonce le bon principe et nomme une touche de trop.
+
+**Et la carte est allée où on la lit.** Elle n'existait que dans une popup
+ouverte par `?` — donc invisible à qui ne connaît pas le raccourci qui montre
+les raccourcis. L'écran RÉGLAGES la porte désormais en entier, et les deux
+endroits lisent la même table.
