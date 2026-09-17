@@ -1,3 +1,5 @@
+#include <filesystem>
+#include <fstream>
 #include <string>
 #include <vector>
 
@@ -99,4 +101,34 @@ SVJ_TEST("library_scan: a sequence pattern's cache is named without the percent"
              std::string("D:/shots/frame_seq.png.svcache"));
     const std::string hashed = cache_path_for("D:/shots/frame_%04d.png", "E:/cache");
     CHECK(hashed.find('%') == std::string::npos);
+}
+
+
+// Le test qui aurait attrapé le défaut du 2026-09-17 : `scratchvj scan` sur un
+// dossier inexistant imprimait « 0 entrées » et sortait en 0, donc un disque
+// débranché était indiscernable d'un dossier vide. Ce n'est pas le compte qui
+// est faux — il y a bien zéro entrée — c'est la question qui n'était pas posée.
+SVJ_TEST("library_scan: a missing folder is not an empty folder") {
+    namespace fs = std::filesystem;
+    const fs::path root = fs::temp_directory_path() / "svj_folder_state";
+    std::error_code ec;
+    fs::remove_all(root, ec);
+    fs::create_directories(root, ec);
+
+    // Vide, mais là : ce que `scan` doit accepter en disant zéro.
+    CHECK(folder_state(root.string()) == FolderState::Present);
+    CHECK(scan_folders({root.string()}, "").empty());
+
+    // Absent : le même zéro, et une réponse différente.
+    const fs::path gone = root / "jamais_créé";
+    CHECK(folder_state(gone.string()) == FolderState::Missing);
+    CHECK(scan_folders({gone.string()}, "").empty());
+
+    // Un fichier n'est pas un dossier, et le dire évite d'envoyer l'utilisateur
+    // chercher un dossier qu'il a bien désigné — mal.
+    const fs::path file = root / "pas_un_dossier.txt";
+    std::ofstream(file) << "x";
+    CHECK(folder_state(file.string()) == FolderState::NotAFolder);
+
+    fs::remove_all(root, ec);
 }

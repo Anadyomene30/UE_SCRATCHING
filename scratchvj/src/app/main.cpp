@@ -5,6 +5,7 @@
 // makes the rest of the project developable before the turntables are plugged in.
 #include <chrono>
 #include <cstring>
+#include <optional>
 #include <iostream>
 #include <string>
 #include <thread>
@@ -33,7 +34,7 @@ void usage() {
         "        Runs a scripted performance through the whole engine and draws it.\n"
         "        No turntables needed. --record writes a .scratchtake fixture.\n"
         "\n"
-        "  scratchvj play FILE [--fps N] [--plain]\n"
+        "  scratchvj play FILE [--plain]\n"
         "        Replays a recorded take.\n"
         "\n"
         "  scratchvj analyze VIDEO [--out FILE.svcache] [--max-width N]\n"
@@ -89,9 +90,43 @@ DeckCommands to_commands(const SimEvent& events) {
     return commands;
 }
 
+// Un nombre pris sur la ligne de commande, ou rien et une raison.
+//
+// Deux défauts mesurés le 2026-09-17, et c'est le même oubli. `std::stod`
+// lève sur « abc » ; il n'y a aucun `catch` au-dessus, donc `demo --seconds
+// abc` sortait en code 3 **sans un mot** — ce qui se lit comme un plantage.
+// Et zéro n'est pas une petite cadence : la boucle avance de `1/fps` et
+// n'atteint jamais sa fin, donc `demo --fps 0` tournait sans fin et sans
+// rien afficher. Une borne basse n'est pas une précaution, elle fait partie
+// de la question posée.
+std::optional<double> number(int argc, char** argv, const char* name, const char* fallback,
+                             double low, double high) {
+    const std::string raw = option(argc, argv, name, fallback);
+    std::size_t used = 0;
+    double value = 0.0;
+    try {
+        value = std::stod(raw, &used);
+    } catch (const std::exception&) {
+        used = 0;
+    }
+    if (used != raw.size() || raw.empty()) {
+        std::cerr << name << " : \"" << raw << "\" n'est pas un nombre\n";
+        return std::nullopt;
+    }
+    if (!(value >= low && value <= high)) {
+        std::cerr << name << " : " << raw << " est hors de [" << low << ", " << high
+                  << "]\n";
+        return std::nullopt;
+    }
+    return value;
+}
+
 int run_demo(int argc, char** argv) {
-    const double seconds = std::stod(option(argc, argv, "--seconds", "24"));
-    const double fps = std::stod(option(argc, argv, "--fps", "30"));
+    const std::optional<double> seconds = number(argc, argv, "--seconds", "24", 0.01, 86400.0);
+    if (!seconds) return 2;
+    const std::optional<double> fps_opt = number(argc, argv, "--fps", "30", 0.1, 1000.0);
+    if (!fps_opt) return 2;
+    const double fps = *fps_opt;
     const bool ansi = !flag(argc, argv, "--plain");
     const std::string record_path = option(argc, argv, "--record", "");
 
@@ -118,7 +153,7 @@ int run_demo(int argc, char** argv) {
     const double dt = 1.0 / fps;
     const auto started = std::chrono::steady_clock::now();
 
-    for (double t = 0.0; t < seconds; t += dt) {
+    for (double t = 0.0; t < *seconds; t += dt) {
         const auto now_us = static_cast<std::uint64_t>(t * 1e6);
         simulation.step(t, engine.surface(), now_us);
 
@@ -186,7 +221,9 @@ int run_play(int argc, char** argv) {
         usage();
         return 2;
     }
-    const double fps = std::stod(option(argc, argv, "--fps", "30"));
+    // Pas de `--fps` ici : une prise porte sa propre horloge et la relecture
+    // dort jusqu'à l'instant enregistré. L'option était analysée puis jetée
+    // (`(void)fps`), donc annoncée dans l'aide sans effet possible.
     const bool ansi = !flag(argc, argv, "--plain");
 
     TakeReader reader;
@@ -249,7 +286,6 @@ int run_play(int argc, char** argv) {
         std::cout << render_dashboard(view, va, vb, surface, empty, ansi) << std::flush;
 
         std::this_thread::sleep_until(started + std::chrono::duration<double>(elapsed));
-        (void)fps;
     }
     if (!error.empty()) {
         std::cerr << error << "\n";
@@ -261,18 +297,26 @@ int run_play(int argc, char** argv) {
 int run_analyze(int argc, char** argv) {
     if (argc < 3) {
         usage();
-        return 1;
+        return 2;  // « argument manquant », comme les autres commandes
     }
     AnalyzeOptions options;
     options.input = argv[2];
     options.output = option(argc, argv, "--out", "");
     options.max_width =
-        static_cast<std::uint32_t>(std::stoul(option(argc, argv, "--max-width", "1024")));
+        [&]() -> std::uint32_t {
+            const std::optional<double> w = number(argc, argv, "--max-width", "1024", 16.0, 16384.0);
+            return w ? static_cast<std::uint32_t>(*w) : 0u;
+        }();
+    if (options.max_width == 0u) return 2;
     const std::string sequence = option(argc, argv, "--sequence", "");
     if (!sequence.empty()) {
         options.is_sequence = true;
-        options.sequence_start = static_cast<std::uint32_t>(std::stoul(sequence));
-        options.sequence_fps = std::stod(option(argc, argv, "--fps", "30"));
+        const std::optional<double> start = number(argc, argv, "--sequence", "0", 0.0, 1e9);
+        if (!start) return 2;
+        options.sequence_start = static_cast<std::uint32_t>(*start);
+        const std::optional<double> sfps = number(argc, argv, "--fps", "30", 0.1, 1000.0);
+        if (!sfps) return 2;
+        options.sequence_fps = *sfps;
     }
     options.is_still = flag(argc, argv, "--still");
 
@@ -303,6 +347,19 @@ int run_scan(int argc, char** argv) {
         return 2;
     }
     const std::string cache_dir = option(argc, argv, "--cache-dir", "");
+    // Un dossier absent et un dossier vide donnaient tous deux « 0 entrées »
+    // et le code 0. C'est le piège que ce dépôt documente ailleurs : un état
+    // normal indiscernable d'une panne. Le disque débranché se nomme.
+    switch (folder_state(argv[2])) {
+        case FolderState::Missing:
+            std::cerr << argv[2] << " : ce dossier n'existe pas\n";
+            return 2;
+        case FolderState::NotAFolder:
+            std::cerr << argv[2] << " : ce n'est pas un dossier\n";
+            return 2;
+        case FolderState::Present:
+            break;
+    }
     const std::vector<ScanItem> items = scan_folders({argv[2]}, cache_dir);
     std::cout << items.size() << " entrées\n";
     for (const ScanItem& item : items) {

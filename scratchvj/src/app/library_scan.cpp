@@ -190,6 +190,13 @@ std::vector<ScanItem> group_images(const std::vector<std::string>& image_paths) 
     return items;
 }
 
+FolderState folder_state(const std::string& folder) {
+    std::error_code ec;
+    if (!fs::exists(folder, ec) || ec) return FolderState::Missing;
+    if (!fs::is_directory(folder, ec) || ec) return FolderState::NotAFolder;
+    return FolderState::Present;
+}
+
 std::vector<ScanItem> scan_folders(const std::vector<std::string>& folders,
                                    const std::string& cache_dir) {
     std::vector<std::string> videos, images, caches;

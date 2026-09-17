@@ -64,6 +64,14 @@ std::vector<ScanItem> group_images(const std::vector<std::string>& image_paths);
 std::vector<ScanItem> scan_folders(const std::vector<std::string>& folders,
                                    const std::string& cache_dir);
 
+// Ce qu'un dossier surveillé est vraiment. Un dossier absent et un dossier vide
+// rendent tous deux zéro entrée, et les distinguer est toute la différence entre
+// « rien à importer » et « le disque est débranché ». C'est le même piège que la
+// sonde Spout : un état normal indiscernable d'une panne tant que personne ne
+// dit ce qui a été trouvé, et pas seulement ce qui manque.
+enum class FolderState { Missing, NotAFolder, Present };
+FolderState folder_state(const std::string& folder);
+
 // The lowest frame number on disk for a sequence pattern: what the analysis
 // pass has to start at. Zero when the pattern matches nothing. Sequence_of()
 // on the pattern itself gives the pattern's own digits, not a real file's,
