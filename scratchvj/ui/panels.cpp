@@ -2146,11 +2146,20 @@ void draw_deck(Deck& deck, Engine& engine, Frame& frame, void* texture,
     const bool projected_360 = is_a && deck.clip.is_equirect();
     picture_well(deck, texture,
                  projected_360 ? static_cast<float>(engine.view_a().aspect) : 0.0f, inner,
-                 std::max(120.0f, height * 0.26f));
+                 // La rangée 360 et sa ligne d'angles sont deux rangs que le deck
+                 // 2D ne porte pas. Ils se prennent sur l'image, jamais sur les
+                 // pads : l'image a un écran de sortie à elle, les pads n'ont que
+                 // celui-ci. Sans ça le sélecteur Cues|Clips|Boucles était coupé
+                 // sur un clip 360, à la taille même où les captures se font.
+                 std::max(110.0f, height * (projected_360 ? 0.20f : 0.26f)));
 
     // --- transport ---------------------------------------------------------------
     ImGui::Dummy(ImVec2(0.0f, 6.0f));
     {
+        // Le bouton lecture fait 44 px (`kHitTargetMin`) quand les autres en
+        // font 28 : la rangée n'avançait que de 28 et la barre de position
+        // mordait le bas des boutons. Un groupe avance de sa vraie hauteur.
+        ImGui::BeginGroup();
         const DeckSource source = deck.clock.source();
         const bool on_platter = source == DeckSource::Timecode;
         if (button("", Icon::SkipStart, false, kParamRow, kInk, loaded)) deck.stop(now_s);
@@ -2232,6 +2241,7 @@ void draw_deck(Deck& deck, Engine& engine, Frame& frame, void* texture,
                 ImGui::PopID();
             }
         }
+        ImGui::EndGroup();
     }
 
     // --- the position bar ---------------------------------------------------------
@@ -4798,7 +4808,11 @@ void draw_play_screen(Engine& engine, Frame& frame) {
     }
 
     const float gap = ImGui::GetStyle().ItemSpacing.x;
-    const float program_h = 232.0f;
+    // Le programme est un moniteur ; les pads sont l'instrument. À 232 px fixes
+    // il prenait le tiers d'une fenêtre de 800 et poussait les pads sous la
+    // ligne de flottaison. Sur une fenêtre courte, c'est le moniteur qui cède.
+    const float program_h =
+        std::clamp(ImGui::GetContentRegionAvail().y * 0.26f, 150.0f, 232.0f);
     const float body_h = std::max(360.0f, ImGui::GetContentRegionAvail().y - program_h - gap);
     const float rail = frame.rail_open ? 250.0f : 0.0f;
     const float mixer_w = 176.0f;
