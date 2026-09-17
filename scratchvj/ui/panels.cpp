@@ -565,7 +565,12 @@ void filmstrip(Deck& deck, Frame& frame, float width, float height = 34.0f) {
             std::snprintf(memo, sizeof(memo), "en m\xC3\xA9moire : %.1f s", span_s);
         }
         const ImVec2 size = ImGui::CalcTextSize(memo);
-        draw->AddText(ImVec2(origin.x + width - size.x - 6.0f, origin.y + 3.0f), kMuted, memo);
+        // La tête de lecture passe par la droite comme par le reste de la
+        // bande, et une mesure imprimée sous sa poignée est une mesure que
+        // personne ne peut lire. Elle change de bout plutôt que de se battre.
+        float memo_x = origin.x + width - size.x - 6.0f;
+        if (head > memo_x - 8.0f) memo_x = origin.x + 6.0f;
+        draw->AddText(ImVec2(memo_x, origin.y + 3.0f), kMuted, memo);
         pop_font();
     }
     if (hovered && loaded && !ImGui::IsItemActive()) {
@@ -2190,7 +2195,11 @@ void draw_deck(Deck& deck, Engine& engine, Frame& frame, void* texture,
         // Placed from what the row has actually used, so it never lands on
         // the time.
         const float rate_w = 90.0f;
-        const float label_w = ImGui::CalcTextSize("Vitesse").x * 0.8f + 8.0f;
+        // Mesuré dans la fonte qui le dessinera : `row_label` compose en petit,
+        // et un facteur supposé collait la valeur au mot — « Vitesse+0.00× ».
+        push_small();
+        const float label_w = ImGui::CalcTextSize("Vitesse").x + 10.0f;
+        pop_font();
         const float used = ImGui::GetItemRectMax().x - ImGui::GetWindowPos().x -
                            ImGui::GetWindowContentRegionMin().x;
         const float rate_x = inner - rate_w;
@@ -4027,7 +4036,11 @@ void draw_output_displays(Frame& frame) {
         pop_font();
     }
     push_small();
-    dim("\xC3\x89""chap ferme la sortie avant de quitter l'instrument.");
+    // Échap ne fait rien dans ce produit depuis la phase 4 : c'est le rang 6
+    // de la pile, celui qui dit de ne rien faire. La phrase promettait le
+    // contraire, et une interface qui décrit un geste qu'elle n'exécute pas
+    // apprend à se méfier de tout ce qu'elle dit d'autre.
+    dim("La sortie se ferme ici, par la puce de l'\xC3\xA9""cran qui la porte.");
     pop_font();
     ImGui::Dummy(ImVec2(0.0f, 14.0f));
 }
@@ -4834,14 +4847,18 @@ void apply_style() {
     c[ImGuiCol_Border] = rgba(kHair);
     c[ImGuiCol_Separator] = rgba(kHair);
     c[ImGuiCol_FrameBg] = rgba(kWell);
-    c[ImGuiCol_FrameBgHovered] = IM_COL32_BLACK_TRANS ? rgba(kHair) : rgba(kHair);
+    c[ImGuiCol_FrameBgHovered] = rgba(kHair);
     c[ImGuiCol_FrameBgActive] = rgba(kHair);
     c[ImGuiCol_Button] = rgba(kWell);
     c[ImGuiCol_ButtonHovered] = rgba(kHair);
     c[ImGuiCol_ButtonActive] = rgba(kAccent);
     c[ImGuiCol_CheckMark] = rgba(kAccent);
-    c[ImGuiCol_SliderGrab] = rgba(kAccent);
-    c[ImGuiCol_SliderGrabActive] = rgba(kInk);
+    // ImGui centre la valeur sur la piste et promène la poignée dessous ; en
+    // aplat, elle passe sous un chiffre et « 0.62 » se lit « 0.6|2 ». La
+    // poignée est un état, la valeur est ce que le curseur existe pour dire :
+    // c'est donc la poignée qui se voile, jamais la valeur qui se déplace.
+    c[ImGuiCol_SliderGrab] = rgba(tok::veil(kAccent, tok::kVeilGrab));
+    c[ImGuiCol_SliderGrabActive] = rgba(tok::veil(kInk, tok::kVeilGrab));
     c[ImGuiCol_Header] = rgba(kHair);
     c[ImGuiCol_HeaderHovered] = rgba(kHair);
     c[ImGuiCol_HeaderActive] = rgba(kHair);

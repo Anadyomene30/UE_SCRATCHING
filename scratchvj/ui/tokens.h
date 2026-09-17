@@ -311,6 +311,7 @@ constexpr std::uint32_t kVeilLoop = 0x33;       // sur l'accent — l'intervalle
 constexpr std::uint32_t kVeilDropTarget = 0x30; // sur l'accent — la case de banque sous un glisser
 constexpr std::uint32_t kVeilRowHover = 0x80;   // sur `chassis.panel` — la ligne survolée
 constexpr std::uint32_t kVeilMaskIdle = 0x60;   // sur `pair.b` — le masque, outil non armé
+constexpr std::uint32_t kVeilGrab = 0x66;       // sur l'accent — la poignée d'un curseur, SOUS sa valeur
 
 // L'ÉCLAIRCISSEMENT — l'opération de `veil`, dans l'autre sens. `veil` pose une
 // opacité sur un jeton ; celle-ci tire un jeton VERS la craie de la ligne, canal
